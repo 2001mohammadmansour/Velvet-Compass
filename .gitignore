@@ -1,0 +1,22 @@
+# Node
+node_modules/
+front/build/
+npm-debug.log*
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# .NET
+back/**/bin/
+back/**/obj/
+
+# IDE / OS
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+.DS_Store
+Thumbs.db

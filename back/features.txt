@@ -1,0 +1,57 @@
+من خلال الـ ERD، هيدي كل الـ features الموجودة بالنظام:
+
+---
+
+## 🔐 Auth & User Management
+- تسجيل وتسجيل دخول المستخدمين
+- إدارة الـ refresh tokens (جدول ضفناه نحن)
+- بروفايل المستخدم (اسم، إيميل، تلفون)
+
+---
+
+## 🏨 Hotel Management
+- إضافة وإدارة الفنادق (اسم، وصف، عنوان، مدينة، دولة)
+- رفع صور للفنادق
+
+---
+
+## 🛏️ Room Management
+- إنشاء أنواع الغرف لكل فندق (RoomTypes) مع سعر أساسي وطاقة استيعابية
+- إضافة غرف فعلية لكل نوع (Rooms) مع رقم الغرفة وحالتها
+- إدارة حالة الغرفة: `available` / `maintenance` / `inactive`
+- رفع صور لأنواع الغرف
+
+---
+
+## 📅 Availability & Pricing
+- تتبع توفر كل غرفة يوميًا (RoomAvailability)
+- حالة اليوم: `free` / `booked` / `blocked`
+- تجاوز السعر الأساسي لأيام معينة (price_override)
+
+---
+
+## ✨ Amenities
+- إنشاء قائمة مرافق (Amenities)
+- ربط المرافق بأنواع الغرف (RoomType_Amenities) — علاقة many-to-many
+
+---
+
+## 📋 Booking Management
+- إنشاء حجز مع تواريخ check-in / check-out
+- حالات الحجز: `pending` / `confirmed` / `cancelled` / `completed`
+- إضافة عدة غرف لحجز واحد (BookingItems) مع السعر والكمية
+- ربط الغرفة الفعلية بعد التأكيد (room_id nullable)
+
+---
+
+## 💳 Payment Management
+- إنشاء دفعة لكل حجز
+- دعم طرق دفع متعددة (method)
+- حالات الدفع: `initiated` / `paid` / `failed` / `refunded`
+- حفظ الـ transaction reference
+
+---
+
+## 🖼️ Media / Images
+- صور مرتبطة بفندق أو بنوع غرفة (nullable على الاثنين)
+- كل صورة فيها URL وكابشن

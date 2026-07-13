@@ -1,0 +1,309 @@
+* {
+  box-sizing: border-box;
+}
+
+.auth-back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.auth-back-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateX(-2px);
+}
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  position: relative;
+  background-image: url("./assets/signup5.jpg");
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.2), transparent 35%);
+  pointer-events: none;
+}
+
+.card {
+  width: min(100%, 460px);
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 20px 45px rgba(3, 10, 28, 0.35);
+  z-index: 1;
+    background: rgba(255, 255, 255, 0.55); /* وسط بين الأبيض والشفاف */
+  backdrop-filter: blur(8px); 
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.page h1 {
+  margin: 0 0 6px;
+  color: #0b1f4d;
+  font-size: 1.7rem;
+}
+
+.subtitle {
+  margin: 0 0 20px;
+  color: #5c677d;
+  font-size: 0.95rem;
+}
+
+.page form {
+  display: grid;
+  gap: 12px;
+}
+
+.page label {
+  display: grid;
+  gap: 6px;
+  color: #1b2438;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.page input[type="text"],
+.page input[type="email"],
+.page input[type="tel"],
+.page input[type="password"] {
+  width: 100%;
+  border: 1px solid #d6dce8;
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 0.96rem;
+  color: #172133;
+  background: #fbfcff;
+  transition: 0.2s border-color, 0.2s box-shadow;
+}
+
+.page input:focus {
+  outline: none;
+  border-color: #0b1f4d;
+  box-shadow: 0 0 0 3px rgba(11, 31, 77, 0.12);
+}
+
+.checkbox-row {
+  grid-template-columns: 18px 1fr;
+  align-items: start;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.checkbox-row input {
+  margin-top: 3px;
+}
+
+.password-hint {
+  margin: 0 0 2px;
+  padding-left: 18px;
+  color: #667089;
+  font-size: 0.83rem;
+}
+
+.password-hint li.ok {
+  color: #136a3f;
+  font-weight: 600;
+}
+
+.page button {
+  margin-top: 6px;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  background: #0b1f4d;
+  cursor: pointer;
+  transition: 0.2s opacity, 0.2s transform;
+}
+
+.page button:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.page button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.page .link-button {
+  margin-top: 2px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #0b1f4d;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.page .link-button:hover:not(:disabled) {
+  text-decoration: underline;
+  transform: none;
+  opacity: 1;
+}
+
+.verification-copy {
+  margin: 0 0 16px;
+  color: #34415c;
+  line-height: 1.5;
+}
+
+.verification-note {
+  margin: 0 0 16px;
+  color: #8a5b00;
+  font-size: 0.9rem;
+}
+
+.verification-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.verification-actions button {
+  flex: 1;
+}
+
+.error {
+  color: #c32222;
+  font-size: 0.82rem;
+  margin-top: -2px;
+}
+
+.checkbox-error {
+  margin-top: -6px;
+}
+
+.success {
+  color: #156f43;
+  font-size: 0.87rem;
+  font-weight: 600;
+}
+
+.submit-error {
+  margin-top: 2px;
+}
+
+
+
+/* hotel owner signup — document preview */
+.signup-doc-preview { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.signup-doc-preview img {
+  width: 120px; height: 84px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1;
+}
+.signup-doc-name { font-size: 12px; color: #64748b; }
+
+/* Terms / Privacy Policy inline links + modal */
+.legal-link {
+  color: #4a9bf0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.legal-link:hover {
+  text-decoration: underline;
+}
+
+.legal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 15, 35, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.legal-modal {
+  width: min(100%, 520px);
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(3, 10, 28, 0.35);
+}
+
+.legal-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.legal-modal-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #0b1f4d;
+}
+
+.legal-modal-close {
+  margin: 0;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.legal-modal-close:hover {
+  background: #e2e8f0;
+}
+
+.legal-modal-body p {
+  margin: 0 0 12px;
+  color: #34415c;
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+
+.legal-modal-done {
+  margin-top: 8px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  background: #0b1f4d;
+  cursor: pointer;
+}
+
+.legal-modal-done:hover {
+  opacity: 0.95;
+}
