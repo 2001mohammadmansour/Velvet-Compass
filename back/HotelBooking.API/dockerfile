@@ -1,0 +1,19 @@
+FROM ://microsoft.com AS build
+WORKDIR /src
+
+# Step out of HotelBooking.API and copy everything inside the 'back' folder
+COPY . .
+
+# Restore and build the project using the correct paths
+RUN dotnet restore "back/HotelBooking.API/HotelBooking.API.csproj"
+RUN dotnet publish "back/HotelBooking.API/HotelBooking.API.csproj" -c Release -o /app/out
+
+# Setup the runtime environment
+FROM ://microsoft.com
+WORKDIR /app
+COPY --from=build /app/out .
+
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+
+ENTRYPOINT ["dotnet", "HotelBooking.API.dll"]
