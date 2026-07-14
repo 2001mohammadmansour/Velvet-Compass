@@ -1,15 +1,12 @@
-FROM ://microsoft.com AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Step out of HotelBooking.API and copy everything inside the 'back' folder
 COPY . .
 
-# Restore and build the project using the correct paths
 RUN dotnet restore "back/HotelBooking.API/HotelBooking.API.csproj"
 RUN dotnet publish "back/HotelBooking.API/HotelBooking.API.csproj" -c Release -o /app/out
 
-# Setup the runtime environment
-FROM ://microsoft.com
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/out .
 
