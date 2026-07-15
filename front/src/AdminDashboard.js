@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import HotelsAnalytics from './HotelsAnalytics';
 import HotelRequests from './HotelRequests';
@@ -7,47 +7,74 @@ import AdminUsers from './AdminUsers';
 import AmenitiesAdmin from './AmenitiesAdmin';
 import NotificationBell from './NotificationBell';
 import { clearAuth } from './services/auth';
+import { getAdminDashboard } from './services/hotels';
+import { getAllHotelRequests } from './services/hotelRequests';
 import './AdminDashboard.css';
 
+function formatMoney(value) {
+  return `$${Math.round(Number(value) || 0).toLocaleString()}`;
+}
+
 /* ── Overview Tab ── */
+// CHANGED: this used to just repeat the sidebar's nav as clickable cards with no actual data.
+// Now leads with real platform-wide numbers (reusing the same admin/dashboard + hotel-requests
+// data the Hotels Analytics / Hotel Requests tabs already fetch), so it's an actual at-a-glance
+// summary instead of a second nav menu.
 function OverviewTab({ onTabChange }) {
-  const sections = [
-    { key: 'hotels', icon: '🏨', label: 'Hotels Analytics', desc: 'Platform revenue, bookings, and top hotels' },
-    { key: 'stats', icon: '📈', label: 'Revenue Stats', desc: 'Monthly/quarterly/yearly revenue charts' },
-    { key: 'users', icon: '👥', label: 'Users', desc: 'All users, their activity, and hotels owned' },
-    { key: 'requests', icon: '📥', label: 'Hotel Requests', desc: 'Approve or reject hotel owner requests' },
-  ];
+  const [data, setData] = useState(null);
+  const [pendingRequests, setPendingRequests] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    Promise.all([getAdminDashboard(), getAllHotelRequests()])
+      .then(([dashboard, requests]) => {
+        if (!mounted) return;
+        setData(dashboard);
+        setPendingRequests(requests.filter((r) => r.status === 'pending').length);
+      })
+      .catch((err) => { if (mounted) setError(err.message || 'Unable to load overview.'); })
+      .finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
+  }, []);
 
   return (
-    <div className="admin-card">
-      <div className="admin-card-title">📋 Quick Navigation</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        {sections.map((s) => (
-          <div
-            key={s.key}
-            onClick={() => onTabChange(s.key)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              padding: '14px 16px',
-              background: 'var(--adm-surface2)',
-              border: '1px solid var(--adm-border)',
-              borderRadius: 10,
-              cursor: 'pointer',
-              transition: 'box-shadow 0.15s, border-color 0.15s'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(42,61,102,0.12)'; e.currentTarget.style.borderColor = '#6C8BC7'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = 'var(--adm-border)'; }}
-          >
-            <span style={{ fontSize: 22 }}>{s.icon}</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--adm-text)' }}>{s.label}</div>
-              <div style={{ fontSize: 12, color: 'var(--adm-text-light)', marginTop: 2 }}>{s.desc}</div>
-            </div>
-            <span style={{ marginLeft: 'auto', color: '#6C8BC7', fontSize: 16 }}>›</span>
+    <>
+      {loading && <p className="admin-stat-sub">Loading overview...</p>}
+      {error && <p className="admin-stat-sub" style={{ color: '#e05555' }}>{error}</p>}
+
+      {data && (
+        <div className="admin-stats-row">
+          <div className="admin-stat-card">
+            <div className="admin-stat-label">Platform Revenue</div>
+            <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(data.revenue?.totalRevenue)}</div>
+            <div className="admin-stat-sub">All-time booking fees + penalties</div>
           </div>
-        ))}
-      </div>
-    </div>
+          <div className="admin-stat-card">
+            <div className="admin-stat-label">Hotels / Users</div>
+            <div className="admin-stat-value" style={{ fontSize: 20 }}>{data.bookingStats?.totalHotels ?? 0} / {data.bookingStats?.totalUsers ?? 0}</div>
+            <div className="admin-stat-sub">Total registered</div>
+          </div>
+          <div className="admin-stat-card">
+            <div className="admin-stat-label">Confirmed Bookings</div>
+            <div className="admin-stat-value" style={{ fontSize: 20 }}>{data.bookingStats?.confirmedBookings ?? 0}</div>
+            <div className="admin-stat-sub">All-time</div>
+          </div>
+          <div
+            className="admin-stat-card"
+            style={{ cursor: 'pointer' }}
+            onClick={() => onTabChange('requests')}
+          >
+            <div className="admin-stat-label">Pending Hotel Requests</div>
+            <div className="admin-stat-value" style={{ fontSize: 20, color: pendingRequests > 0 ? '#f59e0b' : undefined }}>
+              {pendingRequests}
+            </div>
+            <div className="admin-stat-sub">{pendingRequests > 0 ? 'Needs review' : 'All caught up'}</div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

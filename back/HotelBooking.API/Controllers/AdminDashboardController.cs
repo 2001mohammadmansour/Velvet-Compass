@@ -15,8 +15,8 @@ public class AdminDashboardController : ControllerBase
         => _dashboardService = dashboardService;
 
     [HttpGet]
-    public async Task<IActionResult> GetDashboard()
-        => Ok(await _dashboardService.GetDashboardAsync());
+    public async Task<IActionResult> GetDashboard([FromQuery] int? year = null, [FromQuery] int? month = null)
+        => Ok(await _dashboardService.GetDashboardAsync(year, month));
 
     [HttpGet("revenue/date-range")]
     public async Task<IActionResult> GetRevenueByDateRange(

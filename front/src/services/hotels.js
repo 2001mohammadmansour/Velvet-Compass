@@ -62,8 +62,14 @@ export async function getStats() {
 // Platform-wide revenue/booking stats and top-hotel rankings (Admin-only). Real backend data —
 // simpler than the old mock version (no per-room drill-down, no monthly chart per hotel, no
 // star-rating editing, since none of those have backend support).
-export async function getAdminDashboard() {
-  return request('/api/v1/admin/dashboard');
+// CHANGED BY AI (2026-07-15): please review. year/month let Hotels Analytics filter to a specific
+// month or year (bookings scoped by check-in date server-side); omit both for all-time.
+export async function getAdminDashboard({ year, month } = {}) {
+  const params = new URLSearchParams();
+  if (year) params.set('year', year);
+  if (month) params.set('month', month);
+  const qs = params.toString();
+  return request(`/api/v1/admin/dashboard${qs ? `?${qs}` : ''}`);
 }
 
 // Admin-only list of every user, with booking activity and hotels owned (for owners).
@@ -134,6 +140,11 @@ const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "S
 // "all bookings across every hotel" endpoint, so this fetches every hotel, then each hotel's
 // bookings, and aggregates them here — same approach as the owner version, just summed across
 // hotels instead of scoped to one. Revenue is attributed to each booking's check-in date.
+// CHANGED BY AI (2026-07-15): please review. This used to sum totalAmount — the full amount
+// guests paid — which is gross booking volume, not platform revenue (it was ~6x too high vs. the
+// "Platform Revenue" figure on Overview/Hotels Analytics, which correctly uses the 15% booking
+// fee). Now sums each booking's actual platformFee instead, so this tab is finally consistent
+// with the rest of the admin dashboard's definition of "platform revenue".
 export async function getAdminRevenueStats(filters = {}) {
   const hotelsResult = await request('/api/v1/hotels?pageSize=1000');
   const hotelIds = (hotelsResult?.items || []).map((h) => h.hotelId);
@@ -146,7 +157,7 @@ export async function getAdminRevenueStats(filters = {}) {
     .filter((b) => b.status === 'Confirmed' || b.status === 'Completed')
     .map((b) => {
       const [y, m, d] = String(b.checkinDate).split('-').map(Number);
-      return { stayDate: new Date(y, m - 1, d), amount: Number(b.totalAmount) || 0 };
+      return { stayDate: new Date(y, m - 1, d), amount: Number(b.platformFee) || 0 };
     });
 
   const sumRange = (from, to) =>

@@ -225,7 +225,8 @@ namespace HotelBooking.Infrastructure.Services
                     _context.Reviews.Any(r => r.BookingId == b.Id),
                     _context.Reviews.Where(r => r.BookingId == b.Id).Select(r => (decimal?)r.OverallScore).FirstOrDefault(),
                     _context.Reviews.Where(r => r.BookingId == b.Id).Select(r => r.Comment).FirstOrDefault(),
-                    _context.Reviews.Where(r => r.BookingId == b.Id).Select(r => (long?)r.Id).FirstOrDefault()))
+                    _context.Reviews.Where(r => r.BookingId == b.Id).Select(r => (long?)r.Id).FirstOrDefault(),
+                    isAdmin ? b.PlatformFee : 0m))
                 .ToListAsync();
         }
         public async Task<List<BookingSummaryDto>> GetMyBookingsAsync(long userId)

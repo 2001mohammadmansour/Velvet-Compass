@@ -8,6 +8,11 @@ import { getCurrentUser } from "./services/auth";
 
 const CAT_LABELS = { staff: 'Staff', location: 'Location', facilities: 'Facilities', cleanliness: 'Cleanliness', comfort: 'Comfort', value: 'Value' };
 
+// Temporarily hidden — not deleted, just parked for later.
+const SHOW_CLICKS = false;
+const SHOW_CAMPAIGNS = false;
+const SHOW_PERFORMANCE_COMPARISON = false;
+
 function toDate(value) {
   return new Date(`${value}T00:00:00`);
 }
@@ -762,10 +767,12 @@ export default function OwnerDashboard() {
             <div className="m-num">{(metrics?.impressions || 0).toLocaleString()}</div>
             <div className="m-label">Views</div>
           </div>
-          <div className="metric">
-            <div className="m-num">{(metrics?.clicks || 0).toLocaleString()}</div>
-            <div className="m-label">Clicks</div>
-          </div>
+          {SHOW_CLICKS && (
+            <div className="metric">
+              <div className="m-num">{(metrics?.clicks || 0).toLocaleString()}</div>
+              <div className="m-label">Clicks</div>
+            </div>
+          )}
           <div className="metric">
             <div className="m-num">{metrics?.bookings || 0}</div>
             <div className="m-label">Bookings</div>
@@ -777,38 +784,42 @@ export default function OwnerDashboard() {
         </div>
       </section>
 
-      <section className="od-row od-campaign">
-        <h2>Campaigns</h2>
-        <p className="muted">Promote your hotel to appear higher in search results.</p>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button
-            className={`cta ${campaignActive ? 'active' : ''}`}
-            onClick={() => {
-              if (campaignActive) {
-                toggleCampaign();
-              } else {
-                openCampaignModal();
-              }
-            }}
-            disabled={loading}
-          >
-            {campaignActive ? 'Campaign Active (Click to Deactivate)' : 'Activate Campaign'}
-          </button>
-        </div>
-      </section>
-
-      <section className="od-row od-compare">
-        <h2>Performance vs Similar Hotels</h2>
-        <div className="compare-row">
-          <div>Star level</div>
-          <div className="compare-value" style={{ color: '#f59e0b', letterSpacing: 2 }}>
-            {metrics?.stars ? '★'.repeat(metrics.stars) + '☆'.repeat(5 - metrics.stars) : '—'}
+      {SHOW_CAMPAIGNS && (
+        <section className="od-row od-campaign">
+          <h2>Campaigns</h2>
+          <p className="muted">Promote your hotel to appear higher in search results.</p>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <button
+              className={`cta ${campaignActive ? 'active' : ''}`}
+              onClick={() => {
+                if (campaignActive) {
+                  toggleCampaign();
+                } else {
+                  openCampaignModal();
+                }
+              }}
+              disabled={loading}
+            >
+              {campaignActive ? 'Campaign Active (Click to Deactivate)' : 'Activate Campaign'}
+            </button>
           </div>
-          <div>Avg price in category</div>
-          <div className={`compare-tag ${priceComparison.color}`}>{priceComparison.label}</div>
-        </div>
-        <p className="muted small">Shows whether your prices are lower, higher, or near the category average.</p>
-      </section>
+        </section>
+      )}
+
+      {SHOW_PERFORMANCE_COMPARISON && (
+        <section className="od-row od-compare">
+          <h2>Performance vs Similar Hotels</h2>
+          <div className="compare-row">
+            <div>Star level</div>
+            <div className="compare-value" style={{ color: '#f59e0b', letterSpacing: 2 }}>
+              {metrics?.stars ? '★'.repeat(metrics.stars) + '☆'.repeat(5 - metrics.stars) : '—'}
+            </div>
+            <div>Avg price in category</div>
+            <div className={`compare-tag ${priceComparison.color}`}>{priceComparison.label}</div>
+          </div>
+          <p className="muted small">Shows whether your prices are lower, higher, or near the category average.</p>
+        </section>
+      )}
 
       <section className="od-row od-calendar">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>

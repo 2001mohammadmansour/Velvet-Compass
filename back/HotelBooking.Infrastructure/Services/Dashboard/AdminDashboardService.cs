@@ -12,10 +12,24 @@ public class AdminDashboardService : IAdminDashboardService
 
     public AdminDashboardService(AppDbContext context) => _context = context;
 
-    public async Task<AdminDashboardDto> GetDashboardAsync()
+    public async Task<AdminDashboardDto> GetDashboardAsync(int? year = null, int? month = null)
     {
+        DateOnly? from = null;
+        DateOnly? to = null;
+        if (year.HasValue && month.HasValue)
+        {
+            from = new DateOnly(year.Value, month.Value, 1);
+            to = from.Value.AddMonths(1);
+        }
+        else if (year.HasValue)
+        {
+            from = new DateOnly(year.Value, 1, 1);
+            to = from.Value.AddYears(1);
+        }
+
         var bookings = await _context.Bookings
             .Include(b => b.Hotel)
+            .Where(b => from == null || (b.CheckinDate >= from && b.CheckinDate < to))
             .ToListAsync();
 
         var paidBookings = bookings.Where(b =>

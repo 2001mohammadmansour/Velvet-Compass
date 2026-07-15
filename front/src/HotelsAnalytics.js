@@ -6,6 +6,44 @@ function formatMoney(value) {
   return `$${Math.round(Number(value) || 0).toLocaleString()}`;
 }
 
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+// CHANGED BY AI (2026-07-15): please review. New All Time / Year / Month filter for the whole
+// analytics tab — scopes revenue, booking stats, and both ranking tables to the selected period
+// (bookings filtered server-side by check-in date; see getAdminDashboard).
+function PeriodFilter({ mode, setMode, year, setYear, month, setMonth }) {
+  const now = new Date();
+  const years = [now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2];
+
+  return (
+    <div className="admin-card" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+      <div className="ha-sort-row" style={{ display: 'flex', gap: 8 }}>
+        {['all', 'year', 'month'].map((m) => (
+          <button
+            key={m}
+            className={`ha-sort-btn ${mode === m ? 'active' : ''}`}
+            onClick={() => setMode(m)}
+          >
+            {m === 'all' ? 'All Time' : m === 'year' ? 'Year' : 'Month'}
+          </button>
+        ))}
+      </div>
+
+      {mode !== 'all' && (
+        <select className="sr-filter-input" style={{ width: 110 }} value={year} onChange={(e) => setYear(Number(e.target.value))}>
+          {years.map((y) => <option key={y} value={y}>{y}</option>)}
+        </select>
+      )}
+
+      {mode === 'month' && (
+        <select className="sr-filter-input" style={{ width: 150 }} value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+          {MONTH_NAMES.map((label, i) => <option key={label} value={i + 1}>{label}</option>)}
+        </select>
+      )}
+    </div>
+  );
+}
+
 // CHANGED BY AI (2026-07-13): please review — one room type's card in the hotel drill-down, with
 // its reviews shown/moderated inline (view + delete). Manages its own reviews fetch/expand state
 // so opening one room's reviews doesn't affect its siblings.
@@ -201,21 +239,31 @@ function RankingTable({ title, icon, items, valueKey, valueLabel, formatValue })
 }
 
 export default function HotelsAnalytics() {
+  const now = new Date();
+  const [mode, setMode] = useState('all'); // 'all' | 'year' | 'month'
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let mounted = true;
-    getAdminDashboard()
+    setLoading(true);
+    setError('');
+    const filters = mode === 'all' ? {} : mode === 'year' ? { year } : { year, month };
+    getAdminDashboard(filters)
       .then((d) => { if (mounted) setData(d); })
       .catch((err) => { if (mounted) setError(err.message || 'Unable to load platform analytics.'); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
-  }, []);
+  }, [mode, year, month]);
 
-  if (loading) return <p className="admin-stat-sub">Loading platform analytics...</p>;
-  if (error) return <p className="admin-stat-sub" style={{ color: '#e05555' }}>{error}</p>;
+  const filterBar = <PeriodFilter mode={mode} setMode={setMode} year={year} setYear={setYear} month={month} setMonth={setMonth} />;
+
+  if (loading) return <div className="ha-root">{filterBar}<p className="admin-stat-sub">Loading platform analytics...</p></div>;
+  if (error) return <div className="ha-root">{filterBar}<p className="admin-stat-sub" style={{ color: '#e05555' }}>{error}</p></div>;
   if (!data) return null;
 
   const { revenue, bookingStats, topHotelsByRevenue, topHotelsByBookings } = {
@@ -227,6 +275,8 @@ export default function HotelsAnalytics() {
 
   return (
     <div className="ha-root">
+      {filterBar}
+
       {/* Summary stat cards */}
       <div className="admin-stats-row">
         <div className="admin-stat-card">

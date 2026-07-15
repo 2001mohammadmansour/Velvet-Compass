@@ -85,7 +85,7 @@
 .bill-card .value { font-weight: 800; font-size: 22px; margin-top: 8px; color: #1a2a4a; }
 
 /* METRICS */
-.metrics-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
 .metric {
   background: #f7f8fc;
   padding: 16px 12px;
