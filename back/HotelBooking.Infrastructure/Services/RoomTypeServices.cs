@@ -1,7 +1,9 @@
+using HotelBooking.Application.DTOs.Amenities;
 using HotelBooking.Application.DTOs.Rooms;
 using HotelBooking.Application.DTOs.RoomTypes;
 using HotelBooking.Application.Interfaces;
 using HotelBooking.Domain.Entities;
+using HotelBooking.Domain.Enum;
 using HotelBooking.Domain.Exceptions;
 using HotelBooking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -51,7 +53,13 @@ namespace HotelBooking.Infrastructure.Services
                     rt.Capacity,
                     rt.RoomTypeImages.Where(i => i.IsPrimary).Select(i => i.Url).FirstOrDefault(),
                     stats != null ? Math.Round(stats.Avg, 1) : null,
-                    stats?.Count ?? 0
+                    stats?.Count ?? 0,
+                    rt.Description,
+                    rt.AllowExtraBed,
+                    rt.MaxExtraBeds,
+                    rt.ExtraBedPriceType.ToString(),
+                    rt.ExtraBedPriceForOneBed,
+                    rt.ExtraBedPriceForTwoBeds
                 );
             }).ToList();
         }
@@ -60,6 +68,9 @@ namespace HotelBooking.Infrastructure.Services
         {
             var roomType = await _context.RoomTypes.
                 Include(r => r.RoomTypeImages.OrderBy(r => r.SortOrder)).
+                // CHANGED BY AI (2026-07-15): please review. Needed so MapToRoomTypeDetailDto can
+                // populate the new Amenities field.
+                Include(r => r.RoomTypeAmenities).ThenInclude(rta => rta.Amenity).
                 FirstOrDefaultAsync(r => r.Id == roomTypeId && r.HotelId == hotelId)
                 ?? throw new RoomTypeNotFoundException(roomTypeId);
 
@@ -70,6 +81,10 @@ namespace HotelBooking.Infrastructure.Services
         {
             var roomTypes = await _context.RoomTypes
                 .Include(rt => rt.RoomTypeImages)
+                // CHANGED BY AI (2026-07-15): please review. Needed for the Amenities field below;
+                // a hotel typically has only a handful of room types, so this join is cheap (same
+                // reasoning already applied to the review-stats query just below).
+                .Include(rt => rt.RoomTypeAmenities).ThenInclude(rta => rta.Amenity)
                 .Where(rt => rt.HotelId == hotelId)
                 .OrderBy(rt => rt.CreatedAt)
                 .ToListAsync();
@@ -96,13 +111,22 @@ namespace HotelBooking.Infrastructure.Services
                     rt.BasePrice,
                     rt.RoomTypeImages.Where(i => i.IsPrimary).Select(i => i.Url).FirstOrDefault(),
                     stats != null ? Math.Round(stats.Avg, 1) : null,
-                    stats?.Count ?? 0
+                    stats?.Count ?? 0,
+                    rt.Description,
+                    rt.RoomTypeAmenities.Select(rta => new AmenityDto(rta.Amenity.Id, rta.Amenity.Name, rta.Amenity.Icon, rta.Amenity.Scope.ToString(), rta.Amenity.IsActive)).ToList(),
+                    rt.AllowExtraBed,
+                    rt.MaxExtraBeds,
+                    rt.ExtraBedPriceType.ToString(),
+                    rt.ExtraBedPriceForOneBed,
+                    rt.ExtraBedPriceForTwoBeds
                 );
             }).ToList();
         }
         public async Task<RoomTypeDetailDto> CreateAsync(long ownerId, long hotelId, CreateRoomTypeRequest request)
         {
             await VerifyHotelOwnershipAsync(ownerId, false, hotelId);
+            var (allowExtraBed, maxExtraBeds, priceType, priceForOne, priceForTwo) = ValidateExtraBedSettings(
+                request.AllowExtraBed, request.MaxExtraBeds, request.ExtraBedPriceType, request.ExtraBedPriceForOneBed, request.ExtraBedPriceForTwoBeds);
             var roomType = new RoomType
             {
                 HotelId = hotelId,
@@ -110,10 +134,16 @@ namespace HotelBooking.Infrastructure.Services
                 Description = request.Description,
                 Capacity = request.Capacity,
                 Beds = request.Beds,
-                BasePrice = request.BasePrice
+                BasePrice = request.BasePrice,
+                AllowExtraBed = allowExtraBed,
+                MaxExtraBeds = maxExtraBeds,
+                ExtraBedPriceType = priceType,
+                ExtraBedPriceForOneBed = priceForOne,
+                ExtraBedPriceForTwoBeds = priceForTwo
             };
             _context.RoomTypes.Add(roomType);
             await _context.SaveChangesAsync();
+
             return MapToRoomTypeDetailDto(roomType);
 
         }
@@ -122,17 +152,55 @@ namespace HotelBooking.Infrastructure.Services
             await VerifyHotelOwnershipAsync(callerId, isAdmin, hotelId);
             var roomType = await _context.RoomTypes
                 .Include(rt => rt.RoomTypeImages)
+                .Include(rt => rt.RoomTypeAmenities).ThenInclude(rta => rta.Amenity)
                 .FirstOrDefaultAsync(rt => rt.Id == roomTypeId && rt.HotelId == hotelId)
                 ?? throw new RoomTypeNotFoundException(roomTypeId);
+
+            var (allowExtraBed, maxExtraBeds, priceType, priceForOne, priceForTwo) = ValidateExtraBedSettings(
+                request.AllowExtraBed, request.MaxExtraBeds, request.ExtraBedPriceType, request.ExtraBedPriceForOneBed, request.ExtraBedPriceForTwoBeds);
 
             roomType.Name = request.Name;
             roomType.Description = request.Description;
             roomType.Capacity = request.Capacity;
             roomType.Beds = request.Beds;
             roomType.BasePrice = request.BasePrice;
+            roomType.AllowExtraBed = allowExtraBed;
+            roomType.MaxExtraBeds = maxExtraBeds;
+            roomType.ExtraBedPriceType = priceType;
+            roomType.ExtraBedPriceForOneBed = priceForOne;
+            roomType.ExtraBedPriceForTwoBeds = priceForTwo;
 
             await _context.SaveChangesAsync();
             return MapToRoomTypeDetailDto(roomType);
+        }
+
+        // CHANGED BY AI (2026-07-15): please review. Validates the extra-bed system's create/update
+        // input: MaxExtraBeds must be 0/1/2, prices must be non-negative, and MaxExtraBeds is
+        // forced to 0 whenever AllowExtraBed is false regardless of what was sent (defensive,
+        // mirrors how breakfast add-ons are ignored when the hotel doesn't offer them).
+        private static (bool AllowExtraBed, int MaxExtraBeds, ExtraBedPriceType PriceType, decimal PriceForOne, decimal PriceForTwo) ValidateExtraBedSettings(
+            bool allowExtraBed, int maxExtraBeds, string priceType, decimal priceForOne, decimal priceForTwo)
+        {
+            if (!allowExtraBed)
+                return (false, 0, ExtraBedPriceType.Percentage, 0m, 0m);
+
+            if (maxExtraBeds is not (1 or 2))
+                throw new InvalidRoomTypeConfigurationException("MaxExtraBeds must be 1 or 2 when extra beds are allowed.");
+
+            if (priceForOne < 0 || priceForTwo < 0)
+                throw new InvalidRoomTypeConfigurationException("Extra-bed prices cannot be negative.");
+
+            ExtraBedPriceType parsedType;
+            try
+            {
+                parsedType = Enum.Parse<ExtraBedPriceType>(priceType, ignoreCase: true);
+            }
+            catch (Exception)
+            {
+                throw new InvalidRoomTypeConfigurationException($"Invalid extra-bed price type '{priceType}'.");
+            }
+
+            return (true, maxExtraBeds, parsedType, priceForOne, priceForTwo);
         }
         // CHANGED BY AI (2026-07-13): please review. Correcting an earlier wrong diagnosis here:
         // the delete failure was NOT caused by Room -> RoomType (that's already Cascade, so its
@@ -208,6 +276,30 @@ namespace HotelBooking.Infrastructure.Services
             if (hotel.OwnerId != callerId && !isAdmin)
                 throw new UnAuthoraizedOwnerException();
         }
+
+        // CHANGED BY AI (2026-07-15): please review. Lets an Owner/Admin set a room type's full set
+        // of amenities (sea view, minibar, balcony, etc.) in one call — full-replace semantics,
+        // same tolerant-of-invalid-ids approach as HotelServices.SetHotelAmenitiesAsync.
+        public async Task SetRoomTypeAmenitiesAsync(long callerId, bool isAdmin, long hotelId, long roomTypeId, List<long> amenityIds)
+        {
+            await VerifyHotelOwnershipAsync(callerId, isAdmin, hotelId);
+            var roomTypeExists = await _context.RoomTypes.AnyAsync(rt => rt.Id == roomTypeId && rt.HotelId == hotelId);
+            if (!roomTypeExists)
+                throw new RoomTypeNotFoundException(roomTypeId);
+
+            var validIds = await _context.Amenities
+                .Where(a => amenityIds.Contains(a.Id) && a.IsActive && a.Scope == AmenityScope.RoomType)
+                .Select(a => a.Id)
+                .ToListAsync();
+
+            var existing = _context.RoomTypeAmenities.Where(rta => rta.RoomTypeId == roomTypeId);
+            _context.RoomTypeAmenities.RemoveRange(existing);
+            foreach (var id in validIds)
+                _context.RoomTypeAmenities.Add(new RoomTypeAmenity { RoomTypeId = roomTypeId, AmenityId = id });
+
+            await _context.SaveChangesAsync();
+        }
+
         private static RoomTypeDetailDto MapToRoomTypeDetailDto(RoomType roomType) => new(
             roomType.Id,
             roomType.HotelId,
@@ -220,7 +312,15 @@ namespace HotelBooking.Infrastructure.Services
             roomType.RoomTypeImages
             .OrderBy(r => r.SortOrder)
             .Select(i => new RoomTypeImageDto(i.Id, i.Url, i.Caption, i.IsPrimary, i.SortOrder))
-            .ToList()
+            .ToList(),
+            roomType.RoomTypeAmenities
+            .Select(rta => new AmenityDto(rta.Amenity.Id, rta.Amenity.Name, rta.Amenity.Icon, rta.Amenity.Scope.ToString(), rta.Amenity.IsActive))
+            .ToList(),
+            roomType.AllowExtraBed,
+            roomType.MaxExtraBeds,
+            roomType.ExtraBedPriceType.ToString(),
+            roomType.ExtraBedPriceForOneBed,
+            roomType.ExtraBedPriceForTwoBeds
             );
 
 

@@ -1,0 +1,31 @@
+/* CHANGED BY AI (2026-07-15): please review — shared entrance-animation keyframes, consolidated
+   from several near-identical per-page copies (fa-fade-up, ac-fade-up, fadeUp, ls-fade-up,
+   sr-fade-up, land-fade-up, sr-slide-down, land-slide-down, sr-slide-left, fa-slide-right,
+   land-zoom-in, fa-fade-in, nb-panel-in). Each page keeps its own distance/direction/timing via
+   CSS custom properties and its own animation-duration/delay — only the duplicated keyframe
+   shapes were merged, not the per-page feel. */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(var(--fade-up-dist, 24px)); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-y {
+  from { opacity: 0; transform: translateY(var(--slide-y-dist, -18px)); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-x {
+  from { opacity: 0; transform: translateX(var(--slide-x-dist, 28px)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes zoom-in {
+  from { opacity: 0.5; transform: scale(var(--zoom-in-start, 1.1)); }
+  to   { opacity: 1;   transform: scale(1); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

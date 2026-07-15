@@ -13,6 +13,12 @@ namespace HotelBooking.Infrastructure.Persistence.Configurations
             builder.Property(x => x.PricePerNight).HasPrecision(10, 2);
             builder.Property(x => x.TotalPrice).HasPrecision(10, 2);
 
+            // CHANGED BY AI (2026-07-15): please review. New extra-bed columns, precision set here
+            // in the first migration (see the AddBreakfastSettings -> FixBreakfastDecimalPrecision
+            // follow-up in history — avoiding a repeat of that here).
+            builder.Property(x => x.ExtraBedCount).HasDefaultValue(0);
+            builder.Property(x => x.ExtraBedFee).HasPrecision(10, 2).HasDefaultValue(0m);
+
             builder.HasOne(x => x.RoomType)
                    .WithMany()
                    .HasForeignKey(x => x.RoomTypeId)

@@ -16,5 +16,9 @@ namespace HotelBooking.Application.Interfaces
         // CHANGED BY AI (2026-07-13): please review. Backs the homepage's cross-hotel search.
         Task<List<RoomSearchResultDto>> SearchAsync();
 
+        // CHANGED BY AI (2026-07-15): please review. New method backing the room-type-level
+        // amenities checkbox grid (full-replace semantics).
+        Task SetRoomTypeAmenitiesAsync(long callerId, bool isAdmin, long hotelId, long roomTypeId, List<long> amenityIds);
+
     }
 }

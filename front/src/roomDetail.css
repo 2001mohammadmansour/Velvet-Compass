@@ -1,0 +1,136 @@
+/* CHANGED BY AI (2026-07-15): new stylesheet for RoomDetail.js — a two-column "product page" +
+   sticky booking sidebar layout, which reservation.css's single centered column (max-width: 680px
+   on every child) can't do. Shares .section-card/.section-title/.back-btn/.confirm-btn/.price/
+   .hotel/.city from reservation.css. */
+
+.rd-page {
+  padding: 24px 20px 60px;
+  background: var(--background, #F0F2F8);
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.rd-back-wrapper {
+  max-width: 1100px;
+  margin: 0 auto 12px;
+}
+
+.rd-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.rd-main {
+  min-width: 0;
+}
+
+.rd-sidebar {
+  position: sticky;
+  top: 20px;
+}
+
+.rd-gallery-main {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+
+.rd-gallery-placeholder {
+  width: 100%;
+  height: 260px;
+  border-radius: 14px;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.rd-gallery-thumbs {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+.rd-gallery-thumb {
+  width: 72px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0.6;
+  border: 2px solid transparent;
+  flex-shrink: 0;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+.rd-gallery-thumb.active,
+.rd-gallery-thumb:hover {
+  opacity: 1;
+  border-color: var(--primary, #2A3D66);
+}
+
+.rd-room-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 6px;
+}
+
+.rd-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rd-chip {
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.rd-price-summary {
+  margin-top: 6px;
+  margin-bottom: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.rd-price-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.rd-price-total {
+  font-weight: 700;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 6px;
+  margin-top: 2px;
+}
+
+.rd-book-btn {
+  max-width: none;
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .rd-layout {
+    grid-template-columns: 1fr;
+  }
+  .rd-sidebar {
+    position: static;
+  }
+}

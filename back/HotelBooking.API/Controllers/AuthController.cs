@@ -1,3 +1,4 @@
+using HotelBooking.API.Extensions;
 using HotelBooking.Application.DTOs.Auth;
 using HotelBooking.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -44,8 +45,25 @@ namespace HotelBooking.API.Controllers
             return NoContent();
         }
 
+        // CHANGED BY AI (2026-07-13): please review. New self-service profile endpoints backing
+        // the Edit Profile feature.
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetMyProfile()
+            => Ok(await _authService.GetMyProfileAsync(User.GetUserId()));
 
+        [HttpPut("me")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+            => Ok(await _authService.UpdateProfileAsync(User.GetUserId(), request));
 
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            await _authService.ChangePasswordAsync(User.GetUserId(), request);
+            return Ok(new { message = "Password changed successfully." });
+        }
 
     }
 }

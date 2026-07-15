@@ -61,6 +61,17 @@ namespace HotelBooking.API.Controllers
             return NoContent();
         }
 
+        // CHANGED BY AI (2026-07-15): please review. New endpoint backing the owner-facing
+        // room-type amenities checkbox grid (full-replace semantics).
+        [HttpPatch("{roomTypeId:long}/amenities")]
+        [Authorize(Roles = "Owner,Admin")]
+        public async Task<IActionResult> SetAmenities(long hotelId, long roomTypeId, [FromBody] SetRoomTypeAmenitiesRequest request)
+        {
+            var isAdmin = User.IsInRole("Admin");
+            await _roomTypeService.SetRoomTypeAmenitiesAsync(User.GetUserId(), isAdmin, hotelId, roomTypeId, request.AmenityIds);
+            return Ok();
+        }
+
         // Images
         [HttpPost("{roomTypeId:long}/images")]
         [Authorize(Roles = "Owner,Admin")]

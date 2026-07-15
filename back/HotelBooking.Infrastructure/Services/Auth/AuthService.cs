@@ -36,6 +36,16 @@ namespace HotelBooking.Infrastructure.Services.Auth
             if (existingUser is not null)
                 throw new ArgumentException("User with this email already exists.");
 
+            // CHANGED BY AI (2026-07-13): please review. UserName used to always be forced to the
+            // email address (request.Username was collected by the sign-up form and silently
+            // discarded) — now a real, independently-editable username, backing the new Edit
+            // Profile feature. Falls back to the email if left blank so registration can't fail
+            // on this alone.
+            var desiredUsername = string.IsNullOrWhiteSpace(request.Username) ? request.Email : request.Username.Trim();
+            var existingUsername = await _userManager.FindByNameAsync(desiredUsername);
+            if (existingUsername is not null)
+                throw new ArgumentException("That username is already taken.");
+
             var role = request.Role.ToLower() switch
             {
                 "owner" => UserRole.Owner,
@@ -45,8 +55,9 @@ namespace HotelBooking.Infrastructure.Services.Auth
 
             var user = new User
             {
-                UserName = request.Email,
+                UserName = desiredUsername,
                 Email = request.Email,
+                PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim(),
                 Role = role
             };
 
@@ -161,6 +172,58 @@ namespace HotelBooking.Infrastructure.Services.Auth
             token.RevokedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
+
+        // CHANGED BY AI (2026-07-13): please review. New self-service profile methods backing the
+        // Edit Profile feature. Email is intentionally never accepted/changed here.
+        public async Task<UserProfileDto> GetMyProfileAsync(long userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString())
+                ?? throw new UserNotFoundException(userId);
+
+            return MapToProfileDto(user);
+        }
+
+        public async Task<UserProfileDto> UpdateProfileAsync(long userId, UpdateProfileRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString())
+                ?? throw new UserNotFoundException(userId);
+
+            var desiredUsername = (request.Username ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(desiredUsername))
+                throw new Exception("Username can't be empty.");
+
+            if (!string.Equals(user.UserName, desiredUsername, StringComparison.Ordinal))
+            {
+                var existing = await _userManager.FindByNameAsync(desiredUsername);
+                if (existing is not null && existing.Id != user.Id)
+                    throw new Exception("That username is already taken.");
+
+                var setNameResult = await _userManager.SetUserNameAsync(user, desiredUsername);
+                if (!setNameResult.Succeeded)
+                    throw new Exception(string.Join(", ", setNameResult.Errors.Select(e => e.Description)));
+            }
+
+            user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+
+            return MapToProfileDto(user);
+        }
+
+        public async Task ChangePasswordAsync(long userId, ChangePasswordRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString())
+                ?? throw new UserNotFoundException(userId);
+
+            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+            if (!result.Succeeded)
+                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+
+        private static UserProfileDto MapToProfileDto(User user) => new(
+            user.Id, user.UserName!, user.Email!, user.PhoneNumber, user.Role.ToString(), user.CreatedAt
+        );
 
     }
 }

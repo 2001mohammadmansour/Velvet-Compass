@@ -98,6 +98,16 @@ namespace HotelBooking.API.Controllers
             await _hotelService.SetCancellationPolicyAsync(User.GetUserId(), isAdmin, hotelId, request.FreeCancellationEnabled, request.FreeCancellationDaysBefore, request.CancellationFeeType, request.CancellationFeeValue);
             return Ok();
         }
+        // CHANGED BY AI (2026-07-15): please review. New endpoint backing the owner-facing hotel
+        // amenities checkbox grid (full-replace semantics).
+        [HttpPatch("{hotelId:long}/amenities")]
+        [Authorize(Roles = "Owner,Admin")]
+        public async Task<IActionResult> SetAmenities(long hotelId, [FromBody] SetHotelAmenitiesRequest request)
+        {
+            var isAdmin = User.IsInRole("Admin");
+            await _hotelService.SetHotelAmenitiesAsync(User.GetUserId(), isAdmin, hotelId, request.AmenityIds);
+            return Ok();
+        }
         [HttpDelete("{hoetlId:long}")]
         [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> Delete(long hotelId)

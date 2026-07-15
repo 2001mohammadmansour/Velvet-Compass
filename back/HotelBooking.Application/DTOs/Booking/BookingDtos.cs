@@ -40,7 +40,11 @@ public record BookingItemDto(
     int Qty,
     int Nights,
     decimal PricePerNight,
-    decimal TotalPrice
+    decimal TotalPrice,
+    // CHANGED BY AI (2026-07-15): please review. Extra-bed count/fee for this line, fixed at
+    // booking time (see BookingService.CreateAsync/ModifyDatesAsync).
+    int ExtraBedCount = 0,
+    decimal ExtraBedFee = 0m
 );
 
 public record GuestDto(

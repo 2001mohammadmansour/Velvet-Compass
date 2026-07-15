@@ -20,6 +20,8 @@ function mapHotelDetailToProfile(h) {
     // exposed as a normal field (it can't be edited directly here — only via an approved Hotel
     // Request — but the value itself is real, not internal-only).
     starRating: h?.starRating || 0,
+    // CHANGED BY AI (2026-07-15): please review. Hotel-level amenities (wifi, parking, gym, etc.).
+    amenities: Array.isArray(h?.amenities) ? h.amenities : [],
     // Not shown in the edit form, but required to send back on update.
     _country: h?.country || '',
     _email: h?.email || '',
@@ -163,6 +165,16 @@ export async function getRooms(hotelId) {
         // returned by this endpoint at all).
         avgScore: rt.avgScore ?? null,
         reviewCount: rt.reviewCount || 0,
+        // CHANGED BY AI (2026-07-15): please review. Description was already collected by the
+        // backend but never surfaced anywhere in the owner dashboard until now; amenities and the
+        // extra-bed settings are new.
+        description: rt.description || '',
+        amenities: Array.isArray(rt.amenities) ? rt.amenities : [],
+        allowExtraBed: Boolean(rt.allowExtraBed),
+        maxExtraBeds: Number(rt.maxExtraBeds) || 0,
+        extraBedPriceType: rt.extraBedPriceType === 'Fixed' ? 'fixed' : 'percentage',
+        extraBedPriceForOneBed: Number(rt.extraBedPriceForOneBed) || 0,
+        extraBedPriceForTwoBeds: Number(rt.extraBedPriceForTwoBeds) || 0,
       };
     })
   );
@@ -257,6 +269,22 @@ export async function updateHotelProfile(hotelId, updates) {
   return mapHotelDetailToProfile(h);
 }
 
+// CHANGED BY AI (2026-07-15): please review. New: full-replace of the hotel's amenity set.
+export async function updateHotelAmenities(hotelId, amenityIds) {
+  return request(`/api/v1/hotels/${hotelId}/amenities`, {
+    method: 'PATCH',
+    body: JSON.stringify({ amenityIds: (amenityIds || []).map(Number) }),
+  });
+}
+
+// CHANGED BY AI (2026-07-15): please review. New: full-replace of a room type's amenity set.
+export async function updateRoomTypeAmenities(hotelId, roomTypeId, amenityIds) {
+  return request(`/api/v1/hotel/${hotelId}/room-types/${roomTypeId}/amenities`, {
+    method: 'PATCH',
+    body: JSON.stringify({ amenityIds: (amenityIds || []).map(Number) }),
+  });
+}
+
 export async function updateSettings(hotelId, updates) {
   if (typeof updates.autoAcceptBookings !== 'undefined') {
     await request(`/api/v1/hotels/${hotelId}/auto-accept-bookings`, {
@@ -320,13 +348,35 @@ export async function updateRoom(hotelId, roomTypeId, updates) {
   const current = await request(`/api/v1/hotel/${hotelId}/room-types/${roomTypeId}`);
   const payload = {
     name: updates.name ?? current.name,
-    description: current.description || '',
+    // CHANGED BY AI (2026-07-15): please review — fixed a pre-existing bug where this always
+    // re-sent current.description and never updates.description, silently dropping any edit to
+    // the description field (which had no UI to trigger it until now).
+    description: updates.description ?? current.description ?? '',
     capacity: Number(updates.capacity) || current.capacity,
     beds: current.beds,
     basePrice: Number(updates.price) || current.basePrice,
+    // CHANGED BY AI (2026-07-15): please review. New extra-bed system fields, preserved from the
+    // current value if this update doesn't touch them.
+    allowExtraBed: typeof updates.allowExtraBed !== 'undefined' ? Boolean(updates.allowExtraBed) : Boolean(current.allowExtraBed),
+    maxExtraBeds: typeof updates.maxExtraBeds !== 'undefined' ? Number(updates.maxExtraBeds) || 0 : Number(current.maxExtraBeds) || 0,
+    extraBedPriceType: (updates.extraBedPriceType ?? (current.extraBedPriceType === 'Fixed' ? 'fixed' : 'percentage')) === 'fixed' ? 'Fixed' : 'Percentage',
+    extraBedPriceForOneBed: typeof updates.extraBedPriceForOneBed !== 'undefined' ? Number(updates.extraBedPriceForOneBed) || 0 : Number(current.extraBedPriceForOneBed) || 0,
+    extraBedPriceForTwoBeds: typeof updates.extraBedPriceForTwoBeds !== 'undefined' ? Number(updates.extraBedPriceForTwoBeds) || 0 : Number(current.extraBedPriceForTwoBeds) || 0,
   };
   const rt = await request(`/api/v1/hotel/${hotelId}/room-types/${roomTypeId}`, { method: 'PUT', body: JSON.stringify(payload) });
-  return { id: rt.id, name: rt.name, capacity: rt.capacity, price: rt.basePrice };
+
+  if (Array.isArray(updates.amenityIds)) {
+    await updateRoomTypeAmenities(hotelId, roomTypeId, updates.amenityIds);
+  }
+
+  return {
+    id: rt.id, name: rt.name, capacity: rt.capacity, price: rt.basePrice,
+    description: rt.description || '', amenities: Array.isArray(rt.amenities) ? rt.amenities : [],
+    allowExtraBed: Boolean(rt.allowExtraBed), maxExtraBeds: Number(rt.maxExtraBeds) || 0,
+    extraBedPriceType: rt.extraBedPriceType === 'Fixed' ? 'fixed' : 'percentage',
+    extraBedPriceForOneBed: Number(rt.extraBedPriceForOneBed) || 0,
+    extraBedPriceForTwoBeds: Number(rt.extraBedPriceForTwoBeds) || 0,
+  };
 }
 
 // Deleting a room type with physical rooms under it now works fine (they cascade-delete along
@@ -382,10 +432,18 @@ export async function createRoom(hotelId, payload) {
     method: 'POST',
     body: JSON.stringify({
       name: payload.name,
-      description: '',
+      // CHANGED BY AI (2026-07-15): please review — this used to always hardcode an empty
+      // description; now sends whatever the (new) description field collects.
+      description: payload.description || '',
       capacity: Number(payload.capacity) || 1,
       beds: 1,
       basePrice: Number(payload.price) || 0,
+      // CHANGED BY AI (2026-07-15): please review. New extra-bed system fields.
+      allowExtraBed: Boolean(payload.allowExtraBed),
+      maxExtraBeds: Number(payload.maxExtraBeds) || 0,
+      extraBedPriceType: payload.extraBedPriceType === 'fixed' ? 'Fixed' : 'Percentage',
+      extraBedPriceForOneBed: Number(payload.extraBedPriceForOneBed) || 0,
+      extraBedPriceForTwoBeds: Number(payload.extraBedPriceForTwoBeds) || 0,
     }),
   });
 
@@ -397,6 +455,10 @@ export async function createRoom(hotelId, payload) {
     });
   }
 
+  if (Array.isArray(payload.amenityIds) && payload.amenityIds.length) {
+    await updateRoomTypeAmenities(hotelId, roomType.id, payload.amenityIds);
+  }
+
   return { id: roomType.id, name: roomType.name, capacity: roomType.capacity, price: roomType.basePrice, amount };
 }
 
@@ -406,5 +468,5 @@ export async function getHotelReviews(hotelId) {
   return request(`/api/v1/hotels/${hotelId}/reviews`);
 }
 
-const ownerService = { getBilling, getRevenueStats, getMetrics, getRooms, getReservations, getSettings, getHotelProfile, updateHotelProfile, updateSettings, acceptReservation, rejectReservation, createReservation, toggleCampaign, updateCancelPolicy, updateRoom, deleteRoom, uploadHotelPhoto, deleteHotelPhoto, uploadRoomTypePhoto, deleteRoomTypePhoto, getRoomTypeImages, createRoom, getHotelReviews };
+const ownerService = { getBilling, getRevenueStats, getMetrics, getRooms, getReservations, getSettings, getHotelProfile, updateHotelProfile, updateHotelAmenities, updateRoomTypeAmenities, updateSettings, acceptReservation, rejectReservation, createReservation, toggleCampaign, updateCancelPolicy, updateRoom, deleteRoom, uploadHotelPhoto, deleteHotelPhoto, uploadRoomTypePhoto, deleteRoomTypePhoto, getRoomTypeImages, createRoom, getHotelReviews };
 export default ownerService;

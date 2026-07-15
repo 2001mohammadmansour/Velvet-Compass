@@ -13,12 +13,17 @@ namespace HotelBooking.Infrastructure.Services
     {
         private readonly AppDbContext _context;
         private readonly INotificationService _notificationService;
+        // CHANGED BY AI (2026-07-15): please review. Replaces the old single-day GetEffectivePriceAsync
+        // (removed below) — resolves a real per-night price across the whole stay (seasonal rules +
+        // occupancy surge), instead of pricing every night off the check-in night's rate alone.
+        private readonly IRoomPricingService _roomPricingService;
         const decimal platformFeeRate = 0.15m;
 
-        public BookingService(AppDbContext context, INotificationService notificationService)
+        public BookingService(AppDbContext context, INotificationService notificationService, IRoomPricingService roomPricingService)
         {
             _context = context;
             _notificationService = notificationService;
+            _roomPricingService = roomPricingService;
         }
         public async Task<BookingDto> CreateAsync(long userId, CreateBookingRequest request)
         {
@@ -32,6 +37,7 @@ namespace HotelBooking.Infrastructure.Services
 
             var bookingItems = new List<BookingItem>();
             decimal totalAmount = 0;
+            var effectiveCapacity = 0;
 
             foreach (var itemRequest in request.Items)
             {
@@ -43,11 +49,40 @@ namespace HotelBooking.Infrastructure.Services
                 if (availableRooms.Count < itemRequest.Qty)
                     throw new RoomNotAvailableException();
 
-                var pricePerNight = await GetEffectivePriceAsync(
-                    availableRooms[0].Id, request.CheckinDate, roomType.BasePrice);
+                // CHANGED BY AI (2026-07-15): please review. Per-night pricing (seasonal rules +
+                // occupancy surge), summed across the stay, instead of the old "check-in night's
+                // rate x nights" approach — a real pre-existing bug, since a multi-night stay used
+                // to be priced entirely off night 1 regardless of any date-varying rule.
+                var nightlyPrices = await _roomPricingService.GetNightlyPricesAsync(
+                    availableRooms[0].Id, hotel.Id, itemRequest.RoomTypeId, roomType.BasePrice, request.CheckinDate, request.CheckoutDate);
+                var roomSubtotal = nightlyPrices.Sum(n => n.Price);
+                var pricePerNight = totalNights > 0 ? Math.Round(roomSubtotal / totalNights, 2) : roomType.BasePrice;
 
-                var itemTotal = pricePerNight * totalNights * itemRequest.Qty;
+                // CHANGED BY AI (2026-07-15): please review. New extra-bed system: forgiving of a
+                // stale client (clamped/zeroed rather than throwing), mirroring how the breakfast
+                // add-on is silently ignored when the hotel doesn't offer it. Fee is charged per
+                // night, same as the room price and breakfast fee. Deliberately computed off
+                // RoomType.BasePrice, not the seasonally/occupancy-adjusted nightly rate — extra-bed
+                // pricing stays decoupled from both dynamic-pricing levers, by design.
+                var extraBedCount = roomType.AllowExtraBed
+                    ? Math.Clamp(itemRequest.ExtraBedCount, 0, roomType.MaxExtraBeds)
+                    : 0;
+                var extraBedFeePerNight = extraBedCount switch
+                {
+                    0 => 0m,
+                    1 => roomType.ExtraBedPriceType == ExtraBedPriceType.Percentage
+                        ? Math.Round(roomType.BasePrice * (roomType.ExtraBedPriceForOneBed / 100m), 2)
+                        : roomType.ExtraBedPriceForOneBed,
+                    2 => roomType.ExtraBedPriceType == ExtraBedPriceType.Percentage
+                        ? Math.Round(roomType.BasePrice * (roomType.ExtraBedPriceForTwoBeds / 100m), 2)
+                        : roomType.ExtraBedPriceForTwoBeds,
+                    _ => 0m
+                };
+                var extraBedFee = extraBedFeePerNight * totalNights;
+
+                var itemTotal = (roomSubtotal + extraBedFee) * itemRequest.Qty;
                 totalAmount += itemTotal;
+                effectiveCapacity += (roomType.Capacity + extraBedCount) * itemRequest.Qty;
 
                 for (int i = 0; i < itemRequest.Qty; i++)
                 {
@@ -57,11 +92,21 @@ namespace HotelBooking.Infrastructure.Services
                         RoomId = availableRooms[i].Id,
                         Nights = totalNights,
                         PricePerNight = pricePerNight,
-                        TotalPrice = pricePerNight * totalNights,
-                        Qty = 1
+                        TotalPrice = roomSubtotal + extraBedFee,
+                        Qty = 1,
+                        ExtraBedCount = extraBedCount,
+                        ExtraBedFee = extraBedFee
                     });
                 }
             }
+
+            // CHANGED BY AI (2026-07-15): please review. First-ever guest-count-vs-capacity check
+            // in this app (previously unvalidated anywhere, client or server). Effective capacity
+            // includes any extra beds requested, per the confirmed design: extra beds raise how
+            // many guests a room can hold. This is necessarily aggregate across the whole booking,
+            // not per-room, since Guests has no per-room assignment in the schema.
+            if (request.Guests.Count > effectiveCapacity)
+                throw new GuestCountExceedsCapacityException(request.Guests.Count, effectiveCapacity);
 
             var guests = request.Guests.Select(g => new GuestDetail
             {
@@ -386,15 +431,19 @@ namespace HotelBooking.Infrastructure.Services
 
             // Find a room of the same type for the new dates before touching anything, so a
             // failed modification never leaves the booking half-changed.
-            var reassignments = new List<(BookingItem Item, long NewRoomId, decimal PricePerNight)>();
+            // CHANGED BY AI (2026-07-15): please review. Per-night pricing (seasonal + occupancy),
+            // summed across the new date range, replacing the old single-day GetEffectivePriceAsync.
+            var reassignments = new List<(BookingItem Item, long NewRoomId, decimal RoomSubtotal)>();
             foreach (var item in booking.Items)
             {
                 var available = await GetAvailableRoomsExcludingBookingAsync(item.RoomTypeId, request.CheckinDate, request.CheckoutDate, bookingId);
                 if (available.Count == 0)
                     throw new RoomNotAvailableException();
 
-                var pricePerNight = await GetEffectivePriceAsync(available[0].Id, request.CheckinDate, item.RoomType.BasePrice);
-                reassignments.Add((item, available[0].Id, pricePerNight));
+                var nightlyPrices = await _roomPricingService.GetNightlyPricesAsync(
+                    available[0].Id, booking.Hotel.Id, item.RoomTypeId, item.RoomType.BasePrice, request.CheckinDate, request.CheckoutDate);
+                var roomSubtotal = nightlyPrices.Sum(n => n.Price);
+                reassignments.Add((item, available[0].Id, roomSubtotal));
             }
 
             // Free the old date range for each item's current room.
@@ -411,12 +460,32 @@ namespace HotelBooking.Infrastructure.Services
                 : 0m;
 
             var newTotal = 0m;
-            foreach (var (item, newRoomId, pricePerNight) in reassignments)
+            foreach (var (item, newRoomId, roomSubtotal) in reassignments)
             {
                 item.RoomId = newRoomId;
                 item.Nights = newNights;
-                item.PricePerNight = pricePerNight;
-                item.TotalPrice = pricePerNight * newNights;
+                item.PricePerNight = newNights > 0 ? Math.Round(roomSubtotal / newNights, 2) : item.RoomType.BasePrice;
+
+                // CHANGED BY AI (2026-07-15): please review. Extra-bed fee recompute for the new
+                // night count — mirrors the breakfast fee recompute just above: ExtraBedCount is
+                // read back as persisted (never resubmitted, fixed at booking time) and priced
+                // against the room type's CURRENT BasePrice (never the seasonally/occupancy-
+                // adjusted rate — extra-bed pricing stays decoupled from both, by design), matching
+                // the established "current settings win at modify-time" precedent used for
+                // breakfast.
+                var extraBedFeePerNight = item.ExtraBedCount switch
+                {
+                    0 => 0m,
+                    1 => item.RoomType.ExtraBedPriceType == ExtraBedPriceType.Percentage
+                        ? Math.Round(item.RoomType.BasePrice * (item.RoomType.ExtraBedPriceForOneBed / 100m), 2)
+                        : item.RoomType.ExtraBedPriceForOneBed,
+                    2 => item.RoomType.ExtraBedPriceType == ExtraBedPriceType.Percentage
+                        ? Math.Round(item.RoomType.BasePrice * (item.RoomType.ExtraBedPriceForTwoBeds / 100m), 2)
+                        : item.RoomType.ExtraBedPriceForTwoBeds,
+                    _ => 0m
+                };
+                item.ExtraBedFee = extraBedFeePerNight * newNights;
+                item.TotalPrice = roomSubtotal + item.ExtraBedFee;
                 newTotal += item.TotalPrice;
             }
             newTotal += breakfastFee;
@@ -527,17 +596,9 @@ namespace HotelBooking.Infrastructure.Services
             return allRooms.Where(r => !blockedRoomIds.Contains(r.Id)).ToList();
         }
 
-        private async Task<decimal> GetEffectivePriceAsync(long roomId, DateOnly checkinDate, decimal basePrice)
-        {
-            var override_ = await _context.RoomAvailabilities
-                .Where(a => a.RoomId == roomId &&
-                a.Date == checkinDate &&
-                a.PriceOverride.HasValue)
-                .Select(a => a.PriceOverride)
-                .FirstOrDefaultAsync();
-
-            return override_ ?? basePrice;
-        }
+        // CHANGED BY AI (2026-07-15): please review. Removed GetEffectivePriceAsync (the old
+        // single-day price resolver) — both call sites now use IRoomPricingService.GetNightlyPricesAsync,
+        // which folds in the same per-room override plus the new seasonal/occupancy rules.
         private async Task BlockRoomDatesAsync(long roomId, DateOnly from, DateOnly to)
         {
             var existing = await _context.RoomAvailabilities
@@ -565,7 +626,7 @@ namespace HotelBooking.Infrastructure.Services
     b.CheckinDate, b.CheckoutDate, b.TotalNights, b.TotalAmount,
     b.SpecialRequests, b.CreatedAt,
     b.Items.Select(i => new BookingItemDto(
-        i.Id, i.RoomType.Name, i.Qty, i.Nights, i.PricePerNight, i.TotalPrice
+        i.Id, i.RoomType.Name, i.Qty, i.Nights, i.PricePerNight, i.TotalPrice, i.ExtraBedCount, i.ExtraBedFee
     )).ToList(),
     b.Guests.Select(g => new GuestDto(
         g.Id, g.FullName, g.PassportNo, g.Nationality, g.IsPrimary

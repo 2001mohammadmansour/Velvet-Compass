@@ -60,6 +60,11 @@
   padding: 0 4px;
 }
 
+/* CHANGED BY AI (2026-07-13): please review — the panel is conditionally rendered (mounts only
+   while open), so it plays a slide+fade-in animation on mount rather than a hover transition
+   (matching the same motion used for the profile dropdown).
+   CHANGED BY AI (2026-07-15): please review — now uses the shared slide-y keyframe from
+   animations.css instead of a local nb-panel-in copy. */
 .nb-panel {
   position: absolute;
   top: 50px;
@@ -73,6 +78,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  --slide-y-dist: -8px;
+  animation: slide-y 0.18s ease both;
 }
 
 .nb-panel-header {

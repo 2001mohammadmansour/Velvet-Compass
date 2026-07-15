@@ -184,6 +184,11 @@
   border-radius: 14px;
   padding: 16px 20px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  /* CHANGED BY AI (2026-07-13): please review — staggered entrance animation matching the same
+     fade-up pattern already used for hotel/room cards elsewhere, so My Bookings feels
+     consistent with other list pages instead of just popping in flat. */
+  --fade-up-dist: 20px;
+  animation: fade-up 0.38s ease both;
 }
 
 .booking-row-info h3 {
@@ -842,23 +847,13 @@
 .sr-clear-btn-lg:hover { background: #1a2a4a; }
 
 /* ── PAGE ENTRANCE ANIMATIONS ── */
-@keyframes sr-slide-down {
-  from { opacity: 0; transform: translateY(-18px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes sr-slide-left {
-  from { opacity: 0; transform: translateX(-22px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes sr-fade-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.sr-topbar  { animation: sr-slide-down 0.38s ease both; }
-.sr-sidebar { animation: sr-slide-left 0.42s 0.08s ease both; }
-.sr-results { animation: sr-fade-up   0.42s 0.06s ease both; }
-.sr-card    { animation: sr-fade-up   0.38s ease both; }
+/* CHANGED BY AI (2026-07-15): please review — now uses the shared slide-y/slide-x/fade-up
+   keyframes from animations.css; sr-slide-down's -18px already matched slide-y's default, the
+   others get their original distances back via custom properties. */
+.sr-topbar  { animation: slide-y 0.38s ease both; }
+.sr-sidebar { --slide-x-dist: -22px; animation: slide-x 0.42s 0.08s ease both; }
+.sr-results { --fade-up-dist: 20px; animation: fade-up 0.42s 0.06s ease both; }
+.sr-card    { --fade-up-dist: 20px; animation: fade-up 0.38s ease both; }
 
 /* RESPONSIVE */
 @media (max-width: 768px) {

@@ -155,5 +155,21 @@ namespace HotelBooking.API.Extensions
             return services;
         }
 
+        // CHANGED BY AI (2026-07-15): please review. New DI registration for the amenities catalog.
+        public static IServiceCollection AddAmenityServices(this IServiceCollection services)
+        {
+            services.AddScoped<IAmenityService, AmenityService>();
+            return services;
+        }
+
+        // CHANGED BY AI (2026-07-15): please review. New DI registration for the room pricing
+        // system (seasonal rules, occupancy tiers, and the shared resolution/quote engine).
+        public static IServiceCollection AddRoomPricingServices(this IServiceCollection services)
+        {
+            services.AddScoped<IHotelPricingService, HotelPricingService>();
+            services.AddScoped<IRoomPricingService, RoomPricingService>();
+            return services;
+        }
+
     }
 }

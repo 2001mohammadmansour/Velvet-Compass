@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./ownerDashboard.css";
 import * as ownerSvc from "./services/owner";
+import { getAmenities, createAmenity } from "./services/amenities";
+import HotelPricingManager from "./HotelPricingManager";
 import { getCurrentUser } from "./services/auth";
 
 const CAT_LABELS = { staff: 'Staff', location: 'Location', facilities: 'Facilities', cleanliness: 'Cleanliness', comfort: 'Comfort', value: 'Value' };
@@ -104,6 +106,26 @@ export default function OwnerDashboard() {
   const [cancelPolicy, setCancelPolicy] = useState({ freeCancel: true, daysBefore: 2, feeType: 'percentage', feeValue: 20 });
   const [breakfastAvailable, setBreakfastAvailable] = useState(false);
   const [breakfastPrice, setBreakfastPrice] = useState(0);
+  // CHANGED BY AI (2026-07-15): please review. New: hotel/room-type amenities catalogs + selection
+  // state, and the room-type modal's new description/extra-bed fields.
+  const [hotelAmenityCatalog, setHotelAmenityCatalog] = useState([]);
+  const [hotelAmenityIds, setHotelAmenityIds] = useState([]);
+  const [hotelAmenitiesSaving, setHotelAmenitiesSaving] = useState(false);
+  const [roomAmenityCatalog, setRoomAmenityCatalog] = useState([]);
+  const [roomDescription, setRoomDescription] = useState('');
+  const [roomAmenityIds, setRoomAmenityIds] = useState([]);
+  const [allowExtraBed, setAllowExtraBed] = useState(false);
+  const [maxExtraBeds, setMaxExtraBeds] = useState(1);
+  const [extraBedPriceType, setExtraBedPriceType] = useState('percentage');
+  const [extraBedPriceForOneBed, setExtraBedPriceForOneBed] = useState(30);
+  const [extraBedPriceForTwoBeds, setExtraBedPriceForTwoBeds] = useState(50);
+  // CHANGED BY AI (2026-07-15): please review. New: lets an owner add a custom amenity straight
+  // from the checkbox grid if the admin catalog doesn't have what they need (joins the same
+  // shared catalog — see AmenitiesController.Create, now Owner-allowed too).
+  const [newHotelAmenityName, setNewHotelAmenityName] = useState('');
+  const [addingHotelAmenity, setAddingHotelAmenity] = useState(false);
+  const [newRoomAmenityName, setNewRoomAmenityName] = useState('');
+  const [addingRoomAmenity, setAddingRoomAmenity] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [campaignModalOpen, setCampaignModalOpen] = useState(false);
@@ -285,6 +307,16 @@ export default function OwnerDashboard() {
     setVariants([]);
     setPhotos([]);
     setPhotoPreviews([]);
+    // CHANGED BY AI (2026-07-15): please review. Reset the new description/amenities/extra-bed
+    // fields too. Price defaults are pre-filled at 30/50 (matching the spec's default percentages)
+    // so a first-time toggle-on already shows sensible values.
+    setRoomDescription('');
+    setRoomAmenityIds([]);
+    setAllowExtraBed(false);
+    setMaxExtraBeds(1);
+    setExtraBedPriceType('percentage');
+    setExtraBedPriceForOneBed(30);
+    setExtraBedPriceForTwoBeds(50);
     setAddRoomOpen(true);
   }
 
@@ -303,6 +335,15 @@ export default function OwnerDashboard() {
     setRoomPrice(r.price || 0);
     setRoomStatus(r.status || 'draft');
     setVariants(Array.isArray(r.variants) ? r.variants.map(v => ({ name: v.name || '', amount: Number(v.amount) || Number(v.capacity) || 1, price: Number(v.price) || Number(v.priceDelta) || 0 })) : []);
+    // CHANGED BY AI (2026-07-15): please review. Populate the new description/amenities/extra-bed
+    // fields from the room type being edited.
+    setRoomDescription(r.description || '');
+    setRoomAmenityIds(Array.isArray(r.amenities) ? r.amenities.map((a) => a.id) : []);
+    setAllowExtraBed(Boolean(r.allowExtraBed));
+    setMaxExtraBeds(Number(r.maxExtraBeds) || 1);
+    setExtraBedPriceType(r.extraBedPriceType === 'fixed' ? 'fixed' : 'percentage');
+    setExtraBedPriceForOneBed(Number(r.extraBedPriceForOneBed) || 30);
+    setExtraBedPriceForTwoBeds(Number(r.extraBedPriceForTwoBeds) || 50);
     setAddRoomOpen(true);
     if (r.id) {
       const images = await ownerSvc.getRoomTypeImages(hotelId, r.id).catch(() => []);
@@ -445,6 +486,40 @@ export default function OwnerDashboard() {
     setVariants(v => v.filter((_, i) => i !== idx));
   }
 
+  // CHANGED BY AI (2026-07-15): please review. Adds a custom amenity to the shared catalog and
+  // immediately checks it for this hotel/room — the owner doesn't need to re-open the picker.
+  async function handleAddHotelAmenity() {
+    const name = newHotelAmenityName.trim();
+    if (!name) return;
+    setAddingHotelAmenity(true);
+    try {
+      const created = await createAmenity({ name, icon: '', scope: 'Hotel' });
+      setHotelAmenityCatalog((prev) => [...prev, created]);
+      setHotelAmenityIds((prev) => [...prev, created.id]);
+      setNewHotelAmenityName('');
+    } catch (err) {
+      alert('Unable to add amenity: ' + (err.message || err));
+    } finally {
+      setAddingHotelAmenity(false);
+    }
+  }
+
+  async function handleAddRoomAmenity() {
+    const name = newRoomAmenityName.trim();
+    if (!name) return;
+    setAddingRoomAmenity(true);
+    try {
+      const created = await createAmenity({ name, icon: '', scope: 'RoomType' });
+      setRoomAmenityCatalog((prev) => [...prev, created]);
+      setRoomAmenityIds((prev) => [...prev, created.id]);
+      setNewRoomAmenityName('');
+    } catch (err) {
+      alert('Unable to add amenity: ' + (err.message || err));
+    } finally {
+      setAddingRoomAmenity(false);
+    }
+  }
+
   async function saveRoom() {
     if (!roomName.trim()) return alert('Room name is required');
     if (roomPrice < 0) return alert('Price must be >= 0');
@@ -457,7 +532,15 @@ export default function OwnerDashboard() {
         capacity: Number(roomCapacity) || 1,
         price: Number(roomPrice) || 0,
         variants: variants.map(v => ({ name: v.name, amount: Number(v.amount) || 1, price: Number(v.price) || 0 })),
-        status: selectedRoomId ? roomStatus : 'draft'
+        status: selectedRoomId ? roomStatus : 'draft',
+        // CHANGED BY AI (2026-07-15): please review. New description/amenities/extra-bed fields.
+        description: roomDescription,
+        amenityIds: roomAmenityIds,
+        allowExtraBed,
+        maxExtraBeds: allowExtraBed ? maxExtraBeds : 0,
+        extraBedPriceType,
+        extraBedPriceForOneBed,
+        extraBedPriceForTwoBeds,
       };
 
       let roomTypeId = selectedRoomId;
@@ -539,13 +622,19 @@ export default function OwnerDashboard() {
       setLoading(true);
       setError(null);
       try {
-        const [b, m, r, res, settings, rv] = await Promise.all([
+        const [b, m, r, res, settings, rv, profile, hotelCatalog, roomCatalog] = await Promise.all([
           ownerSvc.getBilling(hotelId).catch(() => null),
           ownerSvc.getMetrics(hotelId).catch(() => null),
           ownerSvc.getRooms(hotelId).catch(() => null),
           ownerSvc.getReservations(hotelId).catch(() => null),
           ownerSvc.getSettings(hotelId).catch(() => null),
           ownerSvc.getHotelReviews(hotelId).catch(() => null),
+          // CHANGED BY AI (2026-07-15): please review. New: current hotel amenities + both
+          // amenity catalogs, fetched once here (the room catalog needs to be ready before the
+          // room modal opens).
+          ownerSvc.getHotelProfile(hotelId).catch(() => null),
+          getAmenities('Hotel').catch(() => []),
+          getAmenities('RoomType').catch(() => []),
         ]);
         if (!mounted) return;
         if (b) setBills(b); else setBills({ gross: 0, platformCutPercent: 0 });
@@ -554,6 +643,9 @@ export default function OwnerDashboard() {
         setCampaignActive(Boolean(m?.campaignActive));
         if (res) setReservations(res); else setReservations([]);
         if (rv) setHotelReviews(rv);
+        if (profile) setHotelAmenityIds((profile.amenities || []).map((a) => a.id));
+        setHotelAmenityCatalog(hotelCatalog);
+        setRoomAmenityCatalog(roomCatalog);
         if (settings && typeof settings.autoAcceptBookings !== 'undefined') setAutoAcceptBookings(Boolean(settings.autoAcceptBookings));
         if (settings?.cancelPolicy) {
           setCancelPolicy({
@@ -1061,6 +1153,59 @@ export default function OwnerDashboard() {
         </div>
       </section>
 
+      {/* CHANGED BY AI (2026-07-15): please review. New hotel-level amenities checkbox grid, with
+          its own dedicated Save button (matching the Breakfast/Cancellation Policy sections above). */}
+      <section className="od-row">
+        <h2>Hotel Amenities</h2>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {hotelAmenityCatalog.map((a) => (
+            <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 400 }}>
+              <input
+                type="checkbox"
+                checked={hotelAmenityIds.includes(a.id)}
+                onChange={(e) => setHotelAmenityIds((prev) => e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id))}
+              />
+              {a.icon ? `${a.icon} ` : ''}{a.name}
+            </label>
+          ))}
+          {hotelAmenityCatalog.length === 0 && <span className="muted small">No hotel amenities in the catalog yet.</span>}
+        </div>
+        {/* CHANGED BY AI (2026-07-15): please review. New: add a custom amenity if the admin
+            catalog doesn't have what this hotel needs. */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <input
+            className="sr-filter-input"
+            style={{ maxWidth: 220 }}
+            placeholder="Add a custom amenity..."
+            value={newHotelAmenityName}
+            onChange={(e) => setNewHotelAmenityName(e.target.value)}
+          />
+          <button className="ha-sort-btn" disabled={addingHotelAmenity || !newHotelAmenityName.trim()} onClick={handleAddHotelAmenity}>
+            {addingHotelAmenity ? 'Adding...' : '+ Add'}
+          </button>
+        </div>
+        <div className="cancel-row" style={{ marginTop: 10 }}>
+          <button className="save-btn" disabled={hotelAmenitiesSaving} onClick={async () => {
+            setHotelAmenitiesSaving(true);
+            try {
+              await ownerSvc.updateHotelAmenities(hotelId, hotelAmenityIds);
+              alert('Hotel amenities saved');
+            } catch (err) {
+              alert('Unable to save amenities: ' + (err.message || err));
+            } finally {
+              setHotelAmenitiesSaving(false);
+            }
+          }}>{hotelAmenitiesSaving ? 'Saving...' : 'Save'}</button>
+        </div>
+      </section>
+
+      {/* CHANGED BY AI (2026-07-15): please review. Seasonal/demand pricing moved from per-room-type
+          to hotel scope — configured once here and applied to every room type in this hotel. */}
+      <section className="od-row">
+        <h2>Seasonal &amp; Demand-Based Pricing</h2>
+        <HotelPricingManager hotelId={hotelId} />
+      </section>
+
       <footer style={{ marginTop: 28, opacity: .8 }} className="muted small">Data shown is mocked unless backend is connected — add REACT_APP_API_BASE_URL and REACT_APP_HOTEL_ID.</footer>
 
       {addRoomOpen && (
@@ -1076,6 +1221,18 @@ export default function OwnerDashboard() {
               <input value={roomName} onChange={(e) => setRoomName(e.target.value)} />
             </div>
 
+            {/* CHANGED BY AI (2026-07-15): please review. Description already existed end-to-end on
+                the backend but had no UI to set it until now. */}
+            <div className="campaign-section">
+              <label>Description (shown to guests when booking)</label>
+              <textarea
+                rows={3}
+                value={roomDescription}
+                onChange={(e) => setRoomDescription(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: 8, resize: 'vertical' }}
+              />
+            </div>
+
             <div className="campaign-section" style={{ display: 'flex', gap: 12 }}>
               <label style={{ flex: 1 }}>Amount
                 <input type="number" min={1} value={roomAmount} onChange={(e) => setRoomAmount(Number(e.target.value) || 1)} />
@@ -1086,6 +1243,90 @@ export default function OwnerDashboard() {
               <label style={{ flex: 1 }}>Price
                 <input type="number" min={0} value={roomPrice} onChange={(e) => setRoomPrice(Number(e.target.value) || 0)} />
               </label>
+            </div>
+
+            {/* CHANGED BY AI (2026-07-15): please review. New room-type amenities checkbox grid. */}
+            <div className="campaign-section">
+              <label>Room Amenities</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {roomAmenityCatalog.map((a) => (
+                  <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 400 }}>
+                    <input
+                      type="checkbox"
+                      checked={roomAmenityIds.includes(a.id)}
+                      onChange={(e) => setRoomAmenityIds((prev) => e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id))}
+                    />
+                    {a.icon ? `${a.icon} ` : ''}{a.name}
+                  </label>
+                ))}
+                {roomAmenityCatalog.length === 0 && <span className="muted small">No room amenities in the catalog yet.</span>}
+              </div>
+              {/* CHANGED BY AI (2026-07-15): please review. New: add a custom amenity if the admin
+                  catalog doesn't have what this room needs. */}
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <input
+                  className="sr-filter-input"
+                  style={{ maxWidth: 220 }}
+                  placeholder="Add a custom amenity..."
+                  value={newRoomAmenityName}
+                  onChange={(e) => setNewRoomAmenityName(e.target.value)}
+                />
+                <button className="ha-sort-btn" disabled={addingRoomAmenity || !newRoomAmenityName.trim()} onClick={handleAddRoomAmenity}>
+                  {addingRoomAmenity ? 'Adding...' : '+ Add'}
+                </button>
+              </div>
+            </div>
+
+            {/* CHANGED BY AI (2026-07-15): please review. New extra-bed system: toggle, max beds
+                (1 or 2), price type (percentage of room price, or a flat $ amount), and one price
+                field per tier. Defaults to 30%/50% (per the spec) the first time it's enabled. */}
+            <div className="campaign-section">
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="checkbox"
+                  checked={allowExtraBed}
+                  onChange={(e) => setAllowExtraBed(e.target.checked)}
+                />
+                Allow extra bed
+              </label>
+              {allowExtraBed && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
+                  <label style={{ flex: '1 1 140px' }}>Max extra beds
+                    <select value={maxExtraBeds} onChange={(e) => setMaxExtraBeds(Number(e.target.value))}>
+                      <option value={1}>1</option>
+                      <option value={2}>2</option>
+                    </select>
+                  </label>
+                  <label style={{ flex: '1 1 160px' }}>Price type
+                    <select value={extraBedPriceType} onChange={(e) => setExtraBedPriceType(e.target.value)}>
+                      <option value="percentage">% of room price</option>
+                      <option value="fixed">Flat amount ($)</option>
+                    </select>
+                  </label>
+                  <label style={{ flex: '1 1 160px' }}>
+                    Price for 1 extra bed {extraBedPriceType === 'percentage' ? '(%)' : '($)'}
+                    <input
+                      type="number"
+                      min={0}
+                      step={extraBedPriceType === 'percentage' ? 1 : 0.01}
+                      value={extraBedPriceForOneBed}
+                      onChange={(e) => setExtraBedPriceForOneBed(Number(e.target.value) || 0)}
+                    />
+                  </label>
+                  {maxExtraBeds === 2 && (
+                    <label style={{ flex: '1 1 160px' }}>
+                      Price for 2 extra beds {extraBedPriceType === 'percentage' ? '(%)' : '($)'}
+                      <input
+                        type="number"
+                        min={0}
+                        step={extraBedPriceType === 'percentage' ? 1 : 0.01}
+                        value={extraBedPriceForTwoBeds}
+                        onChange={(e) => setExtraBedPriceForTwoBeds(Number(e.target.value) || 0)}
+                      />
+                    </label>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="campaign-section">

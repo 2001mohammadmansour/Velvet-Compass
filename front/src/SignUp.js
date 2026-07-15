@@ -311,7 +311,8 @@ function SignUp() {
           setPendingOwnerRequest(null);
         }
 
-        navigate(res?.user?.role === "hotel_owner" ? "/ownerhome" : "/");
+        // CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page.
+        navigate("/");
       } catch (signInErr) {
         setVerificationNotice(
           "Account verified, but we couldn't sign you in automatically. Please sign in manually."

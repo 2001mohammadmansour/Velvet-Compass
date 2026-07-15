@@ -1,3 +1,4 @@
+using HotelBooking.Application.DTOs.Amenities;
 using HotelBooking.Application.DTOs.Common;
 using HotelBooking.Application.DTOs.Hotels;
 using HotelBooking.Application.Interfaces;
@@ -13,10 +14,16 @@ namespace HotelBooking.Infrastructure.Services
     {
 
         private readonly AppDbContext _context;
+        // CHANGED BY AI (2026-07-15): please review. Used to pre-populate a new hotel with default
+        // seasonal/occupancy pricing rules right after creation — see CreateHotelAsync below.
+        // Pricing rules moved from per-room-type to hotel scope, so seeding now happens once per
+        // hotel instead of once per room type.
+        private readonly IHotelPricingService _pricingService;
 
-        public HotelServices(AppDbContext context)
+        public HotelServices(AppDbContext context, IHotelPricingService pricingService)
         {
             _context = context;
+            _pricingService = pricingService;
         }
 
         public async Task<PagedResult<HotelSummaryDto>> GetAllAsync(HotelFilterRequest filterRequest)
@@ -55,6 +62,9 @@ namespace HotelBooking.Infrastructure.Services
         {
             var hotel = await _context.Hotels
                 .Include(h => h.HotelImages.OrderBy(h => h.SortOrder))
+                // CHANGED BY AI (2026-07-15): please review. Needed so MapToHotelDetailDto can
+                // populate the new Amenities field.
+                .Include(h => h.HotelAmenities).ThenInclude(ha => ha.Amenity)
                 .FirstOrDefaultAsync(h => h.Id == hotelId)
                 ?? throw new HotelNotFoundException(hotelId);
 
@@ -89,6 +99,11 @@ namespace HotelBooking.Infrastructure.Services
 
             _context.Hotels.Add(hotel);
             await _context.SaveChangesAsync();
+
+            // CHANGED BY AI (2026-07-15): please review. Pre-populates sensible pricing defaults
+            // (a seasonal calendar + occupancy surge tiers) so the owner doesn't start from a
+            // blank slate; these are ordinary rows they can edit or delete afterward.
+            await _pricingService.SeedDefaultsAsync(hotel.Id, DateOnly.FromDateTime(DateTime.UtcNow));
 
             return MapToHotelDetailDto(hotel);
         }
@@ -180,6 +195,9 @@ namespace HotelBooking.Infrastructure.Services
         private async Task<Hotel> GetOwnedHotelAsync(long callerId, bool isAdmin, long hotelId)
         {
             var hotel = await _context.Hotels.Include(h => h.HotelImages)
+                // CHANGED BY AI (2026-07-15): please review. Needed so callers that map the result
+                // to HotelDetailDto (e.g. UpdateHotelAsync) get the Amenities field populated.
+                .Include(h => h.HotelAmenities).ThenInclude(ha => ha.Amenity)
                 .FirstOrDefaultAsync(h => h.Id == hotelId)
                 ?? throw new HotelNotFoundException(hotelId);
 
@@ -221,6 +239,27 @@ namespace HotelBooking.Infrastructure.Services
             await _context.SaveChangesAsync();
         }
 
+        // CHANGED BY AI (2026-07-15): please review. Lets an Owner/Admin set the hotel's full set
+        // of amenities (wifi, parking, gym, etc.) in one call — full-replace semantics. Invalid,
+        // inactive, or wrong-scope ids are silently dropped rather than erroring, matching how the
+        // rest of this service tolerates a stale/imperfect client.
+        public async Task SetHotelAmenitiesAsync(long callerId, bool isAdmin, long hotelId, List<long> amenityIds)
+        {
+            await GetOwnedHotelAsync(callerId, isAdmin, hotelId);
+
+            var validIds = await _context.Amenities
+                .Where(a => amenityIds.Contains(a.Id) && a.IsActive && a.Scope == AmenityScope.Hotel)
+                .Select(a => a.Id)
+                .ToListAsync();
+
+            var existing = _context.HotelAmenities.Where(ha => ha.HotelId == hotelId);
+            _context.HotelAmenities.RemoveRange(existing);
+            foreach (var id in validIds)
+                _context.HotelAmenities.Add(new HotelAmenity { HotelId = hotelId, AmenityId = id });
+
+            await _context.SaveChangesAsync();
+        }
+
         private static HotelDetailDto MapToHotelDetailDto(Hotel hotel) => new(
             hotel.Id,
             hotel.Name,
@@ -242,7 +281,10 @@ namespace HotelBooking.Infrastructure.Services
             hotel.FreeCancellationEnabled,
             hotel.FreeCancellationDaysBefore,
             hotel.CancellationFeeType.ToString(),
-            hotel.CancellationFeeValue
+            hotel.CancellationFeeValue,
+            hotel.HotelAmenities
+                .Select(ha => new AmenityDto(ha.Amenity.Id, ha.Amenity.Name, ha.Amenity.Icon, ha.Amenity.Scope.ToString(), ha.Amenity.IsActive))
+                .ToList()
             );
 
 

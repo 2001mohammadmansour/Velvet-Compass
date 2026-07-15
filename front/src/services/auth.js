@@ -37,6 +37,9 @@ export async function signUpUser(payload) {
     email: payload.email,
     password: payload.password,
     role: ROLE_TO_BACKEND[payload.role] || "guest",
+    // CHANGED BY AI (2026-07-13): please review — was collected by the form but never actually
+    // sent; the backend now persists it too (see AuthService.RegisterAsync).
+    phoneNumber: payload.phoneNumber || null,
   };
   const res = await _req('/api/v1/auth/register', { method: 'POST', body: JSON.stringify(backendPayload) });
   return normalizeAuthResponse(res);
@@ -140,6 +143,24 @@ export function getCurrentUser() {
 
 export function getCurrentRole() {
   return getCurrentUser()?.role || localStorage.getItem("mock_auth_role") || null;
+}
+
+// CHANGED BY AI (2026-07-13): please review — extracted from OwnerHome.js so Navbar.js's new
+// owner profile menu (see the hotel_owner branch fix) derives the exact same username/hotelName
+// fallback chain instead of duplicating it, which is exactly the kind of drift that let the
+// hotel_owner Navbar branch go missing in the first place.
+export function getOwnerProfileSummary() {
+  try {
+    const user = getCurrentUser() || {};
+    const pending = sessionStorage.getItem('pending_signup_profile');
+    const p = pending ? JSON.parse(pending) : {};
+    return {
+      username: user.username || p.username || 'Owner',
+      hotelName: user.hotelName || p.hotelName || 'Your Hotel',
+    };
+  } catch (error) {
+    return { username: 'Owner', hotelName: 'Your Hotel' };
+  }
 }
 
 export function clearAuth() {

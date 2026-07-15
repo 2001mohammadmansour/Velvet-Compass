@@ -24,5 +24,8 @@ namespace HotelBooking.Application.Interfaces
         // policy settings.
         Task SetCancellationPolicyAsync(long callerId, bool isAdmin, long hotelId, bool freeCancellationEnabled, int freeCancellationDaysBefore, string cancellationFeeType, decimal cancellationFeeValue);
         //Task<HotelDetailDto> GetMyHotelDetailsAsync(long ownerId);
+        // CHANGED BY AI (2026-07-15): please review. New method backing the hotel-level amenities
+        // checkbox grid (full-replace semantics).
+        Task SetHotelAmenitiesAsync(long callerId, bool isAdmin, long hotelId, List<long> amenityIds);
     }
 }

@@ -537,25 +537,18 @@
 }
 
 /* ---------- Animations ---------- */
-@keyframes fa-fade-up {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes fa-slide-right {
-  from { opacity: 0; transform: translateX(28px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes fa-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-.facilities-hero      { animation: fa-fade-up    0.5s ease both; }
-.facilities-hero-copy { animation: fa-fade-up    0.5s 0.1s ease both; }
-.facilities-hero-card { animation: fa-slide-right 0.48s 0.2s ease both; }
-.filters-panel        { animation: fa-slide-right 0.45s 0.15s ease both; }
-.section-head         { animation: fa-fade-up    0.4s 0.05s ease both; }
-.trip-card            { animation: fa-fade-up    0.4s ease both; }
+/* CHANGED BY AI (2026-07-15): please review — now uses the shared keyframes from
+   animations.css (fade-up/slide-x default distances already matched fa-fade-up/fa-slide-right,
+   so no per-rule overrides were needed). */
+.facilities-hero      { animation: fade-up  0.5s ease both; }
+.facilities-hero-copy { animation: fade-up  0.5s 0.1s ease both; }
+.facilities-hero-card { animation: slide-x  0.48s 0.2s ease both; }
+.filters-panel        { animation: slide-x  0.45s 0.15s ease both; }
+.section-head         { animation: fade-up  0.4s 0.05s ease both; }
+/* CHANGED BY AI (2026-07-13): please review — re-added now that the page waits for trips to load
+   before rendering anything (see FacilitiesAttractions.jsx), so this fires together with the rest
+   of the page's entrance instead of as a delayed second wave once data arrived. */
+.trip-card            { animation: fade-up  0.4s ease both; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {

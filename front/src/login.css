@@ -43,7 +43,7 @@ Content is user-generated and unverified.
 .brand {
   text-align: center;
   z-index: 2;
-  animation: fadeUp 0.7s ease both;
+  animation: fade-up 0.7s ease both;
 }
 
 .brand-icon {
@@ -109,7 +109,7 @@ Content is user-generated and unverified.
   width: 100%;
   max-width: 420px;
   box-shadow: 0 12px 40px var(--shadow);
-  animation: fadeUp 0.6s ease 0.1s both;
+  animation: fade-up 0.6s ease 0.1s both;
 }
 
 .card-header {
@@ -298,11 +298,8 @@ Content is user-generated and unverified.
 /* ============================= */
 /*         ANIMATIONS            */
 /* ============================= */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
+/* CHANGED BY AI (2026-07-15): please review — fadeUp removed; its 24px distance matches the
+   shared fade-up keyframe's default in animations.css, so usages now point there instead. */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

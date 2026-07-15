@@ -4,6 +4,7 @@ import HotelsAnalytics from './HotelsAnalytics';
 import HotelRequests from './HotelRequests';
 import AdminStats from './AdminStats';
 import AdminUsers from './AdminUsers';
+import AmenitiesAdmin from './AmenitiesAdmin';
 import { clearAuth } from './services/auth';
 import './AdminDashboard.css';
 
@@ -67,6 +68,7 @@ export default function AdminDashboard() {
     { key: 'stats', icon: '📈', label: 'Revenue Stats' },
     { key: 'users', icon: '👥', label: 'Users' },
     { key: 'requests', icon: '📥', label: 'Hotel Requests' },
+    { key: 'amenities', icon: '🛎️', label: 'Amenities' },
   ];
 
   const SECTION_DESCRIPTIONS = {
@@ -75,6 +77,7 @@ export default function AdminDashboard() {
     stats: 'Monthly, quarterly, and yearly revenue charts across all hotels',
     users: 'All users, their booking activity, and hotels owned',
     requests: 'Approve or reject hotel owner requests to create or edit a hotel',
+    amenities: 'Manage the catalog of hotel and room benefits owners can pick from',
   };
 
   return (
@@ -129,6 +132,7 @@ export default function AdminDashboard() {
           {activeTab === 'stats' && <AdminStats />}
           {activeTab === 'users' && <AdminUsers />}
           {activeTab === 'requests' && <HotelRequests />}
+          {activeTab === 'amenities' && <AmenitiesAdmin />}
         </main>
       </div>
     </div>

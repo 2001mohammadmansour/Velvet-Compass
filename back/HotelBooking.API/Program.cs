@@ -25,6 +25,8 @@ builder.Services.AddHotelRequestServices();
 builder.Services.AddReviewServices();
 builder.Services.AddNotificationServices();
 builder.Services.AddTripServices();
+builder.Services.AddAmenityServices();
+builder.Services.AddRoomPricingServices();
 // CHANGED BY AI (2026-07-13): please review. Backs the new hotel/room-type photo upload
 // endpoints — saves files under wwwroot/uploads and returns a public URL.
 builder.Services.AddSingleton<IFileStorageService, FileStorageService>();

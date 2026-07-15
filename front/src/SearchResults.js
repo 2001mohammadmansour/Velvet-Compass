@@ -149,7 +149,11 @@ export default function SearchResults() {
     const destValue = destination.trim().toLowerCase();
     let filtered = rooms.filter((room) => {
       const okCity     = !destValue || String(room.city || '').toLowerCase().includes(destValue);
-      const okGuests   = !guests || room.capacity >= Number(guests);
+      // CHANGED BY AI (2026-07-15): please review — this used to only check base capacity, so a
+      // 2-person room that can sleep 4 with 2 extra beds was wrongly excluded from a 3+ guest
+      // search. Now checks effective capacity (base + max extra beds, if the room allows them).
+      const effectiveCapacity = room.capacity + (room.allowExtraBed ? (room.maxExtraBeds || 0) : 0);
+      const okGuests   = !guests || effectiveCapacity >= Number(guests);
       const okPriceMin = priceMin === null || room.price >= priceMin;
       const okPriceMax = priceMax === null || room.price <= priceMax;
       const okStars    = selectedStars.length === 0 || selectedStars.includes(room.hotelStars);
@@ -165,15 +169,12 @@ export default function SearchResults() {
     return filtered;
   }, [rooms, destination, guests, priceMin, priceMax, selectedStars, minScore, sortBy]);
 
-  const handleBook = (room) => {
-    navigate('/reservation', {
+  // CHANGED BY AI (2026-07-15): please review — this used to jump straight to checkout
+  // (/reservation); now it opens the new room detail/product page instead, same as Rooms.js.
+  const handleViewRoom = (room) => {
+    navigate('/room-detail', {
       state: {
-        room: {
-          id: room.id, hotelId: room.hotelId, name: room.name,
-          hotel: room.hotelName, city: room.city, price: room.price,
-          rating: room.hotelStars, img: room.photos?.[0],
-          capacity: room.capacity, amount: room.amount,
-        },
+        room: { id: room.id, hotelId: room.hotelId },
         checkIn, checkOut, guests,
       },
     });
@@ -309,7 +310,10 @@ export default function SearchResults() {
 
           <div className="sr-grid">
             {results.map((room) => (
-              <div key={room.id} className="sr-card">
+              // CHANGED BY AI (2026-07-15): please review — the whole card now opens the new room
+              // detail page; the review badge stops propagation so it still just opens the
+              // reviews modal instead of also navigating away.
+              <div key={room.id} className="sr-card" onClick={() => handleViewRoom(room)} style={{ cursor: 'pointer' }}>
                 {room.photos?.[0]
                   ? <img className="sr-card-img" src={room.photos[0]} alt={room.name} />
                   : <div className="sr-card-img-placeholder" />
@@ -325,7 +329,7 @@ export default function SearchResults() {
                   ) : null}
 
                   {room.reviewCount > 0 ? (
-                    <button className="rv-badge" onClick={() => setReviewsRoom(room)}>
+                    <button className="rv-badge" onClick={(e) => { e.stopPropagation(); setReviewsRoom(room); }}>
                       ★ {room.avgScore}/10 · {room.reviewCount} review{room.reviewCount !== 1 ? 's' : ''}
                     </button>
                   ) : <p className="sr-card-no-reviews">No reviews yet</p>}
@@ -334,9 +338,14 @@ export default function SearchResults() {
                     <p className="sr-card-price">
                       <span className="sr-price-amount">${room.price}</span>
                       <span className="sr-price-night"> / night</span>
-                      <span className="sr-capacity"> · Sleeps {room.capacity}</span>
+                      {/* CHANGED BY AI (2026-07-15): please review — clarifies that a room's
+                          listed capacity can be extended with an (automatic) extra bed, since the
+                          guest filter above now matches on that effective capacity too. */}
+                      <span className="sr-capacity">
+                        {' '}· Sleeps {room.capacity}{room.allowExtraBed && room.maxExtraBeds > 0 ? ` (up to ${room.capacity + room.maxExtraBeds} with extra bed)` : ''}
+                      </span>
                     </p>
-                    <button className="sr-book-btn" onClick={() => handleBook(room)}>Book Now</button>
+                    <button className="sr-book-btn" onClick={(e) => { e.stopPropagation(); handleViewRoom(room); }}>View Details</button>
                   </div>
                 </div>
               </div>

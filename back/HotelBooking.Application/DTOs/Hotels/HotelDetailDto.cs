@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using HotelBooking.Application.DTOs.Amenities;
 
 namespace HotelBooking.Application.DTOs.Hotels
 {
@@ -27,8 +28,10 @@ namespace HotelBooking.Application.DTOs.Hotels
     bool FreeCancellationEnabled,
     int FreeCancellationDaysBefore,
     string CancellationFeeType,
-    decimal CancellationFeeValue
+    decimal CancellationFeeValue,
+    // CHANGED BY AI (2026-07-15): please review. Hotel-level amenities (wifi, parking, gym, etc.).
+    List<AmenityDto> Amenities
 
         );
-    
+
 }

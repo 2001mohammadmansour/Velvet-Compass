@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './room.css'
-import { getRoomTypesForHotel } from './services/hotels'
+import { getRoomTypesForHotel, getHotelById } from './services/hotels'
 import { getRoomReviews } from './services/guest'
 import { getCurrentRole } from './services/auth'
 import PriceRangeSlider from './PriceRangeSlider'
@@ -108,6 +108,9 @@ export default function Rooms() {
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState('')
   const [reviewsRoom, setReviewsRoom] = useState(null)
+  // CHANGED BY AI (2026-07-15): please review. New: hotel-level amenities, fetched via a direct
+  // detail call since HotelSummaryDto/the `hotel` nav-state object don't carry them.
+  const [hotelAmenities, setHotelAmenities] = useState([])
 
   // Filters
   const [roomName, setRoomName]     = useState('')
@@ -132,6 +135,9 @@ export default function Rooms() {
       .then(data  => { if (mounted) setAllRooms(Array.isArray(data) ? data : []) })
       .catch(err  => { if (mounted) setError(err.message || 'Unable to load rooms.') })
       .finally(() => { if (mounted) setLoading(false) })
+    getHotelById(hid)
+      .then(data => { if (mounted) setHotelAmenities(Array.isArray(data?.amenities) ? data.amenities : []) })
+      .catch(() => { if (mounted) setHotelAmenities([]) })
     return () => { mounted = false }
   }, [hotel?.hotelId])
 
@@ -175,7 +181,11 @@ export default function Rooms() {
   const results = useMemo(() => {
     let filtered = hotelRooms.filter(r => {
       const okName    = !roomName || String(r.name || '').toLowerCase().includes(roomName.toLowerCase())
-      const okGuests  = !guests || r.capacity >= Number(guests)
+      // CHANGED BY AI (2026-07-15): please review — this used to only check base capacity, so a
+      // 2-person room that can sleep 4 with 2 extra beds was wrongly excluded from a 3+ guest
+      // search. Now checks effective capacity (base + max extra beds, if the room allows them).
+      const effectiveCapacity = r.capacity + (r.allowExtraBed ? (r.maxExtraBeds || 0) : 0)
+      const okGuests  = !guests || effectiveCapacity >= Number(guests)
       const okPrMin   = priceMin === null || r.price >= priceMin
       const okPrMax   = priceMax === null || r.price <= priceMax
       const okScore   = minScore === 0 || (r.avgScore !== null && r.avgScore >= minScore)
@@ -189,15 +199,14 @@ export default function Rooms() {
     return filtered
   }, [hotelRooms, roomName, guests, priceMin, priceMax, minScore, sortBy])
 
-  const handleBook = (room) => {
-    navigate('/reservation', {
+  // CHANGED BY AI (2026-07-15): please review — this used to jump straight to checkout
+  // (/reservation). Now it opens the new room detail/product page (photos, description,
+  // amenities, live-priced booking sidebar); Reservation.js is reached only from there, once
+  // dates/guests/add-ons are already decided.
+  const handleViewRoom = (room) => {
+    navigate('/room-detail', {
       state: {
-        room: {
-          id: room.id, hotelId: room.hotelId, name: room.name,
-          hotel: room.hotelName, city: room.city, price: room.price,
-          rating: room.hotelStars, img: room.photos?.[0],
-          capacity: room.capacity, amount: room.amount,
-        },
+        room: { id: room.id, hotelId: room.hotelId },
         checkIn, checkOut, guests,
       },
     })
@@ -220,6 +229,16 @@ export default function Rooms() {
               📍 {hotelCity}
               {hotelStars ? `  ·  ${'★'.repeat(hotelStars)}` : ''}
             </span>
+          )}
+          {/* CHANGED BY AI (2026-07-15): please review. New hotel-level amenities row. */}
+          {hotelAmenities.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+              {hotelAmenities.map((a) => (
+                <span key={a.id} className="sr-dates" style={{ fontSize: 12 }}>
+                  {a.icon ? `${a.icon} ` : ''}{a.name}
+                </span>
+              ))}
+            </div>
           )}
         </div>
         <input
@@ -321,7 +340,10 @@ export default function Rooms() {
 
           <div className="sr-grid">
             {results.map(room => (
-              <div key={room.id} className="sr-card">
+              // CHANGED BY AI (2026-07-15): please review — the whole card now opens the new room
+              // detail page (see handleViewRoom); the review badge stops propagation so it still
+              // opens just the reviews modal instead of also navigating away.
+              <div key={room.id} className="sr-card" onClick={() => handleViewRoom(room)} style={{ cursor: 'pointer' }}>
                 {room.photos?.[0]
                   ? <img className="sr-card-img" src={room.photos[0]} alt={room.name} />
                   : <div className="sr-card-img-placeholder" />
@@ -330,20 +352,43 @@ export default function Rooms() {
                   <h3 className="sr-card-name">{room.name}</h3>
 
                   {room.reviewCount > 0 ? (
-                    <button className="rv-badge" onClick={() => setReviewsRoom(room)}>
+                    <button className="rv-badge" onClick={(e) => { e.stopPropagation(); setReviewsRoom(room); }}>
                       ★ {room.avgScore}/10 · {room.reviewCount} review{room.reviewCount !== 1 ? 's' : ''}
                     </button>
                   ) : (
                     <p className="sr-card-no-reviews">No reviews yet</p>
                   )}
 
+                  {/* CHANGED BY AI (2026-07-15): please review. New room description (truncated)
+                      and room-type amenity chips — the backend already had a Description field,
+                      this is the first time it's actually shown to guests. */}
+                  {room.description && (
+                    <p className="muted small" style={{ margin: '4px 0' }}>
+                      {room.description.length > 100 ? `${room.description.slice(0, 100)}…` : room.description}
+                    </p>
+                  )}
+                  {Array.isArray(room.amenities) && room.amenities.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                      {room.amenities.map((a) => (
+                        <span key={a.id} className="sr-dates" style={{ fontSize: 11 }}>
+                          {a.icon ? `${a.icon} ` : ''}{a.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="sr-card-footer">
                     <p className="sr-card-price">
                       <span className="sr-price-amount">${room.price}</span>
                       <span className="sr-price-night"> / night</span>
-                      <span className="sr-capacity"> · Sleeps {room.capacity}</span>
+                      {/* CHANGED BY AI (2026-07-15): please review — clarifies that a room's
+                          listed capacity can be extended with an (automatic) extra bed, since the
+                          guest filter above now matches on that effective capacity too. */}
+                      <span className="sr-capacity">
+                        {' '}· Sleeps {room.capacity}{room.allowExtraBed && room.maxExtraBeds > 0 ? ` (up to ${room.capacity + room.maxExtraBeds} with extra bed)` : ''}
+                      </span>
                     </p>
-                    <button className="sr-book-btn" onClick={() => handleBook(room)}>Book Now</button>
+                    <button className="sr-book-btn" onClick={(e) => { e.stopPropagation(); handleViewRoom(room); }}>View Details</button>
                   </div>
                 </div>
               </div>

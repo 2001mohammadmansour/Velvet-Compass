@@ -236,6 +236,26 @@ export default function FacilitiesAttractions() {
 
   const pricePercent = ((maxPrice - PRICE_MIN) / (PRICE_MAX - PRICE_MIN)) * 100;
 
+  // CHANGED BY AI (2026-07-13): please review — the page now waits for trips to load before
+  // rendering any of it, instead of mounting the (animated) hero/filters immediately and letting
+  // the trip cards pop in later once the fetch resolved. That two-wave mount was the "shake" —
+  // now everything enters together in one animation pass, same as every other page.
+  if (loading) {
+    return (
+      <div className="facilities-page">
+        <p className="muted" style={{ textAlign: 'center', padding: '80px 20px' }}>Loading trips...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="facilities-page">
+        <p className="muted" style={{ textAlign: 'center', padding: '80px 20px', color: '#9b1c1c' }}>{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="facilities-page">
       <header className="facilities-hero">
@@ -270,9 +290,6 @@ export default function FacilitiesAttractions() {
             <p>{visibleTrips.length} trips available</p>
           </div>
 
-          {loading && <p className="muted">Loading trips...</p>}
-          {error && <p className="muted" style={{ color: '#9b1c1c' }}>{error}</p>}
-
           {manageMode && (
             <button type="button" className="add-trip-btn" onClick={() => setShowAddForm(true)}>
               + Add trip
@@ -280,8 +297,8 @@ export default function FacilitiesAttractions() {
           )}
 
           <div className="trips-grid">
-            {!loading && !error && visibleTrips.map((trip, i) => (
-              <article className="trip-card" key={trip.id} style={{ animationDelay: `${i * 0.07}s` }}>
+            {visibleTrips.map((trip, i) => (
+              <article className="trip-card" key={trip.id} style={{ animationDelay: `${i * 0.06}s` }}>
                 <div className="trip-card-top">
                   <span className="trip-type">{trip.type}</span>
                   <span className="trip-price">${trip.price}</span>
@@ -312,7 +329,7 @@ export default function FacilitiesAttractions() {
             ))}
           </div>
 
-          {!loading && !error && visibleTrips.length === 0 && (
+          {visibleTrips.length === 0 && (
             <div className="empty-state">No trips match the selected filters.</div>
           )}
         </section>

@@ -30,6 +30,22 @@ export async function getMyHotels() {
   }));
 }
 
+// CHANGED BY AI (2026-07-15): please review. New: full hotel detail (used for the hotel-level
+// amenities header on Rooms.js — HotelSummaryDto/getHotels above deliberately omits amenities to
+// avoid bloating the multi-hotel list payload, so the single-hotel page fetches detail directly).
+export async function getHotelById(hotelId) {
+  const h = await request(`/api/v1/hotels/${hotelId}`);
+  return {
+    hotelId: h.hotelId,
+    hotelName: h.name,
+    description: h.description || '',
+    city: h.city,
+    country: h.country,
+    stars: h.starRating,
+    amenities: Array.isArray(h.amenities) ? h.amenities : [],
+  };
+}
+
 // CHANGED BY AI (2026-07-13): please review — rewired from a mock "/api/stats" endpoint that
 // never existed on the real backend (the homepage's stats section silently failed and always
 // showed "—") to the real platform-wide counts.
@@ -209,7 +225,39 @@ export async function searchRooms({ checkIn, checkOut } = {}) {
     photos: rt.primaryImageUrl ? [rt.primaryImageUrl] : [],
     avgScore: rt.avgScore ?? null,
     reviewCount: rt.reviewCount || 0,
+    // CHANGED BY AI (2026-07-15): please review. Description + extra-bed scalar fields (cheap,
+    // no join). Amenities deliberately excluded here — this is a cross-hotel, potentially-many-rows
+    // list; see getRoomTypesForHotel below for where amenities ARE included (single hotel, few rows).
+    description: rt.description || '',
+    allowExtraBed: Boolean(rt.allowExtraBed),
+    maxExtraBeds: Number(rt.maxExtraBeds) || 0,
+    extraBedPriceType: rt.extraBedPriceType === 'Fixed' ? 'fixed' : 'percentage',
+    extraBedPriceForOneBed: Number(rt.extraBedPriceForOneBed) || 0,
+    extraBedPriceForTwoBeds: Number(rt.extraBedPriceForTwoBeds) || 0,
   }));
+}
+
+// CHANGED BY AI (2026-07-15): please review. New: full room type detail (public endpoint) — used
+// by the new RoomDetail.js page for its photo gallery (the full Images list, not just one
+// primaryImageUrl) plus fresh description/amenities/extra-bed settings.
+export async function getRoomTypeDetail(hotelId, roomTypeId) {
+  const rt = await request(`/api/v1/hotel/${hotelId}/room-types/${roomTypeId}`);
+  return {
+    id: rt.id,
+    hotelId: rt.hotelId,
+    name: rt.name,
+    description: rt.description || '',
+    capacity: rt.capacity,
+    beds: rt.beds,
+    price: rt.basePrice,
+    images: Array.isArray(rt.images) ? [...rt.images].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)) : [],
+    amenities: Array.isArray(rt.amenities) ? rt.amenities : [],
+    allowExtraBed: Boolean(rt.allowExtraBed),
+    maxExtraBeds: Number(rt.maxExtraBeds) || 0,
+    extraBedPriceType: rt.extraBedPriceType === 'Fixed' ? 'fixed' : 'percentage',
+    extraBedPriceForOneBed: Number(rt.extraBedPriceForOneBed) || 0,
+    extraBedPriceForTwoBeds: Number(rt.extraBedPriceForTwoBeds) || 0,
+  };
 }
 
 // Returns the room types (used as "rooms" throughout the guest UI) for one specific hotel.
@@ -229,6 +277,16 @@ export async function getRoomTypesForHotel(hotelId) {
     // hardcoded null/0 since the backend had no reviews at all).
     avgScore: rt.avgScore ?? null,
     reviewCount: rt.reviewCount || 0,
+    // CHANGED BY AI (2026-07-15): please review. Description, room-type amenities, and the
+    // extra-bed system settings — a hotel typically has only a handful of room types, so amenities
+    // (a collection) are safe to include here (unlike the cross-hotel searchRooms above).
+    description: rt.description || '',
+    amenities: Array.isArray(rt.amenities) ? rt.amenities : [],
+    allowExtraBed: Boolean(rt.allowExtraBed),
+    maxExtraBeds: Number(rt.maxExtraBeds) || 0,
+    extraBedPriceType: rt.extraBedPriceType === 'Fixed' ? 'fixed' : 'percentage',
+    extraBedPriceForOneBed: Number(rt.extraBedPriceForOneBed) || 0,
+    extraBedPriceForTwoBeds: Number(rt.extraBedPriceForTwoBeds) || 0,
   }));
 }
 
@@ -258,5 +316,5 @@ export async function createHotelForOwner(pendingRequest) {
   return request('/api/v1/hotels', { method: 'POST', body: JSON.stringify(payload) });
 }
 
-const hotelsService = { getHotels, getMyHotels, getAdminDashboard, getAdminRevenueStats, getAdminUsers, getAdminUserBookings, suspendUser, unsuspendUser, searchRooms, approveHotel, createHotelForOwner, getReviewDetail, deleteReview };
+const hotelsService = { getHotels, getMyHotels, getHotelById, getRoomTypeDetail, getAdminDashboard, getAdminRevenueStats, getAdminUsers, getAdminUserBookings, suspendUser, unsuspendUser, searchRooms, getRoomTypesForHotel, approveHotel, createHotelForOwner, getReviewDetail, deleteReview };
 export default hotelsService;

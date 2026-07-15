@@ -2,16 +2,13 @@
 /*       ALL CITIES PAGE     */
 /* ========================= */
 
-@keyframes ac-fade-up {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
+/* CHANGED BY AI (2026-07-15): please review — now uses the shared fade-up keyframe from
+   animations.css (its default 24px distance already matched ac-fade-up). */
 .ac-hero {
   background: var(--primary);
   padding: 80px 40px 70px;
   text-align: center;
-  animation: ac-fade-up 0.5s ease both;
+  animation: fade-up 0.5s ease both;
 }
 
 .ac-hero-title {
@@ -66,7 +63,7 @@
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.09);
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  animation: ac-fade-up 0.45s ease both;
+  animation: fade-up 0.45s ease both;
 }
 
 .ac-card:hover {

@@ -56,6 +56,16 @@ namespace HotelBooking.API.Middleware
                 BookingNotModifiableException => (HttpStatusCode.BadRequest, ex.Message),
                 // CHANGED BY AI (2026-07-13): please review. New mapping for the Trips feature.
                 TripNotFoundException => (HttpStatusCode.NotFound, ex.Message),
+                // CHANGED BY AI (2026-07-15): please review. New mappings for the amenities catalog
+                // and the extra-bed system (bad config, guest count over effective capacity).
+                AmenityNotFoundException => (HttpStatusCode.NotFound, ex.Message),
+                GuestCountExceedsCapacityException => (HttpStatusCode.BadRequest, ex.Message),
+                InvalidRoomTypeConfigurationException => (HttpStatusCode.BadRequest, ex.Message),
+                // CHANGED BY AI (2026-07-15): please review. New mappings for the seasonal-rule /
+                // occupancy-tier pricing system.
+                PricingRuleNotFoundException => (HttpStatusCode.NotFound, ex.Message),
+                OverlappingPriceRuleException => (HttpStatusCode.Conflict, ex.Message),
+                InvalidPricingRuleException => (HttpStatusCode.BadRequest, ex.Message),
                 _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
             };
 

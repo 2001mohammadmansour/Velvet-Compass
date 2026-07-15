@@ -162,6 +162,65 @@
 .owner-profile-icon {
   font-size: 1.1rem;
   line-height: 1;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* CHANGED BY AI (2026-07-13): please review — polish pass on the profile trigger/dropdown. The
+   trigger is icon-only (name used to also show here, duplicating the dropdown header right below
+   it); the dropdown header shows the name once, large, with a small muted line underneath. */
+.owner-profile-caret {
+  font-size: 0.65rem;
+  opacity: 0.7;
+  margin-left: 2px;
+}
+
+.owner-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 4px 10px;
+}
+
+.owner-profile-icon-lg {
+  width: 40px;
+  height: 40px;
+  font-size: 1.3rem;
+  background: rgba(42, 61, 102, 0.1);
+  flex-shrink: 0;
+}
+
+.owner-profile-name-big {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.owner-profile-email {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 400;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.owner-profile-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 6px 0;
 }
 
 .owner-profile-dropdown {
@@ -175,13 +234,21 @@
   padding: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  display: none;
   z-index: 20;
+  /* CHANGED BY AI (2026-07-13): please review — switched from display:none/block (which can't be
+     transitioned) to opacity/transform/visibility, so opening now slides+fades in instead of
+     popping in instantly. */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
 }
 
 .owner-profile-menu:hover .owner-profile-dropdown,
 .owner-profile-menu:focus-within .owner-profile-dropdown {
-  display: block;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .owner-profile-line {
@@ -254,42 +321,35 @@
 /* ========================= */
 /*    LANDING ANIMATIONS     */
 /* ========================= */
-@keyframes land-slide-down {
-  from { opacity: 0; transform: translateY(-100%); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes land-fade-up {
-  from { opacity: 0; transform: translateY(36px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes land-zoom-in {
-  from { opacity: 0.5; transform: scale(1.1); }
-  to   { opacity: 1;   transform: scale(1); }
-}
+/* CHANGED BY AI (2026-07-15): please review — now uses the shared slide-y/fade-up/zoom-in
+   keyframes from animations.css; distances that differed from the shared defaults are set via
+   custom properties so each element keeps its original motion. */
 
 /* Navbar slides down from above */
 .navbar {
-  animation: land-slide-down 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --slide-y-dist: -100%;
+  animation: slide-y 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Hero image zooms in slowly */
 .hero-image img {
-  animation: land-zoom-in 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: zoom-in 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Text elements stagger in */
 .hero-text h1 {
-  animation: land-fade-up 0.65s 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --fade-up-dist: 36px;
+  animation: fade-up 0.65s 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .hero-text > p {
-  animation: land-fade-up 0.65s 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --fade-up-dist: 36px;
+  animation: fade-up 0.65s 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .home-search-bar {
-  animation: land-fade-up 0.65s 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --fade-up-dist: 36px;
+  animation: fade-up 0.65s 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* ========================= */
@@ -1195,11 +1255,13 @@
 /*       LIVE STATS          */
 /* ========================= */
 .ls-section       { background: var(--background); padding: 90px 40px; }
-.ls-heading       { text-align: center; margin-bottom: 52px; animation: ls-fade-up 0.5s ease both; }
+/* CHANGED BY AI (2026-07-15): please review — ls-fade-up replaced with the shared fade-up
+   keyframe (animations.css), 20px distance kept via --fade-up-dist. */
+.ls-heading       { text-align: center; margin-bottom: 52px; --fade-up-dist: 20px; animation: fade-up 0.5s ease both; }
 .ls-title         { font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 800; color: var(--primary); margin: 0 0 10px; }
 .ls-subtitle      { font-size: 1rem; color: #6b7280; margin: 0; }
 .ls-grid          { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; max-width: 1200px; margin: 0 auto; }
-.ls-card          { position: relative; border-radius: 18px; overflow: hidden; height: 340px; cursor: default; animation: ls-fade-up 0.5s ease both; transition: transform 0.35s ease; }
+.ls-card          { position: relative; border-radius: 18px; overflow: hidden; height: 340px; cursor: default; --fade-up-dist: 20px; animation: fade-up 0.5s ease both; transition: transform 0.35s ease; }
 .ls-card:nth-child(1) { animation-delay: 0.05s; }
 .ls-card:nth-child(2) { animation-delay: 0.12s; }
 .ls-card:nth-child(3) { animation-delay: 0.19s; }
@@ -1211,10 +1273,6 @@
 .ls-card-body         { position: absolute; bottom: 0; left: 0; right: 0; padding: 24px 22px; }
 .ls-num               { display: block; font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 900; color: #fff; line-height: 1; margin-bottom: 6px; }
 .ls-label             { font-size: 0.82rem; color: rgba(255,255,255,0.80); font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; }
-@keyframes ls-fade-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 @media (max-width: 960px) {
   .ls-grid { grid-template-columns: repeat(2, 1fr); max-width: 640px; margin: 0 auto; }
   .ls-card { height: 300px; }

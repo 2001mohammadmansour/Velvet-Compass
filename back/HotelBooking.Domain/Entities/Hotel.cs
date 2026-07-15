@@ -35,6 +35,14 @@ namespace HotelBooking.Domain.Entities
         public User Owner { get; set; } = null!;
         public ICollection<RoomType> RoomTypes { get; set; } = new List<RoomType>();
         public ICollection<HotelImage> HotelImages { get; set; } = new List<HotelImage>();
+        // CHANGED BY AI (2026-07-15): please review. New join for the hotel-level amenities
+        // catalog (wifi, parking, gym, etc.) — see Amenity/HotelAmenity.
+        public ICollection<HotelAmenity> HotelAmenities { get; set; } = new List<HotelAmenity>();
+        // CHANGED BY AI (2026-07-15): please review. Pricing system moved from per-room-type to
+        // hotel scope: one seasonal calendar and one demand-surge tier set per hotel, applied to
+        // every room type in it (see RoomPricingService).
+        public ICollection<SeasonalPriceRule> SeasonalPriceRules { get; set; } = new List<SeasonalPriceRule>();
+        public ICollection<OccupancyPriceTier> OccupancyPriceTiers { get; set; } = new List<OccupancyPriceTier>();
 
 
 

@@ -245,8 +245,8 @@ export default function MyBookings() {
 
       {user?.id && !loading && !error && (
         <div className="bookings-list">
-          {bookings.map((b) => (
-            <div key={b.id} className="booking-row" style={{ flexWrap: 'wrap', gap: 12 }}>
+          {bookings.map((b, i) => (
+            <div key={b.id} className="booking-row" style={{ flexWrap: 'wrap', gap: 12, animationDelay: `${i * 0.06}s` }}>
               <div className="booking-row-info">
                 <h3>{b.roomName}</h3>
                 <p className="hotel-name">{b.hotelName}</p>

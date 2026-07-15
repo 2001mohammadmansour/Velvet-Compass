@@ -51,11 +51,9 @@ export default function Login() {
         } catch (e) { /* owner may not have an approved hotel yet */ }
       }
 
-      if (next?.user?.role === 'hotel_owner') {
-        navigate('/ownerhome');
-      } else {
-        navigate('/');
-      }
+      // CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page,
+      // so everyone lands on the same page after login.
+      navigate('/');
     } catch (err) {
       alert('Login failed: ' + (err.message || err));
     } finally {

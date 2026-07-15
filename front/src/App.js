@@ -1,8 +1,10 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { getCurrentRole } from "./services/auth";
 import './App.css';
+import './animations.css';
 import Home from "./home";
 import Rooms from "./Rooms";
+import RoomDetail from "./RoomDetail";
 import Hotels from "./Hotels";
 import SearchResults from "./SearchResults";
 import MyBookings from "./MyBookings";
@@ -12,7 +14,6 @@ import SignUp from "./SignUp";
 import ServicesSection from "./ServicesSection"
 import Login from "./Login"
 import OwnerDashboard from "./OwnerDashboard";
-import OwnerHome from "./OwnerHome";
 import OwnerStats from "./OwnerStats";
 import OwnerHotelInfo from "./OwnerHotelInfo";
 import OwnerRequests from "./OwnerRequests";
@@ -23,11 +24,12 @@ import AdminDashboard from "./AdminDashboard";
 import ScrollToTop from "./ScrollToTop";
 import Navbar from "./Navbar";
 import NotificationBell from "./NotificationBell";
+import EditProfile from "./EditProfile";
 
 const PUBLIC_NAV = new Set([
-  '/', '/home', '/hotels', '/rooms', '/search', '/my-bookings',
+  '/', '/home', '/hotels', '/rooms', '/room-detail', '/search', '/my-bookings',
   '/reservation', '/services', '/about', '/contact', '/cities',
-  '/facilities-attractions',
+  '/facilities-attractions', '/profile',
 ]);
 
 function OwnerRoute({ children }) {
@@ -40,32 +42,37 @@ function AdminRoute({ children }) {
   return children;
 }
 
-// CHANGED BY AI (2026-07-13): please review — pages that render their own inline bell next to a
-// profile icon (Navbar.js's pages, plus OwnerHome's own inline navbar). The floating fallback
-// bell is suppressed on these so there's never a duplicate.
-const HAS_OWN_INLINE_BELL = new Set(['/ownerhome']);
-
 export default function App() {
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '/home';
   const showNavbar = PUBLIC_NAV.has(location.pathname);
-  const hasOwnBell = showNavbar || HAS_OWN_INLINE_BELL.has(location.pathname);
 
   return (
     <>
       <ScrollToTop />
-      {!hasOwnBell && <NotificationBell />}
+      {/* CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page
+          (see the /ownerhome redirect below), so every page with a shared Navbar already covers
+          them; the floating fallback bell is only needed on pages without one. */}
+      {!showNavbar && <NotificationBell />}
       {showNavbar && <Navbar transparent={isHome} />}
       <div key={location.pathname} className="page-enter">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
-          <Route path="/owner" element={<Navigate to="/ownerhome" replace />} />
-          <Route path="/ownerhome" element={<OwnerRoute><OwnerHome /></OwnerRoute>} />
+          {/* CHANGED BY AI (2026-07-13): please review — removed the separate owner home page
+              per request; both /owner and /ownerhome now just redirect to the normal home page.
+              Kept as redirects (rather than deleted routes) so existing links elsewhere in the
+              app (OwnerDashboard.js, OwnerHotelInfo.js, OwnerRequests.js, etc.) keep working. */}
+          <Route path="/owner" element={<Navigate to="/" replace />} />
+          <Route path="/ownerhome" element={<Navigate to="/" replace />} />
           <Route path="/rooms" element={<Rooms />} />
+          {/* CHANGED BY AI (2026-07-15): please review — new room detail/product page between the
+              room list and checkout; see RoomDetail.js. */}
+          <Route path="/room-detail" element={<RoomDetail />} />
           <Route path="/hotels" element={<Hotels />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/my-bookings" element={<MyBookings />} />
+          <Route path="/profile" element={<EditProfile />} />
           <Route path="/facilities-attractions" element={<FacilitiesAttractions />} />
           <Route path="/reservation" element={<Reservation />} />
           <Route path="/signup" element={<SignUp />} />

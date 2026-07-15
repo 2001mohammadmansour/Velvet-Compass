@@ -18,6 +18,16 @@ namespace HotelBooking.Application.DTOs.RoomTypes
         int Capacity,
         string? PrimaryImageUrl,
         decimal? AvgScore,
-        int ReviewCount
+        int ReviewCount,
+        // CHANGED BY AI (2026-07-15): please review. Description + extra-bed scalar fields, cheap
+        // to include here (no join needed). Amenities (a collection) deliberately excluded from
+        // this cross-hotel, potentially-many-rows DTO to avoid an N+1/payload-bloat risk — see
+        // RoomTypeSummaryDto (single-hotel, low row count) for where amenities are exposed instead.
+        string Description = "",
+        bool AllowExtraBed = false,
+        int MaxExtraBeds = 0,
+        string ExtraBedPriceType = "Percentage",
+        decimal ExtraBedPriceForOneBed = 0m,
+        decimal ExtraBedPriceForTwoBeds = 0m
     );
 }

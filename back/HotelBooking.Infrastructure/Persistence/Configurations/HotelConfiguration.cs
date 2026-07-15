@@ -44,6 +44,12 @@ namespace HotelBooking.Infrastructure.Persistence.Configurations
                 .WithOne(h => h.Hotel)
                 .HasForeignKey(h => h.HotelId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // CHANGED BY AI (2026-07-15): please review. New hotel-level amenities join.
+            builder.HasMany(h => h.HotelAmenities)
+                .WithOne(x => x.Hotel)
+                .HasForeignKey(x => x.HotelId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

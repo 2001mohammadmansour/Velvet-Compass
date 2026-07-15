@@ -24,6 +24,11 @@ namespace HotelBooking.Infrastructure.Persistence
         public DbSet<Review> Reviews => Set<Review>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<Trip> Trips => Set<Trip>();
+        public DbSet<Amenity> Amenities => Set<Amenity>();
+        public DbSet<HotelAmenity> HotelAmenities => Set<HotelAmenity>();
+        public DbSet<RoomTypeAmenity> RoomTypeAmenities => Set<RoomTypeAmenity>();
+        public DbSet<SeasonalPriceRule> SeasonalPriceRules => Set<SeasonalPriceRule>();
+        public DbSet<OccupancyPriceTier> OccupancyPriceTiers => Set<OccupancyPriceTier>();
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
