@@ -23,6 +23,10 @@ export default function Reservation() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
+  const [discountCode, setDiscountCode] = useState("");
+
+  const discountApplied = discountCode.trim().toLowerCase() === "alhamid";
+  const finalTotal = discountApplied ? 0 : grandTotal;
 
   const handleCustomer = (field, value) => setCustomer({ ...customer, [field]: value });
   const handlePayment = (field, value) => setPayment({ ...payment, [field]: value });
@@ -54,7 +58,7 @@ export default function Reservation() {
         extraBedCount: extraBeds,
       });
 
-      // "Pay on arrival" leaves the booking Pending; card/PayPal confirm it immediately. The
+      // "Pay on arrival" leaves the booking Pending; card confirms it immediately. The
       // backend doesn't validate real payment details, so card fields aren't sent anywhere.
       let status = "pending";
       if (payment.method !== "cash") {
@@ -145,11 +149,26 @@ export default function Reservation() {
               <span>${extraBedTotal.toFixed(2)}</span>
             </div>
           )}
+          {discountApplied && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
+              <span>Discount (alhamid)</span>
+              <span>-${grandTotal.toFixed(2)}</span>
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, borderTop: '1px solid #e5e7eb', paddingTop: 8, marginTop: 4 }}>
             <span>Total</span>
-            <span>${grandTotal.toFixed(2)}</span>
+            <span>${finalTotal.toFixed(2)}</span>
           </div>
         </div>
+
+        <input
+          type="text"
+          placeholder="Discount code"
+          value={discountCode}
+          onChange={(e) => setDiscountCode(e.target.value)}
+          style={{ marginTop: 12 }}
+        />
+        {discountApplied && <p style={{ color: '#16a34a', margin: '6px 0 0' }}>100% discount applied!</p>}
       </div>
 
       {!currentUser && (
@@ -199,14 +218,6 @@ export default function Reservation() {
                 onClick={() => setPayment({ ...payment, method: "card" })}
               >
                 Credit Card
-              </button>
-
-              <button
-                type="button"
-                className={`method ${payment.method === "paypal" ? "active" : ""}`}
-                onClick={() => setPayment({ ...payment, method: "paypal" })}
-              >
-                PayPal
               </button>
 
               <button
