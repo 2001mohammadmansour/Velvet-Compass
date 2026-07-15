@@ -28,6 +28,10 @@ namespace HotelBooking.Application.DTOs.RoomTypes
         int MaxExtraBeds = 0,
         string ExtraBedPriceType = "Percentage",
         decimal ExtraBedPriceForOneBed = 0m,
-        decimal ExtraBedPriceForTwoBeds = 0m
+        decimal ExtraBedPriceForTwoBeds = 0m,
+        // Rooms of this type still bookable for the searched dates (or overall, if no dates were
+        // given). Room types with 0 are excluded from search results entirely rather than relying
+        // on the frontend to hide them.
+        int AvailableCount = 0
     );
 }

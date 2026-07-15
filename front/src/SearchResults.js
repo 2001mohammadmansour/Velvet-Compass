@@ -334,6 +334,10 @@ export default function SearchResults() {
                     </button>
                   ) : <p className="sr-card-no-reviews">No reviews yet</p>}
 
+                  {room.availableCount > 0 && room.availableCount < 3 && (
+                    <p className="sr-low-stock">Only {room.availableCount} left</p>
+                  )}
+
                   <div className="sr-card-footer">
                     <p className="sr-card-price">
                       <span className="sr-price-amount">${room.price}</span>

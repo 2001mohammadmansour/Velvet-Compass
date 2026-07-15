@@ -18,13 +18,13 @@ namespace HotelBooking.Infrastructure.Services
             _context = context;
         }
 
-        // CHANGED BY AI (2026-07-13): please review. Backs the homepage's cross-hotel search
+        // CHANGED BY AI (2026-07-15): please review. Backs the homepage's cross-hotel search
         // (previously a mock "/api/rooms/search" endpoint that didn't exist on this backend at
         // all). Returns every room type across every hotel; the frontend still does destination/
-        // price/stars/score filtering client-side over this full list, same as before. No
-        // date-based availability filtering — matches the existing single-hotel room listing,
-        // which has the same limitation.
-        public async Task<List<RoomSearchResultDto>> SearchAsync()
+        // price/stars/score filtering client-side over this full list, same as before. Now excludes
+        // room types with zero rooms available (for the given dates, or overall if no dates were
+        // given) and reports AvailableCount so the frontend can show a "few left" notice.
+        public async Task<List<RoomSearchResultDto>> SearchAsync(DateOnly? checkIn = null, DateOnly? checkOut = null)
         {
             var roomTypes = await _context.RoomTypes
                 .Include(rt => rt.Hotel)
@@ -37,8 +37,11 @@ namespace HotelBooking.Infrastructure.Services
                 .GroupBy(r => r.RoomTypeId)
                 .Select(g => new { RoomTypeId = g.Key, Avg = g.Average(r => r.OverallScore), Count = g.Count() })
                 .ToDictionaryAsync(s => s.RoomTypeId);
+            var availableCounts = await GetAvailableCountsAsync(roomTypeIds, checkIn, checkOut);
 
-            return roomTypes.Select(rt =>
+            return roomTypes
+                .Where(rt => availableCounts.GetValueOrDefault(rt.Id, 0) > 0)
+                .Select(rt =>
             {
                 reviewStats.TryGetValue(rt.Id, out var stats);
                 return new RoomSearchResultDto(
@@ -59,9 +62,43 @@ namespace HotelBooking.Infrastructure.Services
                     rt.MaxExtraBeds,
                     rt.ExtraBedPriceType.ToString(),
                     rt.ExtraBedPriceForOneBed,
-                    rt.ExtraBedPriceForTwoBeds
+                    rt.ExtraBedPriceForTwoBeds,
+                    availableCounts.GetValueOrDefault(rt.Id, 0)
                 );
             }).ToList();
+        }
+
+        // CHANGED BY AI (2026-07-15): please review. Bulk version of BookingService's
+        // GetAvailableRoomsAsync, adapted to report a per-room-type count across many room types at
+        // once (2 queries total) instead of checking one room type at a time. Same rules: a room
+        // counts as available unless its Status isn't Available, or it has a Booked/Blocked
+        // RoomAvailability row overlapping [checkIn, checkOut) (checkout day itself is free). With
+        // no dates given, this is just the total Available-status room count per type.
+        private async Task<Dictionary<long, int>> GetAvailableCountsAsync(List<long> roomTypeIds, DateOnly? checkIn, DateOnly? checkOut)
+        {
+            var totalByRoomType = await _context.Rooms
+                .Where(r => roomTypeIds.Contains(r.RoomTypeId) && r.Status == RoomStatus.Available)
+                .GroupBy(r => r.RoomTypeId)
+                .Select(g => new { RoomTypeId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(g => g.RoomTypeId, g => g.Count);
+
+            if (checkIn is null || checkOut is null || checkOut <= checkIn)
+                return totalByRoomType;
+
+            var blockedByRoomType = await _context.RoomAvailabilities
+                .Where(a =>
+                    a.Date >= checkIn && a.Date < checkOut &&
+                    (a.Status == RoomAvailabilityStatus.Booked || a.Status == RoomAvailabilityStatus.Blocked) &&
+                    a.Room.Status == RoomStatus.Available &&
+                    roomTypeIds.Contains(a.Room.RoomTypeId))
+                .Select(a => new { a.RoomId, a.Room.RoomTypeId })
+                .Distinct()
+                .GroupBy(x => x.RoomTypeId)
+                .Select(g => new { RoomTypeId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(g => g.RoomTypeId, g => g.Count);
+
+            return roomTypeIds.ToDictionary(id => id, id =>
+                Math.Max(0, totalByRoomType.GetValueOrDefault(id, 0) - blockedByRoomType.GetValueOrDefault(id, 0)));
         }
 
         public async Task<RoomTypeDetailDto> GetRoomTypeById(long hotelId, long roomTypeId)
@@ -77,7 +114,7 @@ namespace HotelBooking.Infrastructure.Services
             return MapToRoomTypeDetailDto(roomType);
 
         }
-        public async Task<List<RoomTypeSummaryDto>> GetRoomTypesByHotelAsync(long hotelId)
+        public async Task<List<RoomTypeSummaryDto>> GetRoomTypesByHotelAsync(long hotelId, DateOnly? checkIn = null, DateOnly? checkOut = null)
         {
             var roomTypes = await _context.RoomTypes
                 .Include(rt => rt.RoomTypeImages)
@@ -99,8 +136,13 @@ namespace HotelBooking.Infrastructure.Services
                 .GroupBy(r => r.RoomTypeId)
                 .Select(g => new { RoomTypeId = g.Key, Avg = g.Average(r => r.OverallScore), Count = g.Count() })
                 .ToDictionaryAsync(s => s.RoomTypeId);
+            // CHANGED BY AI (2026-07-15): please review. Same sold-out exclusion + "few left" count
+            // as the cross-hotel search below, reusing the same bulk availability query.
+            var availableCounts = await GetAvailableCountsAsync(roomTypeIds, checkIn, checkOut);
 
-            return roomTypes.Select(rt =>
+            return roomTypes
+                .Where(rt => availableCounts.GetValueOrDefault(rt.Id, 0) > 0)
+                .Select(rt =>
             {
                 reviewStats.TryGetValue(rt.Id, out var stats);
                 return new RoomTypeSummaryDto(
@@ -118,7 +160,8 @@ namespace HotelBooking.Infrastructure.Services
                     rt.MaxExtraBeds,
                     rt.ExtraBedPriceType.ToString(),
                     rt.ExtraBedPriceForOneBed,
-                    rt.ExtraBedPriceForTwoBeds
+                    rt.ExtraBedPriceForTwoBeds,
+                    availableCounts.GetValueOrDefault(rt.Id, 0)
                 );
             }).ToList();
         }

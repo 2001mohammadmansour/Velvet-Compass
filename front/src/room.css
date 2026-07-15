@@ -794,6 +794,7 @@
 .sr-card-hotel { font-size: 13px; color: #6b7280; margin: 0; }
 .sr-card-stars { margin: 2px 0 0; color: #f59e0b; font-size: 15px; letter-spacing: 2px; }
 .sr-card-no-reviews { font-size: 12px; color: #d1d5db; margin: 2px 0 0; }
+.sr-low-stock { font-size: 12px; font-weight: 700; color: #dc2626; margin: 4px 0 0; }
 .sr-card-footer {
   display: flex;
   align-items: center;

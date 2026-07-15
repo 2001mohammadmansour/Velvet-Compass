@@ -206,11 +206,16 @@ export async function getAdminRevenueStats(filters = {}) {
 
 // CHANGED BY AI (2026-07-13): please review — rewired from a mock "/api/rooms/search" endpoint
 // that never existed on the real backend (the homepage search returned nothing/errored) to the
-// real cross-hotel search. checkIn/checkOut aren't used to filter here (the backend has no
-// date-based room-type search yet, same limitation getRoomTypesForHotel below already has) — they
-// stay as unused params so SearchResults.js doesn't need to change how it calls this.
+// real cross-hotel search.
+// CHANGED BY AI (2026-07-15): please review. checkIn/checkOut are now sent to the backend, which
+// excludes room types with zero rooms available for those dates and reports how many remain
+// (availableCount) — backs the "sold out rooms hidden" / "only N left" UI in SearchResults.js.
 export async function searchRooms({ checkIn, checkOut } = {}) {
-  const items = await request('/api/v1/room-types/search');
+  const params = new URLSearchParams();
+  if (checkIn) params.set('checkIn', checkIn);
+  if (checkOut) params.set('checkOut', checkOut);
+  const qs = params.toString();
+  const items = await request(`/api/v1/room-types/search${qs ? `?${qs}` : ''}`);
   const list = Array.isArray(items) ? items : [];
   return list.map((rt) => ({
     id: rt.id,
@@ -234,6 +239,7 @@ export async function searchRooms({ checkIn, checkOut } = {}) {
     extraBedPriceType: rt.extraBedPriceType === 'Fixed' ? 'fixed' : 'percentage',
     extraBedPriceForOneBed: Number(rt.extraBedPriceForOneBed) || 0,
     extraBedPriceForTwoBeds: Number(rt.extraBedPriceForTwoBeds) || 0,
+    availableCount: Number(rt.availableCount) || 0,
   }));
 }
 
@@ -261,10 +267,14 @@ export async function getRoomTypeDetail(hotelId, roomTypeId) {
 }
 
 // Returns the room types (used as "rooms" throughout the guest UI) for one specific hotel.
-// Note: check-in/check-out dates aren't used to filter availability yet — the backend has no
-// date-based room-type search, only per-room availability lookups (a separate future feature).
-export async function getRoomTypesForHotel(hotelId) {
-  const items = await request(`/api/v1/hotel/${hotelId}/room-types`);
+// CHANGED BY AI (2026-07-15): please review. checkIn/checkOut are now sent to the backend, same
+// as searchRooms above — sold-out room types are excluded and availableCount is reported.
+export async function getRoomTypesForHotel(hotelId, { checkIn, checkOut } = {}) {
+  const params = new URLSearchParams();
+  if (checkIn) params.set('checkIn', checkIn);
+  if (checkOut) params.set('checkOut', checkOut);
+  const qs = params.toString();
+  const items = await request(`/api/v1/hotel/${hotelId}/room-types${qs ? `?${qs}` : ''}`);
   const list = Array.isArray(items) ? items : [];
   return list.map((rt) => ({
     id: rt.id,
@@ -287,6 +297,7 @@ export async function getRoomTypesForHotel(hotelId) {
     extraBedPriceType: rt.extraBedPriceType === 'Fixed' ? 'fixed' : 'percentage',
     extraBedPriceForOneBed: Number(rt.extraBedPriceForOneBed) || 0,
     extraBedPriceForTwoBeds: Number(rt.extraBedPriceForTwoBeds) || 0,
+    availableCount: Number(rt.availableCount) || 0,
   }));
 }
 

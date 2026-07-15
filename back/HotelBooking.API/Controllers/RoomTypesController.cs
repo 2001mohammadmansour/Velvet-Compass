@@ -23,15 +23,17 @@ namespace HotelBooking.API.Controllers
             _reviewService = reviewService;
         }
         [HttpGet]
-        public async Task<IActionResult> GetAll(long hotelId)
-            => Ok(await _roomTypeService.GetRoomTypesByHotelAsync(hotelId));
+        public async Task<IActionResult> GetAll(long hotelId, [FromQuery] DateOnly? checkIn = null, [FromQuery] DateOnly? checkOut = null)
+            => Ok(await _roomTypeService.GetRoomTypesByHotelAsync(hotelId, checkIn, checkOut));
 
         // CHANGED BY AI (2026-07-13): please review. New public cross-hotel search endpoint,
         // replacing the frontend's previous mock "/api/rooms/search" call (which hit an endpoint
         // that never existed on this backend — the homepage search returned nothing/errored).
+        // CHANGED BY AI (2026-07-15): please review. Now accepts optional checkIn/checkOut so
+        // sold-out room types can be excluded and remaining stock reported (see RoomTypeServices).
         [HttpGet("~/api/v1/room-types/search")]
-        public async Task<IActionResult> Search()
-            => Ok(await _roomTypeService.SearchAsync());
+        public async Task<IActionResult> Search([FromQuery] DateOnly? checkIn = null, [FromQuery] DateOnly? checkOut = null)
+            => Ok(await _roomTypeService.SearchAsync(checkIn, checkOut));
 
         [HttpGet("{roomTypeId:long}")]
         public async Task<IActionResult> GetById(long hotelId, long roomTypeId)

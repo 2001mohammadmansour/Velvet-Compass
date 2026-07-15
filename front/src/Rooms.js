@@ -131,7 +131,7 @@ export default function Rooms() {
     if (!hid) { setAllRooms([]); setLoading(false); return }
     setLoading(true)
     setError('')
-    getRoomTypesForHotel(hid)
+    getRoomTypesForHotel(hid, { checkIn, checkOut })
       .then(data  => { if (mounted) setAllRooms(Array.isArray(data) ? data : []) })
       .catch(err  => { if (mounted) setError(err.message || 'Unable to load rooms.') })
       .finally(() => { if (mounted) setLoading(false) })
@@ -139,7 +139,7 @@ export default function Rooms() {
       .then(data => { if (mounted) setHotelAmenities(Array.isArray(data?.amenities) ? data.amenities : []) })
       .catch(() => { if (mounted) setHotelAmenities([]) })
     return () => { mounted = false }
-  }, [hotel?.hotelId])
+  }, [hotel?.hotelId, checkIn, checkOut])
 
   // Rooms that belong to this hotel
   const hotelKey = String(
@@ -357,6 +357,10 @@ export default function Rooms() {
                     </button>
                   ) : (
                     <p className="sr-card-no-reviews">No reviews yet</p>
+                  )}
+
+                  {room.availableCount > 0 && room.availableCount < 3 && (
+                    <p className="sr-low-stock">Only {room.availableCount} left</p>
                   )}
 
                   {/* CHANGED BY AI (2026-07-15): please review. New room description (truncated)
