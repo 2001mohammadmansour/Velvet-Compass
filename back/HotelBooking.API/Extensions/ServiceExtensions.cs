@@ -148,10 +148,9 @@ namespace HotelBooking.API.Extensions
             return services;
         }
 
-        // CHANGED BY AI (2026-07-13): please review. New DI registration for the Trips feature.
-        public static IServiceCollection AddTripServices(this IServiceCollection services)
+        public static IServiceCollection AddPartnerServices(this IServiceCollection services)
         {
-            services.AddScoped<ITripService, TripService>();
+            services.AddScoped<IPartnerService, PartnerService>();
             return services;
         }
 

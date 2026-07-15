@@ -3,7 +3,8 @@ import heroImage from './assets/homepage_slider.webp';
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useSiteContent } from './useSiteContent';
-import { getHotels, getStats } from './services/hotels';
+import { getStats } from './services/hotels';
+import { getPartners } from './services/partners';
 
 import hotelsStatImg  from './assets/verified hotels.jpg';
 import citiesStatImg  from './assets/city.jpg';
@@ -28,20 +29,11 @@ export default function Home() {
   const navigate = useNavigate();
 
   const [searchForm, setSearchForm] = useState({ destination: '', checkIn: '', checkOut: '', guests: 1 });
-  const [featuredHotels, setFeaturedHotels] = useState([]);
+  const [partners, setPartners] = useState([]);
   const [hotelStats, setHotelStats] = useState({ hotels: 0, cities: 0, bookings: 0, rooms: 0 });
 
   useEffect(() => {
-    getHotels().then(hotels => {
-      const highStar = hotels.filter(h => Number(h.stars) >= 4);
-      const byCity = {};
-      highStar.forEach(h => {
-        if (!byCity[h.city] || Number(h.stars) > Number(byCity[h.city].stars)) {
-          byCity[h.city] = h;
-        }
-      });
-      setFeaturedHotels(Object.values(byCity).sort((a, b) => Number(b.stars) - Number(a.stars)));
-    }).catch(() => {});
+    getPartners().then(setPartners).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -77,7 +69,7 @@ export default function Home() {
     );
     els.forEach(el => observer.observe(el));
     return () => observer.disconnect();
-  }, [featuredHotels]);
+  }, [partners]);
 
   return (
     <div className="home" id="home">
@@ -178,40 +170,36 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Featured Hotels ── */}
-      {featuredHotels.length > 0 && (
+      {/* ── Our Partners ── */}
+      {partners.length > 0 && (
         <section className="fh-section">
           <div className="fh-header" data-reveal>
-            <h2 className="fh-title">Recommended Hotels</h2>
+            <h2 className="fh-title">Our Partners</h2>
             <button
               className="fh-more-btn"
-              onClick={() => navigate('/hotels', { state: { initialFilters: { stars: [4, 5] } } })}
+              onClick={() => navigate('/partners')}
             >
               View More →
             </button>
           </div>
           <div className="fh-grid">
-            {featuredHotels.map((hotel, i) => (
+            {partners.map((partner, i) => (
               <div
-                key={hotel.hotelId || hotel.hotelName}
+                key={partner.id}
                 className="fh-card"
                 data-reveal
                 style={{ transitionDelay: `${i * 0.08}s` }}
-                onClick={() => navigate('/hotels', { state: { initialFilters: { city: hotel.city } } })}
+                onClick={() => navigate('/partners')}
               >
                 <div className="fh-img">
-                  {hotel.cardPhoto
-                    ? <img src={hotel.cardPhoto} alt={hotel.hotelName} />
-                    : <span className="fh-img-icon">🏨</span>
+                  {partner.imageUrl
+                    ? <img src={partner.imageUrl} alt={partner.name} />
+                    : <span className="fh-img-icon">🏙️</span>
                   }
                 </div>
                 <div className="fh-card-body">
-                  <div className="fh-stars">{'★'.repeat(Number(hotel.stars) || 0)}</div>
-                  <h3 className="fh-hotel-name">{hotel.hotelName}</h3>
-                  <p className="fh-city">{hotel.city}</p>
-                  {hotel.minPrice && (
-                    <p className="fh-price">From ${hotel.minPrice}/night</p>
-                  )}
+                  <h3 className="fh-hotel-name">{partner.name}</h3>
+                  <p className="fh-city">{partner.city}</p>
                 </div>
               </div>
             ))}

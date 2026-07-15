@@ -265,16 +265,13 @@ public static class DataSeeder
         context.HotelViews.AddRange(hotelViews);
         await context.SaveChangesAsync();
 
-        // CHANGED BY AI (2026-07-13): please review. Seeds the same default trips the
-        // "Facilities & Attractions" page used to hardcode client-side (useSiteContent.js), so a
-        // fresh install doesn't start with an empty page.
-        context.Trips.AddRange(
-            new Trip { Title = "Old City Walk", City = "Damascus", Price = 45, PriceLabel = "Budget", Type = "City trip", Duration = "Half day", Difficulty = "Easy", Description = "Explore historic alleys, traditional markets, and guided heritage stops through the heart of Damascus." },
-            new Trip { Title = "Aleppo Citadel Route", City = "Aleppo", Price = 95, PriceLabel = "Standard", Type = "City trip", Duration = "Full day", Difficulty = "Medium", Description = "A guided trip through landmarks, local food corners, and the iconic citadel experience." },
-            new Trip { Title = "Desert Sunset Trek", City = "Palmyra", Price = 170, PriceLabel = "Premium", Type = "Desert trip", Duration = "2 days", Difficulty = "Extreme", Description = "A guided desert journey with sunset views, campsite stories, and a calm night under the stars." },
-            new Trip { Title = "Coastal Sea Activities", City = "Latakia", Price = 130, PriceLabel = "Standard", Type = "Sea activity", Duration = "Full day", Difficulty = "Medium", Description = "Enjoy boat time, beach relaxation, and water activities led by local guides on the coast." },
-            new Trip { Title = "Tartus Family Escape", City = "Tartus", Price = 70, PriceLabel = "Budget", Type = "Sea activity", Duration = "Half day", Difficulty = "Easy", Description = "A relaxed seaside outing for families with guided stops, snacks, and easy coastal fun." },
-            new Trip { Title = "Homs Heritage Trail", City = "Homs", Price = 110, PriceLabel = "Standard", Type = "City trip", Duration = "Full day", Difficulty = "Hard", Description = "Discover city culture, historic sites, and local stories with a knowledgeable guide." }
+        context.Partners.AddRange(
+            new Partner { Name = "Old City Walk", City = "Damascus", Description = "Explore historic alleys, traditional markets, and guided heritage stops through the heart of Damascus." },
+            new Partner { Name = "Aleppo Citadel Route", City = "Aleppo", Description = "A guided trip through landmarks, local food corners, and the iconic citadel experience." },
+            new Partner { Name = "Desert Sunset Trek", City = "Palmyra", Description = "A guided desert journey with sunset views, campsite stories, and a calm night under the stars." },
+            new Partner { Name = "Coastal Sea Activities", City = "Latakia", Description = "Enjoy boat time, beach relaxation, and water activities led by local guides on the coast." },
+            new Partner { Name = "Tartus Family Escape", City = "Tartus", Description = "A relaxed seaside outing for families with guided stops, snacks, and easy coastal fun." },
+            new Partner { Name = "Homs Heritage Trail", City = "Homs", Description = "Discover city culture, historic sites, and local stories with a knowledgeable guide." }
         );
         await context.SaveChangesAsync();
 

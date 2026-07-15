@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { label: 'Home',                     href: '/' },
   { label: 'Services',                 href: '/services' },
   { label: 'Hotels',                   href: '/hotels' },
-  { label: 'Facilities & Attractions', href: '/facilities-attractions' },
+  { label: 'Our Partners',             href: '/partners' },
   { label: 'About Us',                 href: '/about' },
 ];
 

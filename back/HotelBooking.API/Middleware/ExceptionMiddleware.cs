@@ -55,7 +55,7 @@ namespace HotelBooking.API.Middleware
                 // dates guard rails (cancelled/completed/already-started bookings).
                 BookingNotModifiableException => (HttpStatusCode.BadRequest, ex.Message),
                 // CHANGED BY AI (2026-07-13): please review. New mapping for the Trips feature.
-                TripNotFoundException => (HttpStatusCode.NotFound, ex.Message),
+                PartnerNotFoundException => (HttpStatusCode.NotFound, ex.Message),
                 // CHANGED BY AI (2026-07-15): please review. New mappings for the amenities catalog
                 // and the extra-bed system (bad config, guest count over effective capacity).
                 AmenityNotFoundException => (HttpStatusCode.NotFound, ex.Message),

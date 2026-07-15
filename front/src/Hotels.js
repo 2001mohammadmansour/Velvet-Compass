@@ -4,7 +4,8 @@ import './room.css'
 import * as hotelsSvc from './services/hotels'
 const SYRIA_CITIES = [
   'Damascus', 'Aleppo', 'Homs', 'Hama', 'Latakia', 'Tartous',
-  'Idlib', 'Palmyra', 'Bloudan',
+  'Idlib', 'Palmyra', 'Bloudan', 'Deir ez-Zor', 'Qamishli',
+  'Daraa', 'As-Suwayda', 'Raqqa', 'Douma', 'Quneitra',
 ]
 
 const STAR_OPTIONS = [5, 4, 3, 2, 1]

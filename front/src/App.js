@@ -9,7 +9,7 @@ import Hotels from "./Hotels";
 import SearchResults from "./SearchResults";
 import MyBookings from "./MyBookings";
 import Reservation from "./Reservation"
-import FacilitiesAttractions from "./FacilitiesAttractions";
+import OurPartners from "./OurPartners";
 import SignUp from "./SignUp";
 import ServicesSection from "./ServicesSection"
 import Login from "./Login"
@@ -29,7 +29,7 @@ import EditProfile from "./EditProfile";
 const PUBLIC_NAV = new Set([
   '/', '/home', '/hotels', '/rooms', '/room-detail', '/search', '/my-bookings',
   '/reservation', '/services', '/about', '/contact', '/cities',
-  '/facilities-attractions', '/profile',
+  '/partners', '/profile',
 ]);
 
 function OwnerRoute({ children }) {
@@ -73,7 +73,7 @@ export default function App() {
           <Route path="/search" element={<SearchResults />} />
           <Route path="/my-bookings" element={<MyBookings />} />
           <Route path="/profile" element={<EditProfile />} />
-          <Route path="/facilities-attractions" element={<FacilitiesAttractions />} />
+          <Route path="/partners" element={<OurPartners />} />
           <Route path="/reservation" element={<Reservation />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/services" element={<ServicesSection />} />

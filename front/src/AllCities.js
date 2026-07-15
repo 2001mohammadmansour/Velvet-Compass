@@ -18,15 +18,16 @@ const ALL_CITIES = [
   { name: 'Hama',       description: 'City of the water wheels', img: hamaImg },
   { name: 'Latakia',    description: 'The Mediterranean coast', img: latakiaImg },
   { name: 'Tartous',    description: 'A coastal gem', img: tartousImg },
-  { name: 'Deir ez-Zor', description: 'The Euphrates city',    hidden: true },
+  { name: 'Deir ez-Zor', description: 'The Euphrates city' },
   { name: 'Idlib',       description: 'The northwest city',    img: idlibImg },
-  { name: 'Qamishli',   description: 'The northeastern hub',  hidden: true },
-  { name: 'Daraa',      description: 'The southern gateway',  hidden: true },
-  { name: 'As-Suwayda', description: 'The mountain city',     hidden: true },
+  { name: 'Qamishli',   description: 'The northeastern hub' },
+  { name: 'Daraa',      description: 'The southern gateway' },
+  { name: 'As-Suwayda', description: 'The mountain city' },
   { name: 'Palmyra',    description: 'Ancient desert wonder', img: palmyraImg },
-  { name: 'Raqqa',      description: 'City on the Euphrates', hidden: true },
-  { name: 'Douma',      description: 'Near the capital',      hidden: true },
+  { name: 'Raqqa',      description: 'City on the Euphrates' },
+  { name: 'Douma',      description: 'Near the capital' },
   { name: 'Bloudan',   description: 'A mountain summer resort', img: bloudanImg },
+  { name: 'Quneitra',  description: 'The southwestern frontier city' },
 ];
 
 export default function AllCities() {

@@ -35,7 +35,8 @@ function StarPicker({ value, onChange }) {
 
 const SYRIAN_CITIES = [
   'Damascus', 'Aleppo', 'Homs', 'Hama', 'Latakia', 'Tartous',
-  'Idlib', 'Palmyra', 'Bloudan',
+  'Idlib', 'Palmyra', 'Bloudan', 'Deir ez-Zor', 'Qamishli',
+  'Daraa', 'As-Suwayda', 'Raqqa', 'Douma', 'Quneitra',
 ];
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
