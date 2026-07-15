@@ -9,7 +9,8 @@ const NAV_LINKS = [
   { label: 'Services',                 href: '/services' },
   { label: 'Hotels',                   href: '/hotels' },
   { label: 'Our Partners',             href: '/partners' },
-  { label: 'About Us',                 href: '/about' },
+  // Temporarily hidden — not deleted, just parked for later. Route still exists at /about.
+  // { label: 'About Us',              href: '/about' },
 ];
 
 // CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page, so
