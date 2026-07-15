@@ -3,6 +3,7 @@ import {
   useEffect,
   useRef
 } from "react";
+import { useNavigate } from "react-router-dom";
 
 const services = [{
     id: 1,
@@ -240,6 +241,7 @@ function Card({
 
 export default function ServicesSection() {
   const [vis, setVis] = useState(false);
+  const navigate = useNavigate();
   useEffect(() => {
     setTimeout(() => setVis(true), 100);
   }, []);
@@ -458,8 +460,9 @@ export default function ServicesSection() {
                 }
               } >
               <
-              button className = "btn-primary" > Start booking now < /button> <
-              button className = "btn-outline" > Discover our services < /button> <
+              button className = "btn-primary" onClick = {
+                () => navigate('/hotels')
+              } > Start booking now < /button> <
               /div>
 
               <

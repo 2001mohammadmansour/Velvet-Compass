@@ -5,6 +5,7 @@ import HotelRequests from './HotelRequests';
 import AdminStats from './AdminStats';
 import AdminUsers from './AdminUsers';
 import AmenitiesAdmin from './AmenitiesAdmin';
+import NotificationBell from './NotificationBell';
 import { clearAuth } from './services/auth';
 import './AdminDashboard.css';
 
@@ -98,6 +99,7 @@ export default function AdminDashboard() {
           <button className="admin-header-btn admin-header-btn-danger" onClick={handleLogout}>
             Sign Out
           </button>
+          <NotificationBell inline />
         </div>
       </header>
 

@@ -52,8 +52,10 @@ export default function App() {
       <ScrollToTop />
       {/* CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page
           (see the /ownerhome redirect below), so every page with a shared Navbar already covers
-          them; the floating fallback bell is only needed on pages without one. */}
-      {!showNavbar && <NotificationBell />}
+          them; the floating fallback bell is only needed on pages without one.
+          Admin dashboard now renders its own inline bell in the header, so it's excluded here
+          too — otherwise the floating bell overlapped the Sign Out button. */}
+      {!showNavbar && location.pathname !== '/admin' && <NotificationBell />}
       {showNavbar && <Navbar transparent={isHome} />}
       <div key={location.pathname} className="page-enter">
         <Routes>

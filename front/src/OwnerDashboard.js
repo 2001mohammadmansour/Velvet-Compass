@@ -1290,20 +1290,22 @@ export default function OwnerDashboard() {
                 Allow extra bed
               </label>
               {allowExtraBed && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
-                  <label style={{ flex: '1 1 140px' }}>Max extra beds
-                    <select value={maxExtraBeds} onChange={(e) => setMaxExtraBeds(Number(e.target.value))}>
-                      <option value={1}>1</option>
-                      <option value={2}>2</option>
-                    </select>
-                  </label>
-                  <label style={{ flex: '1 1 160px' }}>Price type
-                    <select value={extraBedPriceType} onChange={(e) => setExtraBedPriceType(e.target.value)}>
-                      <option value="percentage">% of room price</option>
-                      <option value="fixed">Flat amount ($)</option>
-                    </select>
-                  </label>
-                  <label style={{ flex: '1 1 160px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                    <label style={{ flex: '1 1 140px' }}>Max extra beds
+                      <select value={maxExtraBeds} onChange={(e) => setMaxExtraBeds(Number(e.target.value))}>
+                        <option value={1}>1</option>
+                        <option value={2}>2</option>
+                      </select>
+                    </label>
+                    <label style={{ flex: '1 1 160px' }}>Price type
+                      <select value={extraBedPriceType} onChange={(e) => setExtraBedPriceType(e.target.value)}>
+                        <option value="percentage">% of room price</option>
+                        <option value="fixed">Flat amount ($)</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label>
                     Price for 1 extra bed {extraBedPriceType === 'percentage' ? '(%)' : '($)'}
                     <input
                       type="number"
@@ -1314,8 +1316,8 @@ export default function OwnerDashboard() {
                     />
                   </label>
                   {maxExtraBeds === 2 && (
-                    <label style={{ flex: '1 1 160px' }}>
-                      Price for 2 extra beds {extraBedPriceType === 'percentage' ? '(%)' : '($)'}
+                    <label>
+                      Price for 2 extra bed {extraBedPriceType === 'percentage' ? '(%)' : '($)'}
                       <input
                         type="number"
                         min={0}
