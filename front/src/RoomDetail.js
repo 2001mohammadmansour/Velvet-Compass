@@ -5,6 +5,7 @@
 // selection forward to Reservation.js, which is now a clean checkout-only page.
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./reservation.css";
 import "./roomDetail.css";
 import * as ownerSvc from "./services/owner";
@@ -13,9 +14,10 @@ import { getPriceQuote } from "./services/pricing";
 import { getRoomReviews } from "./services/guest";
 import { getCurrentUser } from "./services/auth";
 
-const CAT_LABELS = { staff: 'Staff', location: 'Location', facilities: 'Facilities', cleanliness: 'Cleanliness', comfort: 'Comfort', value: 'Value' };
+const CATEGORY_KEYS = ['staff', 'location', 'facilities', 'cleanliness', 'comfort', 'value'];
 
 function ReviewSnippet({ hotelId, roomId }) {
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
   useEffect(() => {
     if (!roomId || !hotelId) return;
@@ -24,16 +26,16 @@ function ReviewSnippet({ hotelId, roomId }) {
   if (!data || data.reviewCount === 0) return null;
   return (
     <div className="section-card">
-      <h2 className="section-title" style={{ fontSize: '1.1rem', marginBottom: 12 }}>Guest Reviews</h2>
+      <h2 className="section-title" style={{ fontSize: '1.1rem', marginBottom: 12 }}>{t('roomDetail.guestReviews')}</h2>
       <p style={{ marginBottom: 12 }}>
         <span style={{ fontSize: 28, fontWeight: 800, color: '#2a3d66' }}>{data.avgScore}</span>
-        <span style={{ fontSize: 14, color: '#6b7280', marginLeft: 6 }}>/ 10 · {data.reviewCount} review{data.reviewCount !== 1 ? 's' : ''}</span>
+        <span style={{ fontSize: 14, color: '#6b7280', marginInlineStart: 6 }}>{t('roomDetail.reviewsOverall', { count: data.reviewCount })}</span>
       </p>
       {data.categoryAverages && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-          {Object.entries(CAT_LABELS).map(([key, label]) => (
+          {CATEGORY_KEYS.map((key) => (
             <div key={key} style={{ background: '#f3f4f6', borderRadius: 8, padding: '5px 11px', textAlign: 'center', minWidth: 80 }}>
-              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 2 }}>{label}</div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 2 }}>{t(`myBookings.review.categories.${key}.label`)}</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2340' }}>{data.categoryAverages[key]}</div>
             </div>
           ))}
@@ -54,6 +56,7 @@ function ReviewSnippet({ hotelId, roomId }) {
 }
 
 export default function RoomDetail() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const incoming = location.state || {};
@@ -98,10 +101,10 @@ export default function RoomDetail() {
         setHotel(hotelData);
         if (settings?.breakfast?.available) setBreakfastSettings({ price: Number(settings.breakfast.price) || 0 });
       })
-      .catch((err) => { if (mounted) setError(err.message || 'Unable to load room.'); })
+      .catch((err) => { if (mounted) setError(err.message || t('roomDetail.loadError')); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
-  }, [roomRef?.hotelId, roomRef?.id]);
+  }, [roomRef?.hotelId, roomRef?.id, t]);
 
   const nights = useMemo(() => {
     if (!dates.checkIn || !dates.checkOut) return 0;
@@ -148,10 +151,14 @@ export default function RoomDetail() {
 
   function handleBookNow() {
     setBookError('');
-    if (!dates.checkIn || !dates.checkOut) { setBookError('Please choose check-in and check-out dates.'); return; }
-    if (new Date(dates.checkIn) >= new Date(dates.checkOut)) { setBookError('Check-out date must be after check-in date.'); return; }
+    if (!dates.checkIn || !dates.checkOut) { setBookError(t('roomDetail.errors.chooseDates')); return; }
+    if (new Date(dates.checkIn) >= new Date(dates.checkOut)) { setBookError(t('roomDetail.errors.checkoutAfterCheckin')); return; }
     if (guests > hardCapacity) {
-      setBookError(`This room sleeps up to ${hardCapacity} guests${maxExtraBeds ? ` (including ${maxExtraBeds} extra bed${maxExtraBeds === 1 ? '' : 's'})` : ''}.`);
+      setBookError(
+        maxExtraBeds
+          ? t('roomDetail.errors.capacityExceededWithBeds', { capacity: hardCapacity, beds: maxExtraBeds })
+          : t('roomDetail.errors.capacityExceeded', { capacity: hardCapacity })
+      );
       return;
     }
 
@@ -178,7 +185,7 @@ export default function RoomDetail() {
   if (!roomRef?.hotelId) {
     return (
       <div className="reservation-page">
-        <div className="section-card"><p>No room selected. <Link to="/hotels">Browse hotels</Link></p></div>
+        <div className="section-card"><p>{t('roomDetail.noRoomSelected')} <Link to="/hotels">{t('roomDetail.browseHotels')}</Link></p></div>
       </div>
     );
   }
@@ -186,10 +193,10 @@ export default function RoomDetail() {
   return (
     <div className="rd-page">
       <div className="back-wrapper rd-back-wrapper">
-        <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Back</button>
+        <button type="button" className="back-btn" onClick={() => navigate(-1)}>{t('roomDetail.back')}</button>
       </div>
 
-      {loading && <p className="sr-status">Loading room...</p>}
+      {loading && <p className="sr-status">{t('roomDetail.loading')}</p>}
       {error && <p className="sr-status sr-error">{error}</p>}
 
       {room && (
@@ -215,7 +222,7 @@ export default function RoomDetail() {
                   )}
                 </>
               ) : (
-                <div className="rd-gallery-placeholder">No photos yet</div>
+                <div className="rd-gallery-placeholder">{t('roomDetail.noPhotosYet')}</div>
               )}
             </div>
 
@@ -230,7 +237,7 @@ export default function RoomDetail() {
             {/* Hotel amenities */}
             {Array.isArray(hotel?.amenities) && hotel.amenities.length > 0 && (
               <div className="section-card">
-                <h2 className="section-title">Hotel Amenities</h2>
+                <h2 className="section-title">{t('roomDetail.hotelAmenities')}</h2>
                 <div className="rd-chip-row">
                   {hotel.amenities.map((a) => (
                     <span key={a.id} className="rd-chip">{a.icon ? `${a.icon} ` : ''}{a.name}</span>
@@ -242,7 +249,7 @@ export default function RoomDetail() {
             {/* Room amenities */}
             {room.amenities.length > 0 && (
               <div className="section-card">
-                <h2 className="section-title">Room Amenities</h2>
+                <h2 className="section-title">{t('roomDetail.roomAmenities')}</h2>
                 <div className="rd-chip-row">
                   {room.amenities.map((a) => (
                     <span key={a.id} className="rd-chip">{a.icon ? `${a.icon} ` : ''}{a.name}</span>
@@ -256,16 +263,16 @@ export default function RoomDetail() {
 
           <aside className="rd-sidebar">
             <div className="section-card rd-booking-card">
-              <h2 className="section-title">Book This Room</h2>
-              <p className="price">${room.price}<span style={{ fontSize: 13, fontWeight: 500, color: '#6b7280' }}> / night</span></p>
+              <h2 className="section-title">{t('roomDetail.bookThisRoom')}</h2>
+              <p className="price">${room.price}<span style={{ fontSize: 13, fontWeight: 500, color: '#6b7280' }}>{t('roomDetail.perNight')}</span></p>
 
-              <label className="field-label">Check-in</label>
+              <label className="field-label">{t('roomDetail.checkIn')}</label>
               <input type="date" value={dates.checkIn} onChange={(e) => setDates((d) => ({ ...d, checkIn: e.target.value }))} />
 
-              <label className="field-label">Check-out</label>
+              <label className="field-label">{t('roomDetail.checkOut')}</label>
               <input type="date" min={dates.checkIn || undefined} value={dates.checkOut} onChange={(e) => setDates((d) => ({ ...d, checkOut: e.target.value }))} />
 
-              <label className="field-label">Guests</label>
+              <label className="field-label">{t('roomDetail.guests')}</label>
               <input
                 type="number"
                 min={1}
@@ -279,11 +286,11 @@ export default function RoomDetail() {
                   to choose this themselves. */}
               {extraBedsNeeded > 0 ? (
                 <p className="muted small" style={{ margin: '-8px 0 12px' }}>
-                  This room includes {extraBedsNeeded} extra bed{extraBedsNeeded === 1 ? '' : 's'} to fit {guests} guests.
+                  {t('roomDetail.extraBedsNote', { count: extraBedsNeeded, guests })}
                 </p>
               ) : maxExtraBeds > 0 ? (
                 <p className="muted small" style={{ margin: '-8px 0 12px' }}>
-                  Sleeps {room.capacity} without an extra bed, up to {hardCapacity} with one.
+                  {t('roomDetail.sleepsNote', { capacity: room.capacity, hardCapacity })}
                 </p>
               ) : null}
 
@@ -295,14 +302,14 @@ export default function RoomDetail() {
                     onChange={(e) => setBreakfast(e.target.checked)}
                     style={{ width: 18, height: 18, margin: 0 }}
                   />
-                  <span>Breakfast <span style={{ color: '#555' }}>(+${breakfastSettings.price}/person/night)</span></span>
+                  <span>{t('roomDetail.breakfastLabel')} <span style={{ color: '#555' }}>{t('roomDetail.breakfastPrice', { price: breakfastSettings.price })}</span></span>
                 </label>
               )}
 
               {nights > 0 && (
                 <div className="rd-price-summary">
                   <div className="rd-price-row">
-                    <span>Room ({nights} night{nights !== 1 ? 's' : ''})</span>
+                    <span>{t('roomDetail.roomNights', { count: nights })}</span>
                     <span>{quoteLoading ? '…' : `$${roomTotal.toFixed(2)}`}</span>
                   </div>
                   {/* CHANGED BY AI (2026-07-15): please review. Small transparency touch — shows
@@ -310,16 +317,16 @@ export default function RoomDetail() {
                       night in this stay. */}
                   {quoteReasons.length > 0 && (
                     <p className="muted small" style={{ margin: '-2px 0 4px' }}>
-                      Includes: {quoteReasons.join(', ')}
+                      {t('roomDetail.includes', { reasons: quoteReasons.join(', ') })}
                     </p>
                   )}
                   {breakfast && breakfastSettings && (
-                    <div className="rd-price-row"><span>Breakfast</span><span>${breakfastTotal}</span></div>
+                    <div className="rd-price-row"><span>{t('roomDetail.breakfast')}</span><span>${breakfastTotal}</span></div>
                   )}
                   {extraBedsNeeded > 0 && (
-                    <div className="rd-price-row"><span>Extra bed{extraBedsNeeded === 1 ? '' : 's'}</span><span>${extraBedTotal.toFixed(2)}</span></div>
+                    <div className="rd-price-row"><span>{t('roomDetail.extraBed', { count: extraBedsNeeded })}</span><span>${extraBedTotal.toFixed(2)}</span></div>
                   )}
-                  <div className="rd-price-row rd-price-total"><span>Total</span><span>${grandTotal.toFixed(2)}</span></div>
+                  <div className="rd-price-row rd-price-total"><span>{t('roomDetail.total')}</span><span>${grandTotal.toFixed(2)}</span></div>
                 </div>
               )}
 
@@ -327,11 +334,11 @@ export default function RoomDetail() {
 
               {currentUser ? (
                 <button type="button" className="confirm-btn rd-book-btn" onClick={handleBookNow}>
-                  Book Now
+                  {t('roomDetail.bookNow')}
                 </button>
               ) : (
                 <Link to="/login" className="confirm-btn rd-book-btn" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
-                  Log in to Book
+                  {t('roomDetail.loginToBook')}
                 </Link>
               )}
             </div>

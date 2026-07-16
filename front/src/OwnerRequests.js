@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './ownerDashboard.css';
 import { submitHotelRequest, getMyHotelRequests, REQUEST_FIELDS } from './services/hotelRequests';
 import { fileToResizedDataUrl } from './data/imageUtil';
@@ -26,16 +27,18 @@ function StarPicker({ value, onChange }) {
 }
 
 function StatusBadge({ status }) {
+  const { t } = useTranslation();
   const map = {
-    pending: { label: 'Pending review', cls: 'orq-badge-pending' },
-    approved: { label: 'Approved', cls: 'orq-badge-approved' },
-    rejected: { label: 'Rejected', cls: 'orq-badge-rejected' },
+    pending: { label: t('ownerRequests.statuses.pending'), cls: 'orq-badge-pending' },
+    approved: { label: t('ownerRequests.statuses.approved'), cls: 'orq-badge-approved' },
+    rejected: { label: t('ownerRequests.statuses.rejected'), cls: 'orq-badge-rejected' },
   };
   const s = map[status] || map.pending;
   return <span className={`orq-badge ${s.cls}`}>{s.label}</span>;
 }
 
 export default function OwnerRequests() {
+  const { t } = useTranslation();
   const owner = useMemo(() => {
     const user = getCurrentUser() || {};
     return {
@@ -61,13 +64,13 @@ export default function OwnerRequests() {
   const [myRequests, setMyRequests] = useState([]);
   const [loadError, setLoadError] = useState('');
 
-  function loadRequests() {
+  const loadRequests = useCallback(() => {
     return getMyHotelRequests()
       .then(setMyRequests)
-      .catch((err) => setLoadError(err.message || 'Unable to load your requests.'));
-  }
+      .catch((err) => setLoadError(err.message || t('ownerRequests.errors.loadRequestsFailed')));
+  }, [t]);
 
-  useEffect(() => { loadRequests(); }, []);
+  useEffect(() => { loadRequests(); }, [loadRequests]);
 
   // Prefill edit form with the owner's current hotel info
   useEffect(() => {
@@ -92,7 +95,7 @@ export default function OwnerRequests() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_DOC_BYTES) {
-      setError('Document image is too large (max 8MB).');
+      setError(t('ownerRequests.errors.documentTooLarge'));
       e.target.value = '';
       return;
     }
@@ -101,7 +104,7 @@ export default function OwnerRequests() {
       setDoc({ name: file.name, dataUrl });
       setError('');
     } catch {
-      setError('Could not read the document image. Try another file.');
+      setError(t('ownerRequests.errors.documentUnreadable'));
     }
     e.target.value = '';
   }
@@ -110,15 +113,15 @@ export default function OwnerRequests() {
     e.preventDefault();
     setError('');
     if (!doc) {
-      setError('Please attach a document image (license / ownership proof).');
+      setError(t('ownerRequests.errors.documentRequired'));
       return;
     }
     if (!identity.ownerName.trim()) {
-      setError('Please enter your name.');
+      setError(t('ownerRequests.errors.nameRequired'));
       return;
     }
     if (type === 'edit' && !owner.hotelId) {
-      setError("You don't have an approved hotel to edit yet.");
+      setError(t('ownerRequests.errors.noApprovedHotel'));
       return;
     }
     setSubmitting(true);
@@ -131,15 +134,15 @@ export default function OwnerRequests() {
         document: doc,
       });
     } catch (err) {
-      setError(err.message || 'Could not submit the request.');
+      setError(err.message || t('ownerRequests.errors.submitFailed'));
       setSubmitting(false);
       return;
     }
     setDoc(null);
     setSuccess(
       type === 'create'
-        ? 'New hotel request submitted. The admin will review it.'
-        : 'Edit request submitted. The admin will review it.'
+        ? t('ownerRequests.success.created')
+        : t('ownerRequests.success.edited')
     );
     setSubmitting(false);
     await loadRequests();
@@ -148,13 +151,13 @@ export default function OwnerRequests() {
   return (
     <div className="owner-dashboard">
       <header className="od-header">
-        <h1>Hotel Requests</h1>
-        <p className="muted">Request a new hotel or changes to your hotel details. An admin must approve them.</p>
+        <h1>{t('ownerRequests.title')}</h1>
+        <p className="muted">{t('ownerRequests.subtitle')}</p>
       </header>
 
       <div style={{ marginBottom: 14 }}>
         <Link to="/ownerhome" className="cta" style={{ textDecoration: 'none', display: 'inline-block' }}>
-          Back to Owner Home
+          {t('ownerRequests.backToOwnerHome')}
         </Link>
       </div>
 
@@ -169,42 +172,42 @@ export default function OwnerRequests() {
               className={`orq-type-btn ${type === 'edit' ? 'active' : ''}`}
               onClick={() => setType('edit')}
             >
-              ✏️ Edit my hotel
+              {t('ownerRequests.editMyHotel')}
             </button>
             <button
               type="button"
               className={`orq-type-btn ${type === 'create' ? 'active' : ''}`}
               onClick={() => setType('create')}
             >
-              ➕ Register new hotel
+              {t('ownerRequests.registerNewHotel')}
             </button>
           </div>
 
           <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
             <label>
-              <div className="small muted" style={{ marginBottom: 4 }}>Your Name</div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerRequests.yourName')}</div>
               <input value={identity.ownerName}
                 onChange={(e) => setIdentity((p) => ({ ...p, ownerName: e.target.value }))}
-                placeholder="Owner name" required className="orq-input" />
+                placeholder={t('ownerRequests.yourNamePlaceholder')} required className="orq-input" />
             </label>
             <label>
-              <div className="small muted" style={{ marginBottom: 4 }}>Your Email</div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerRequests.yourEmail')}</div>
               <input type="email" value={identity.ownerEmail}
                 onChange={(e) => setIdentity((p) => ({ ...p, ownerEmail: e.target.value }))}
                 placeholder="you@email.com" className="orq-input" />
             </label>
             <label style={{ gridColumn: '1 / -1' }}>
-              <div className="small muted" style={{ marginBottom: 4 }}>Address</div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerRequests.address')}</div>
               <input value={form.address} onChange={(e) => updateField('address', e.target.value)}
-                placeholder="Street, district, details" className="orq-input" />
+                placeholder={t('ownerRequests.addressPlaceholder')} className="orq-input" />
             </label>
             <div style={{ gridColumn: '1 / -1' }}>
-              <div className="small muted" style={{ marginBottom: 6 }}>Hotel Stars</div>
+              <div className="small muted" style={{ marginBottom: 6 }}>{t('ownerRequests.hotelStars')}</div>
               <StarPicker value={form.stars} onChange={(n) => updateField('stars', n)} />
             </div>
 
             <label style={{ gridColumn: '1 / -1' }}>
-              <div className="small muted" style={{ marginBottom: 4 }}>Document image (license / ownership proof) — required</div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerRequests.documentImage')}</div>
               <input type="file" accept="image/*" onChange={handleDoc} />
               {doc && (
                 <div className="orq-doc-preview">
@@ -217,22 +220,22 @@ export default function OwnerRequests() {
 
           <div style={{ marginTop: 14 }}>
             <button className="save-btn" type="submit" disabled={submitting}>
-              {submitting ? 'Submitting...' : 'Submit request'}
+              {submitting ? t('ownerRequests.submitting') : t('ownerRequests.submitRequest')}
             </button>
           </div>
         </form>
       </section>
 
       <section className="od-row" style={{ marginTop: 18 }}>
-        <h2 style={{ marginTop: 0 }}>My requests</h2>
+        <h2 style={{ marginTop: 0 }}>{t('ownerRequests.myRequests')}</h2>
         {loadError && <p className="muted small" style={{ color: '#e05555' }}>{loadError}</p>}
-        {myRequests.length === 0 && !loadError && <p className="muted small">You haven't submitted any requests yet.</p>}
+        {myRequests.length === 0 && !loadError && <p className="muted small">{t('ownerRequests.noRequestsYet')}</p>}
         <div className="orq-list">
           {myRequests.map((r) => (
             <div key={r.id} className="orq-card">
               <div className="orq-card-head">
                 <div>
-                  <strong>{r.type === 'create' ? 'New hotel' : 'Edit hotel'}</strong>
+                  <strong>{r.type === 'create' ? t('ownerRequests.newHotel') : t('ownerRequests.editHotel')}</strong>
                   {' · '}
                   <span className="muted small">{new Date(r.createdAt).toLocaleString()}</span>
                 </div>
@@ -242,7 +245,7 @@ export default function OwnerRequests() {
                 {REQUEST_FIELDS.map((f) =>
                   r.changes?.[f.key] ? (
                     <div key={f.key} className="orq-change-line">
-                      <span className="muted small">{f.label}:</span>{' '}
+                      <span className="muted small">{t(`ownerRequests.fields.${f.key}`, f.label)}:</span>{' '}
                       {f.render ? f.render(r.changes[f.key]) : r.changes[f.key]}
                     </div>
                   ) : null
@@ -250,7 +253,7 @@ export default function OwnerRequests() {
               </div>
               {r.status === 'rejected' && r.rejectionReason && (
                 <div className="orq-reject-reason">
-                  <strong>Rejection reason:</strong> {r.rejectionReason}
+                  <strong>{t('ownerRequests.rejectionReason')}</strong> {r.rejectionReason}
                 </div>
               )}
             </div>

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './home.css';
 import NotificationBell from './NotificationBell';
 
@@ -7,7 +8,8 @@ import NotificationBell from './NotificationBell';
 // hotel_owner role ended up missing from Navbar.js in the first place (it was built once for
 // guests, and the owner version was written separately in OwnerHome.js and never kept in sync).
 // One shared component now backs every place a logged-in user sees their profile menu.
-export default function ProfileMenu({ name, subtitle, links, onSignOut, triggerLabel = 'Account profile' }) {
+export default function ProfileMenu({ name, subtitle, links, onSignOut, triggerLabel }) {
+  const { t } = useTranslation();
   return (
     <div className="owner-profile-slot">
       <NotificationBell inline />
@@ -15,7 +17,7 @@ export default function ProfileMenu({ name, subtitle, links, onSignOut, triggerL
         {/* CHANGED BY AI (2026-07-13): please review — trigger no longer repeats the name (it
             was showing once here and again in the dropdown header right below it); just the icon
             and a caret now, name lives in one place only. */}
-        <button className="owner-profile-trigger" type="button" aria-label={triggerLabel}>
+        <button className="owner-profile-trigger" type="button" aria-label={triggerLabel || t('nav.accountProfile')}>
           <span className="owner-profile-icon">👤</span>
           <span className="owner-profile-caret">▾</span>
         </button>
@@ -32,7 +34,7 @@ export default function ProfileMenu({ name, subtitle, links, onSignOut, triggerL
             <Link key={link.to} to={link.to} className="owner-profile-dashboard-link">{link.label}</Link>
           ))}
           <div className="owner-profile-divider" />
-          <button type="button" className="owner-profile-signout-btn" onClick={onSignOut}>Sign Out</button>
+          <button type="button" className="owner-profile-signout-btn" onClick={onSignOut}>{t('nav.signOut')}</button>
         </div>
       </div>
     </div>

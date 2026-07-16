@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './room.css';
 import './reservation.css';
 import { getCurrentUser } from './services/auth';
@@ -9,6 +10,7 @@ import { getMyProfile, updateMyProfile, changeMyPassword, updateStoredUsername }
 // (guest or owner) change their username and phone number, and change their password. Email is
 // intentionally read-only; the backend never accepts a change to it here either.
 export default function EditProfile() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = getCurrentUser();
 
@@ -35,17 +37,17 @@ export default function EditProfile() {
         setProfile(p);
         setForm({ username: p.username, phoneNumber: p.phoneNumber });
       })
-      .catch((err) => { if (mounted) setLoadError(err.message || 'Unable to load your profile.'); })
+      .catch((err) => { if (mounted) setLoadError(err.message || t('editProfile.loadError')); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
-  }, [user?.id]);
+  }, [user?.id, t]);
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setProfileError('');
     setProfileSuccess('');
     if (!form.username.trim()) {
-      setProfileError('Username can\'t be empty.');
+      setProfileError(t('editProfile.errors.usernameEmpty'));
       return;
     }
     setSavingProfile(true);
@@ -54,9 +56,9 @@ export default function EditProfile() {
       setProfile(updated);
       setForm({ username: updated.username, phoneNumber: updated.phoneNumber });
       updateStoredUsername(updated.username);
-      setProfileSuccess('Profile updated.');
+      setProfileSuccess(t('editProfile.success.profileUpdated'));
     } catch (err) {
-      setProfileError(err.message || 'Unable to update profile.');
+      setProfileError(err.message || t('editProfile.errors.profileUpdateFailed'));
     } finally {
       setSavingProfile(false);
     }
@@ -68,24 +70,24 @@ export default function EditProfile() {
     setPasswordSuccess('');
     const { currentPassword, newPassword, confirmPassword } = passwordForm;
     if (!currentPassword || !newPassword) {
-      setPasswordError('Fill in both your current and new password.');
+      setPasswordError(t('editProfile.errors.bothPasswordsRequired'));
       return;
     }
     if (newPassword.length < 8 || !/\d/.test(newPassword)) {
-      setPasswordError('New password must be at least 8 characters and include a digit.');
+      setPasswordError(t('editProfile.errors.passwordTooWeak'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords don\'t match.');
+      setPasswordError(t('editProfile.errors.passwordsDontMatch'));
       return;
     }
     setSavingPassword(true);
     try {
       await changeMyPassword({ currentPassword, newPassword });
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setPasswordSuccess('Password changed.');
+      setPasswordSuccess(t('editProfile.success.passwordChanged'));
     } catch (err) {
-      setPasswordError(err.message || 'Unable to change password.');
+      setPasswordError(err.message || t('editProfile.errors.passwordChangeFailed'));
     } finally {
       setSavingPassword(false);
     }
@@ -94,22 +96,22 @@ export default function EditProfile() {
   return (
     <div className="rooms-page">
       <div className="back-wrapper">
-        <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Back</button>
+        <button type="button" className="back-btn" onClick={() => navigate(-1)}>{t('editProfile.back')}</button>
       </div>
 
-      <h1 className="section-title">Edit Profile</h1>
+      <h1 className="section-title">{t('editProfile.title')}</h1>
 
-      {!user?.id && <div className="empty-state"><p>Please log in to edit your profile.</p></div>}
-      {loading && <p style={{ textAlign: 'center', marginBottom: 20 }}>Loading your profile...</p>}
+      {!user?.id && <div className="empty-state"><p>{t('editProfile.pleaseLogin')}</p></div>}
+      {loading && <p style={{ textAlign: 'center', marginBottom: 20 }}>{t('editProfile.loading')}</p>}
       {loadError && <p style={{ textAlign: 'center', color: '#9b1c1c', marginBottom: 20 }}>{loadError}</p>}
 
       {user?.id && !loading && !loadError && profile && (
         <div style={{ maxWidth: 520, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
           <section className="section-card">
-            <h2 className="section-title" style={{ fontSize: '1.1rem', marginBottom: 12 }}>Account Information</h2>
+            <h2 className="section-title" style={{ fontSize: '1.1rem', marginBottom: 12 }}>{t('editProfile.accountInformation')}</h2>
             <form onSubmit={handleProfileSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                Username
+                {t('editProfile.username')}
                 <input
                   value={form.username}
                   onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
@@ -119,7 +121,7 @@ export default function EditProfile() {
               </label>
 
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                Phone Number
+                {t('editProfile.phoneNumber')}
                 <input
                   value={form.phoneNumber}
                   onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value }))}
@@ -129,7 +131,7 @@ export default function EditProfile() {
               </label>
 
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                Email <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>(cannot be changed)</span>
+                {t('editProfile.email')} <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>{t('editProfile.cannotBeChanged')}</span>
                 <input
                   value={profile.email}
                   readOnly
@@ -141,16 +143,16 @@ export default function EditProfile() {
               {profileSuccess && <p style={{ color: '#166534', fontSize: 13, margin: 0 }}>{profileSuccess}</p>}
 
               <button type="submit" className="cta" disabled={savingProfile} style={{ alignSelf: 'flex-start' }}>
-                {savingProfile ? 'Saving...' : 'Save Changes'}
+                {savingProfile ? t('editProfile.saving') : t('editProfile.saveChanges')}
               </button>
             </form>
           </section>
 
           <section className="section-card">
-            <h2 className="section-title" style={{ fontSize: '1.1rem', marginBottom: 12 }}>Change Password</h2>
+            <h2 className="section-title" style={{ fontSize: '1.1rem', marginBottom: 12 }}>{t('editProfile.changePassword')}</h2>
             <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                Current Password
+                {t('editProfile.currentPassword')}
                 <input
                   type="password"
                   value={passwordForm.currentPassword}
@@ -161,7 +163,7 @@ export default function EditProfile() {
               </label>
 
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                New Password <span style={{ color: '#9ca3af' }}>(min 8 characters, include a digit)</span>
+                {t('editProfile.newPassword')} <span style={{ color: '#9ca3af' }}>{t('editProfile.newPasswordHint')}</span>
                 <input
                   type="password"
                   value={passwordForm.newPassword}
@@ -172,7 +174,7 @@ export default function EditProfile() {
               </label>
 
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                Confirm New Password
+                {t('editProfile.confirmNewPassword')}
                 <input
                   type="password"
                   value={passwordForm.confirmPassword}
@@ -186,7 +188,7 @@ export default function EditProfile() {
               {passwordSuccess && <p style={{ color: '#166534', fontSize: 13, margin: 0 }}>{passwordSuccess}</p>}
 
               <button type="submit" className="cta" disabled={savingPassword} style={{ alignSelf: 'flex-start' }}>
-                {savingPassword ? 'Saving...' : 'Change Password'}
+                {savingPassword ? t('editProfile.saving') : t('editProfile.changePasswordBtn')}
               </button>
             </form>
           </section>

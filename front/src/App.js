@@ -26,10 +26,12 @@ import Navbar from "./Navbar";
 import NotificationBell from "./NotificationBell";
 import EditProfile from "./EditProfile";
 
-const PUBLIC_NAV = new Set([
+const NAVBAR_ROUTES = new Set([
   '/', '/home', '/hotels', '/rooms', '/room-detail', '/search', '/my-bookings',
   '/reservation', '/services', '/about', '/contact', '/cities',
   '/partners', '/profile',
+  '/owner/dashboard', '/owner/stats', '/owner/hotel-info', '/owner/requests',
+  '/admin',
 ]);
 
 function OwnerRoute({ children }) {
@@ -45,18 +47,16 @@ function AdminRoute({ children }) {
 export default function App() {
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '/home';
-  const showNavbar = PUBLIC_NAV.has(location.pathname);
+  const showNavbar = NAVBAR_ROUTES.has(location.pathname);
 
   return (
     <>
       <ScrollToTop />
-      {/* CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page
-          (see the /ownerhome redirect below), so every page with a shared Navbar already covers
-          them; the floating fallback bell is only needed on pages without one.
-          Admin dashboard now renders its own inline bell in the header, so it's excluded here
-          too — otherwise the floating bell overlapped the Sign Out button. */}
-      {!showNavbar && location.pathname !== '/admin' && <NotificationBell />}
-      {showNavbar && <Navbar transparent={isHome} />}
+      {/* Every page with a shared Navbar already has an inline notification bell (via ProfileMenu
+          for guests/owners, or directly for admin); the floating fallback bell is only needed on
+          pages without one. */}
+      {!showNavbar && <NotificationBell />}
+      {showNavbar && <Navbar transparent={isHome} flush={location.pathname === '/admin'} />}
       <div key={location.pathname} className="page-enter">
         <Routes>
           <Route path="/" element={<Home />} />

@@ -1,6 +1,7 @@
 import './home.css';
 import './AllCities.css';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import damascusImg from './assets/Damascus.jpg';
 import aleppoImg   from './assets/Aleppo.jpg';
 import tartousImg  from './assets/Tartous.jpg';
@@ -20,32 +21,33 @@ import quneitraImg from './assets/quneitra.jpg';
 
 
 const ALL_CITIES = [
-  { name: 'Damascus',    description: 'The ancient capital', img: damascusImg },
-  { name: 'Aleppo',     description: 'The historic northern city', img: aleppoImg },
-  { name: 'Homs',       description: 'The heart of Syria', img: homsImg },
-  { name: 'Hama',       description: 'City of the water wheels', img: hamaImg },
-  { name: 'Latakia',    description: 'The Mediterranean coast', img: latakiaImg },
-  { name: 'Tartous',    description: 'A coastal gem', img: tartousImg },
-  { name: 'Deir ez-Zor', description: 'The Euphrates city', img: deirImg },
-  { name: 'Idlib',       description: 'The northwest city',    img: idlibImg },
-  { name: 'Qamishli',   description: 'The northeastern hub', img: qamishliImg },
-  { name: 'Daraa',      description: 'The southern gateway', img: daraaImg },
-  { name: 'As-Suwayda', description: 'The mountain city', img: suwaydaImg },
-  { name: 'Palmyra',    description: 'Ancient desert wonder', img: palmyraImg },
-  { name: 'Raqqa',      description: 'City on the Euphrates', img: raqqaImg },
-  { name: 'Douma',      description: 'Near the capital', img: doumaImg },
-  { name: 'Bloudan',   description: 'A mountain summer resort', img: bloudanImg },
-  { name: 'Quneitra',  description: 'The southwestern frontier city', img: quneitraImg },
+  { name: 'Damascus',    img: damascusImg },
+  { name: 'Aleppo',      img: aleppoImg },
+  { name: 'Homs',        img: homsImg },
+  { name: 'Hama',        img: hamaImg },
+  { name: 'Latakia',     img: latakiaImg },
+  { name: 'Tartous',     img: tartousImg },
+  { name: 'Deir ez-Zor', img: deirImg },
+  { name: 'Idlib',       img: idlibImg },
+  { name: 'Qamishli',    img: qamishliImg },
+  { name: 'Daraa',       img: daraaImg },
+  { name: 'As-Suwayda',  img: suwaydaImg },
+  { name: 'Palmyra',     img: palmyraImg },
+  { name: 'Raqqa',       img: raqqaImg },
+  { name: 'Douma',       img: doumaImg },
+  { name: 'Bloudan',     img: bloudanImg },
+  { name: 'Quneitra',    img: quneitraImg },
 ];
 
 export default function AllCities() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
     <div className="home">
       <div className="ac-hero">
-        <h1 className="ac-hero-title">Explore All Cities</h1>
-        <p className="ac-hero-sub">Choose a city and discover the best hotels waiting for you</p>
+        <h1 className="ac-hero-title">{t('allCities.title')}</h1>
+        <p className="ac-hero-sub">{t('allCities.subtitle')}</p>
       </div>
 
       <div className="ac-grid-section">
@@ -65,8 +67,8 @@ export default function AllCities() {
               </div>
               <div className="ac-card-body">
                 <h3 className="ac-city-name">{city.name}</h3>
-                <p className="ac-city-desc">{city.description}</p>
-                <button className="ac-explore-btn">Explore Hotels →</button>
+                <p className="ac-city-desc">{t(`allCities.descriptions.${city.name}`)}</p>
+                <button className="ac-explore-btn">{t('allCities.exploreHotels')}</button>
               </div>
             </div>
           ))}
@@ -74,7 +76,7 @@ export default function AllCities() {
       </div>
 
       <footer className="footer">
-        <p>© 2026 Velvet Compass. All rights reserved.</p>
+        <p>{t('allCities.footer')}</p>
       </footer>
     </div>
   );

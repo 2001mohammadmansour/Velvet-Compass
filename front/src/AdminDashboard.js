@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import HotelsAnalytics from './HotelsAnalytics';
 import HotelRequests from './HotelRequests';
 import AdminStats from './AdminStats';
 import AdminUsers from './AdminUsers';
 import AmenitiesAdmin from './AmenitiesAdmin';
-import NotificationBell from './NotificationBell';
-import { clearAuth } from './services/auth';
 import { getAdminDashboard } from './services/hotels';
 import { getAllHotelRequests } from './services/hotelRequests';
 import './AdminDashboard.css';
@@ -21,6 +19,7 @@ function formatMoney(value) {
 // data the Hotels Analytics / Hotel Requests tabs already fetch), so it's an actual at-a-glance
 // summary instead of a second nav menu.
 function OverviewTab({ onTabChange }) {
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -34,43 +33,43 @@ function OverviewTab({ onTabChange }) {
         setData(dashboard);
         setPendingRequests(requests.filter((r) => r.status === 'pending').length);
       })
-      .catch((err) => { if (mounted) setError(err.message || 'Unable to load overview.'); })
+      .catch((err) => { if (mounted) setError(err.message || t('adminDashboard.overviewTab.loadError')); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
-  }, []);
+  }, [t]);
 
   return (
     <>
-      {loading && <p className="admin-stat-sub">Loading overview...</p>}
+      {loading && <p className="admin-stat-sub">{t('adminDashboard.overviewTab.loading')}</p>}
       {error && <p className="admin-stat-sub" style={{ color: '#e05555' }}>{error}</p>}
 
       {data && (
         <div className="admin-stats-row">
           <div className="admin-stat-card">
-            <div className="admin-stat-label">Platform Revenue</div>
+            <div className="admin-stat-label">{t('adminDashboard.overviewTab.platformRevenue')}</div>
             <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(data.revenue?.totalRevenue)}</div>
-            <div className="admin-stat-sub">All-time booking fees + penalties</div>
+            <div className="admin-stat-sub">{t('adminDashboard.overviewTab.platformRevenueSub')}</div>
           </div>
           <div className="admin-stat-card">
-            <div className="admin-stat-label">Hotels / Users</div>
+            <div className="admin-stat-label">{t('adminDashboard.overviewTab.hotelsUsers')}</div>
             <div className="admin-stat-value" style={{ fontSize: 20 }}>{data.bookingStats?.totalHotels ?? 0} / {data.bookingStats?.totalUsers ?? 0}</div>
-            <div className="admin-stat-sub">Total registered</div>
+            <div className="admin-stat-sub">{t('adminDashboard.overviewTab.totalRegistered')}</div>
           </div>
           <div className="admin-stat-card">
-            <div className="admin-stat-label">Confirmed Bookings</div>
+            <div className="admin-stat-label">{t('adminDashboard.overviewTab.confirmedBookings')}</div>
             <div className="admin-stat-value" style={{ fontSize: 20 }}>{data.bookingStats?.confirmedBookings ?? 0}</div>
-            <div className="admin-stat-sub">All-time</div>
+            <div className="admin-stat-sub">{t('adminDashboard.overviewTab.allTime')}</div>
           </div>
           <div
             className="admin-stat-card"
             style={{ cursor: 'pointer' }}
             onClick={() => onTabChange('requests')}
           >
-            <div className="admin-stat-label">Pending Hotel Requests</div>
+            <div className="admin-stat-label">{t('adminDashboard.overviewTab.pendingHotelRequests')}</div>
             <div className="admin-stat-value" style={{ fontSize: 20, color: pendingRequests > 0 ? '#f59e0b' : undefined }}>
               {pendingRequests}
             </div>
-            <div className="admin-stat-sub">{pendingRequests > 0 ? 'Needs review' : 'All caught up'}</div>
+            <div className="admin-stat-sub">{pendingRequests > 0 ? t('adminDashboard.overviewTab.needsReview') : t('adminDashboard.overviewTab.allCaughtUp')}</div>
           </div>
         </div>
       )}
@@ -82,58 +81,33 @@ function OverviewTab({ onTabChange }) {
    MAIN ADMIN DASHBOARD COMPONENT
 ══════════════════════════════════ */
 export default function AdminDashboard() {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview');
 
-  const handleLogout = () => {
-    clearAuth();
-    navigate('/login');
-  };
-
   const NAV_ITEMS = [
-    { key: 'overview', icon: '📊', label: 'Overview' },
-    { key: 'hotels', icon: '🏨', label: 'Hotels Analytics' },
-    { key: 'stats', icon: '📈', label: 'Revenue Stats' },
-    { key: 'users', icon: '👥', label: 'Users' },
-    { key: 'requests', icon: '📥', label: 'Hotel Requests' },
-    { key: 'amenities', icon: '🛎️', label: 'Amenities' },
+    { key: 'overview', icon: '📊', label: t('adminDashboard.nav.overview') },
+    { key: 'hotels', icon: '🏨', label: t('adminDashboard.nav.hotels') },
+    { key: 'stats', icon: '📈', label: t('adminDashboard.nav.stats') },
+    { key: 'users', icon: '👥', label: t('adminDashboard.nav.users') },
+    { key: 'requests', icon: '📥', label: t('adminDashboard.nav.requests') },
+    { key: 'amenities', icon: '🛎️', label: t('adminDashboard.nav.amenities') },
   ];
 
   const SECTION_DESCRIPTIONS = {
-    overview: 'Admin panel overview and quick navigation',
-    hotels: 'Platform revenue, bookings, and top hotels',
-    stats: 'Monthly, quarterly, and yearly revenue charts across all hotels',
-    users: 'All users, their booking activity, and hotels owned',
-    requests: 'Approve or reject hotel owner requests to create or edit a hotel',
-    amenities: 'Manage the catalog of hotel and room benefits owners can pick from',
+    overview: t('adminDashboard.sectionDescriptions.overview'),
+    hotels: t('adminDashboard.sectionDescriptions.hotels'),
+    stats: t('adminDashboard.sectionDescriptions.stats'),
+    users: t('adminDashboard.sectionDescriptions.users'),
+    requests: t('adminDashboard.sectionDescriptions.requests'),
+    amenities: t('adminDashboard.sectionDescriptions.amenities'),
   };
 
   return (
     <div className="admin-root">
-      {/* Header */}
-      <header className="admin-header">
-        <div className="admin-header-brand">
-          Velvet Compass <span>Admin Panel</span>
-        </div>
-        <div className="admin-header-actions">
-          <div className="admin-preview-live">
-            <div className="admin-pulse" />
-            Live Site
-          </div>
-          <Link to="/" target="_blank" className="admin-header-btn admin-header-btn-outline">
-            ↗ View Site
-          </Link>
-          <button className="admin-header-btn admin-header-btn-danger" onClick={handleLogout}>
-            Sign Out
-          </button>
-          <NotificationBell inline />
-        </div>
-      </header>
-
       <div className="admin-body">
         {/* Sidebar */}
         <aside className="admin-sidebar">
-          <div className="admin-sidebar-label">Navigation</div>
+          <div className="admin-sidebar-label">{t('adminDashboard.navigation')}</div>
           {NAV_ITEMS.map((item) => (
             <div
               key={item.key}

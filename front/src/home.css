@@ -65,6 +65,11 @@
   box-shadow: 0 2px 16px rgba(0,0,0,0.25);
 }
 
+/* Sits directly above a same-colored panel (e.g. the admin sidebar) — no shadow seam between them. */
+.navbar.navbar-flush {
+  box-shadow: none;
+}
+
 .brand {
   font-size: 1.25rem;
   font-weight: 800;
@@ -1422,4 +1427,19 @@
   .hero-text p {
     font-size: 1rem;
   }
+}
+
+/* ========================= */
+/*       RTL OVERRIDES       */
+/* ========================= */
+[dir="rtl"] .home-search-bar {
+  text-align: right;
+}
+[dir="rtl"] .owner-profile-caret {
+  margin-left: 0;
+  margin-right: 2px;
+}
+[dir="rtl"] .owner-profile-dropdown {
+  right: auto;
+  left: 0;
 }

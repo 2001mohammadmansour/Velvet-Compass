@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "./ownerDashboard.css";
 import { getAdminRevenueStats } from "./services/hotels";
 
-const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
 export default function AdminStats() {
+  const { t } = useTranslation();
+  const monthLabels = t('common.months', { returnObjects: true });
   const now = new Date();
   const currentYear = now.getFullYear();
   const [chartMode, setChartMode] = useState("monthly");
@@ -85,7 +86,7 @@ export default function AdminStats() {
         setChartPoints(Array.isArray(payload?.points) ? payload.points : []);
       } catch (err) {
         if (!mounted) return;
-        setError(err.message || "Failed to load stats");
+        setError(err.message || t('adminStats.loadError'));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -94,7 +95,7 @@ export default function AdminStats() {
     return () => {
       mounted = false;
     };
-  }, [chartMode, customEndDate, customStartDate, effectiveYear, selectedMonth, selectedQuarter]);
+  }, [chartMode, customEndDate, customStartDate, effectiveYear, selectedMonth, selectedQuarter, t]);
 
   const lineChart = useMemo(() => {
     const pointsSource = chartPoints.length ? chartPoints : [{ label: "-", value: 0 }];
@@ -172,25 +173,25 @@ export default function AdminStats() {
   function exportPdf() {
     const printWindow = window.open("", "_blank", "width=960,height=700");
     if (!printWindow) {
-      alert("Unable to open print window. Please allow popups for this site.");
+      alert(t('adminStats.popupBlockedError'));
       return;
     }
     const rowsHtml = chartPoints
       .map((point) => `<tr><td>${String(point.label)}</td><td>$${Math.round(Number(point.value) || 0).toLocaleString()}</td></tr>`)
       .join("");
     const periodLabel = chartMode === "custom"
-      ? `Custom Range (${customStartDate} to ${customEndDate})`
+      ? `${t('adminStats.customRange')} (${customStartDate} to ${customEndDate})`
       : chartMode === "monthly"
-        ? "Monthly"
+        ? t('adminStats.monthly')
         : chartMode === "quarterly"
-          ? "Quarterly"
+          ? t('adminStats.quarterly')
           : chartMode === "ytd"
-            ? "Year to Date"
-            : "Yearly";
+            ? t('adminStats.yearToDate')
+            : t('adminStats.yearly');
     printWindow.document.write(`
       <html>
         <head>
-          <title>Platform Revenue Report</title>
+          <title>${t('adminStats.report.title')}</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
             h1 { margin: 0 0 8px; }
@@ -201,12 +202,12 @@ export default function AdminStats() {
           </style>
         </head>
         <body>
-          <h1>Platform Revenue Report</h1>
-          <p>Mode: ${periodLabel}</p>
-          <p>Generated: ${new Date().toLocaleString()}</p>
+          <h1>${t('adminStats.report.title')}</h1>
+          <p>${t('adminStats.report.mode', { period: periodLabel })}</p>
+          <p>${t('adminStats.report.generated', { date: new Date().toLocaleString() })}</p>
           <table>
-            <thead><tr><th>Label</th><th>Revenue</th></tr></thead>
-            <tbody>${rowsHtml || '<tr><td colspan="2">No data</td></tr>'}</tbody>
+            <thead><tr><th>${t('adminStats.report.label')}</th><th>${t('adminStats.report.revenue')}</th></tr></thead>
+            <tbody>${rowsHtml || `<tr><td colspan="2">${t('adminStats.report.noData')}</td></tr>`}</tbody>
           </table>
         </body>
       </html>
@@ -235,62 +236,62 @@ export default function AdminStats() {
 
   return (
     <div className="owner-dashboard">
-      {error && <div className="od-error" style={{ color: "#9b1c1c", padding: 10, borderRadius: 6, background: "#fff1f0", marginBottom: 12 }}>Error: {error}</div>}
-      {loading && <div className="muted small" style={{ marginBottom: 12 }}>Loading stats...</div>}
+      {error && <div className="od-error" style={{ color: "#9b1c1c", padding: 10, borderRadius: 6, background: "#fff1f0", marginBottom: 12 }}>{error}</div>}
+      {loading && <div className="muted small" style={{ marginBottom: 12 }}>{t('adminStats.loading')}</div>}
 
       <section className="od-row">
-        <h2>Revenue Periods</h2>
+        <h2>{t('adminStats.revenuePeriods')}</h2>
         <div className="metrics-grid">
           <div className="metric">
             <div className="m-num">{formatMoney(summary.monthly)}</div>
-            <div className="m-label">Monthly Revenue</div>
+            <div className="m-label">{t('adminStats.monthlyRevenue')}</div>
           </div>
           <div className="metric">
             <div className="m-num">{formatMoney(summary.quarterly)}</div>
-            <div className="m-label">Quarterly Revenue</div>
+            <div className="m-label">{t('adminStats.quarterlyRevenue')}</div>
           </div>
           <div className="metric">
             <div className="m-num">{formatMoney(summary.ytd)}</div>
-            <div className="m-label">Year-to-Date Revenue</div>
+            <div className="m-label">{t('adminStats.ytdRevenue')}</div>
           </div>
           <div className="metric">
             <div className="m-num">{formatMoney(summary.yearly)}</div>
-            <div className="m-label">Yearly Revenue</div>
+            <div className="m-label">{t('adminStats.yearlyRevenue')}</div>
           </div>
         </div>
         <div className="revenue-comparison-grid">
           <div className="revenue-comparison-card">
-            <h4>vs Last Month</h4>
+            <h4>{t('adminStats.vsLastMonth')}</h4>
             <p className={`revenue-comparison-delta ${monthComparison.trend}`}>{formatDelta(monthComparison.delta)}</p>
             <span className="muted small">{formatPercent(monthComparison.percent)}</span>
           </div>
           <div className="revenue-comparison-card">
-            <h4>vs Last Quarter</h4>
+            <h4>{t('adminStats.vsLastQuarter')}</h4>
             <p className={`revenue-comparison-delta ${quarterComparison.trend}`}>{formatDelta(quarterComparison.delta)}</p>
             <span className="muted small">{formatPercent(quarterComparison.percent)}</span>
           </div>
           <div className="revenue-comparison-card">
-            <h4>vs Last Year</h4>
+            <h4>{t('adminStats.vsLastYear')}</h4>
             <p className={`revenue-comparison-delta ${yearComparison.trend}`}>{formatDelta(yearComparison.delta)}</p>
             <span className="muted small">{formatPercent(yearComparison.percent)}</span>
           </div>
         </div>
 
         <div className="revenue-chart-wrap">
-          <h3>Platform Revenue Trend</h3>
+          <h3>{t('adminStats.revenueTrend')}</h3>
           <div className="revenue-controls">
             <div className="revenue-mode-switch">
-              <button type="button" className={`cta ${chartMode === "monthly" ? "active" : ""}`} onClick={() => setChartMode("monthly")}>Monthly</button>
-              <button type="button" className={`cta ${chartMode === "quarterly" ? "active" : ""}`} onClick={() => setChartMode("quarterly")}>Quarterly</button>
-              <button type="button" className={`cta ${chartMode === "yearly" ? "active" : ""}`} onClick={() => setChartMode("yearly")}>Yearly</button>
-              <button type="button" className={`cta ${chartMode === "ytd" ? "active" : ""}`} onClick={() => setChartMode("ytd")}>Year to Date</button>
-              <button type="button" className={`cta ${chartMode === "custom" ? "active" : ""}`} onClick={() => setChartMode("custom")}>Custom Range</button>
+              <button type="button" className={`cta ${chartMode === "monthly" ? "active" : ""}`} onClick={() => setChartMode("monthly")}>{t('adminStats.monthly')}</button>
+              <button type="button" className={`cta ${chartMode === "quarterly" ? "active" : ""}`} onClick={() => setChartMode("quarterly")}>{t('adminStats.quarterly')}</button>
+              <button type="button" className={`cta ${chartMode === "yearly" ? "active" : ""}`} onClick={() => setChartMode("yearly")}>{t('adminStats.yearly')}</button>
+              <button type="button" className={`cta ${chartMode === "ytd" ? "active" : ""}`} onClick={() => setChartMode("ytd")}>{t('adminStats.yearToDate')}</button>
+              <button type="button" className={`cta ${chartMode === "custom" ? "active" : ""}`} onClick={() => setChartMode("custom")}>{t('adminStats.customRange')}</button>
             </div>
             <div className="revenue-filters">
               {chartMode === "monthly" && (
                 <>
                   <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
-                    {MONTH_LABELS.map((label, index) => (
+                    {monthLabels.map((label, index) => (
                       <option key={label} value={index}>{label}</option>
                     ))}
                   </select>
@@ -324,7 +325,7 @@ export default function AdminStats() {
                 </select>
               )}
               {chartMode === "ytd" && (
-                <span className="muted small">Year: {currentYear}</span>
+                <span className="muted small">{t('adminStats.year', { year: currentYear })}</span>
               )}
               {chartMode === "custom" && (
                 <>
@@ -351,7 +352,7 @@ export default function AdminStats() {
             </div>
           </div>
           <div className="revenue-line-chart">
-            <svg viewBox={`0 0 ${lineChart.width} ${lineChart.height}`} role="img" aria-label="Platform revenue trend line graph">
+            <svg viewBox={`0 0 ${lineChart.width} ${lineChart.height}`} role="img" aria-label={t('adminStats.trendGraphLabel')}>
               {lineChart.gridValues.map((value, index) => {
                 const ratio = lineChart.range === 0 ? 0 : (lineChart.maxValue - value) / lineChart.range;
                 const y = lineChart.padding.top + ratio * (lineChart.height - lineChart.padding.top - lineChart.padding.bottom);
@@ -394,19 +395,19 @@ export default function AdminStats() {
             </svg>
           </div>
           <div className="revenue-export-actions">
-            <button type="button" className="cta" onClick={exportCsv}>Export CSV</button>
-            <button type="button" className="cta" onClick={exportPdf}>Export PDF</button>
+            <button type="button" className="cta" onClick={exportCsv}>{t('adminStats.exportCsv')}</button>
+            <button type="button" className="cta" onClick={exportPdf}>{t('adminStats.exportPdf')}</button>
           </div>
           <p className="muted small">
             {chartMode === "monthly"
-              ? "Daily line graph for the selected month, across all hotels."
+              ? t('adminStats.descriptions.monthly')
               : chartMode === "quarterly"
-                ? "Quarter view for the selected quarter, across all hotels."
+                ? t('adminStats.descriptions.quarterly')
                 : chartMode === "ytd"
-                  ? "Year-to-date view from the same date last year to today, across all hotels."
+                  ? t('adminStats.descriptions.ytd')
                   : chartMode === "custom"
-                    ? `Custom range from ${customStartDate} to ${customEndDate}, across all hotels.`
-                  : "Year view by month, across all hotels."}
+                    ? t('adminStats.descriptions.custom', { start: customStartDate, end: customEndDate })
+                  : t('adminStats.descriptions.yearly')}
           </p>
         </div>
       </section>

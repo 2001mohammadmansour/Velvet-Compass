@@ -1,33 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './room.css';
 import { searchRooms } from './services/hotels';
 import { getRoomReviews } from './services/guest';
 import PriceRangeSlider from './PriceRangeSlider';
 
-const CAT_LABELS = {
-  staff: 'Staff', location: 'Location', facilities: 'Facilities',
-  cleanliness: 'Cleanliness', comfort: 'Comfort', value: 'Value',
-};
-
-const SCORE_OPTIONS = [
-  { label: 'Any', value: 0 },
-  { label: '6+', value: 6 },
-  { label: '7+', value: 7 },
-  { label: '8+', value: 8 },
-  { label: '9+', value: 9 },
-];
-
-const SORT_OPTIONS = [
-  { value: 'recommended',  label: 'Recommended' },
-  { value: 'price_asc',    label: 'Price: Low → High' },
-  { value: 'price_desc',   label: 'Price: High → Low' },
-  { value: 'score_desc',   label: 'Review Score' },
-  { value: 'stars_desc',   label: 'Hotel Stars' },
-];
+const CATEGORY_KEYS = ['staff', 'location', 'facilities', 'cleanliness', 'comfort', 'value'];
 
 /* ── Reviews modal ── */
 function ReviewsModal({ room, onClose }) {
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,16 +32,16 @@ function ReviewsModal({ room, onClose }) {
               </p>
             )}
           </div>
-          <button className="rv-close" onClick={onClose} aria-label="Close">×</button>
+          <button className="rv-close" onClick={onClose} aria-label={t('searchResults.reviews.closeAria')}>×</button>
         </div>
 
-        {loading && <p style={{ color: '#6b7280' }}>Loading reviews…</p>}
+        {loading && <p style={{ color: '#6b7280' }}>{t('searchResults.reviews.loading')}</p>}
 
         {!loading && data && data.categoryAverages && (
           <div className="rvv-cats">
-            {Object.entries(CAT_LABELS).map(([key, label]) => (
+            {CATEGORY_KEYS.map((key) => (
               <div key={key} className="rvv-cat-pill">
-                <span>{label}</span>
+                <span>{t(`myBookings.review.categories.${key}.label`)}</span>
                 <span>{data.categoryAverages[key]}</span>
               </div>
             ))}
@@ -67,7 +50,7 @@ function ReviewsModal({ room, onClose }) {
 
         {!loading && data && (
           <div className="rvv-list">
-            {data.reviews.length === 0 && <p style={{ color: '#9ca3af' }}>No reviews yet.</p>}
+            {data.reviews.length === 0 && <p style={{ color: '#9ca3af' }}>{t('searchResults.reviews.noReviewsYet')}</p>}
             {data.reviews.map((r) => (
               <div key={r.id} className="rvv-item">
                 <div className="rvv-item-header">
@@ -87,9 +70,26 @@ function ReviewsModal({ room, onClose }) {
 
 /* ── Main page ── */
 export default function SearchResults() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const incoming = location.state || {};
+
+  const SCORE_OPTIONS = [
+    { label: t('searchResults.scoreAny'), value: 0 },
+    { label: '6+', value: 6 },
+    { label: '7+', value: 7 },
+    { label: '8+', value: 8 },
+    { label: '9+', value: 9 },
+  ];
+
+  const SORT_OPTIONS = [
+    { value: 'recommended', label: t('searchResults.sortOptions.recommended') },
+    { value: 'price_asc', label: t('searchResults.sortOptions.priceAsc') },
+    { value: 'price_desc', label: t('searchResults.sortOptions.priceDesc') },
+    { value: 'score_desc', label: t('searchResults.sortOptions.scoreDesc') },
+    { value: 'stars_desc', label: t('searchResults.sortOptions.starsDesc') },
+  ];
 
   const checkIn  = incoming.checkIn  || '';
   const checkOut = incoming.checkOut || '';
@@ -115,10 +115,10 @@ export default function SearchResults() {
     setError('');
     searchRooms({ checkIn, checkOut })
       .then((data) => { if (!mounted) return; setRooms(Array.isArray(data) ? data : []); })
-      .catch((err)  => { if (!mounted) return; setError(err.message || 'Unable to load rooms.'); })
+      .catch((err)  => { if (!mounted) return; setError(err.message || t('searchResults.loadError')); })
       .finally(()   => { if (!mounted) return; setLoading(false); });
     return () => { mounted = false; };
-  }, [checkIn, checkOut]);
+  }, [checkIn, checkOut, t]);
 
   const maxPrice = useMemo(() => {
     if (!rooms.length) return 1000;
@@ -186,18 +186,18 @@ export default function SearchResults() {
     <div className="sr-page">
       {/* Top bar */}
       <div className="sr-topbar">
-        <button type="button" className="back-btn" onClick={() => navigate('/')}>← Home</button>
+        <button type="button" className="back-btn" onClick={() => navigate('/')}>{t('searchResults.backHome')}</button>
         <div className="sr-topbar-center">
-          <h1 className="sr-title">{destination ? `Rooms in ${destination}` : 'Search Results'}</h1>
+          <h1 className="sr-title">{destination ? t('searchResults.roomsIn', { destination }) : t('searchResults.title')}</h1>
           {dateSummary && <span className="sr-dates">{dateSummary}</span>}
         </div>
         <button className="sr-filter-toggle" onClick={() => setSidebarOpen((v) => !v)}>
-          {sidebarOpen ? '✕ Hide filters' : '⊞ Filters'}
+          {sidebarOpen ? t('searchResults.hideFilters') : t('searchResults.showFilters')}
           {activeFilterCount > 0 && <span className="sr-filter-badge">{activeFilterCount}</span>}
         </button>
       </div>
 
-      {loading && <p className="sr-status">Loading rooms…</p>}
+      {loading && <p className="sr-status">{t('searchResults.loading')}</p>}
       {error   && <p className="sr-status sr-error">{error}</p>}
 
       <div className="sr-body">
@@ -205,18 +205,18 @@ export default function SearchResults() {
         {sidebarOpen && (
           <aside className="sr-sidebar">
             <div className="sr-sidebar-header">
-              <span className="sr-sidebar-title">Filters</span>
+              <span className="sr-sidebar-title">{t('searchResults.filters')}</span>
               {activeFilterCount > 0 && (
-                <button className="sr-clear-btn" onClick={clearFilters}>Clear all</button>
+                <button className="sr-clear-btn" onClick={clearFilters}>{t('searchResults.clearAll')}</button>
               )}
             </div>
 
             {/* Destination */}
             <div className="sr-filter-section">
-              <label className="sr-filter-label">Destination</label>
+              <label className="sr-filter-label">{t('searchResults.destination')}</label>
               <input
                 className="sr-filter-input"
-                placeholder="City or hotel name"
+                placeholder={t('searchResults.destinationPlaceholder')}
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
               />
@@ -224,7 +224,7 @@ export default function SearchResults() {
 
             {/* Guests */}
             <div className="sr-filter-section">
-              <label className="sr-filter-label">Guests</label>
+              <label className="sr-filter-label">{t('searchResults.guests')}</label>
               <input
                 className="sr-filter-input"
                 type="number"
@@ -236,7 +236,7 @@ export default function SearchResults() {
 
             {/* Sort */}
             <div className="sr-filter-section">
-              <label className="sr-filter-label">Sort by</label>
+              <label className="sr-filter-label">{t('searchResults.sortBy')}</label>
               <div className="sr-sort-list">
                 {SORT_OPTIONS.map((opt) => (
                   <button
@@ -252,7 +252,7 @@ export default function SearchResults() {
 
             {/* Price */}
             <div className="sr-filter-section">
-              <label className="sr-filter-label">Price per night</label>
+              <label className="sr-filter-label">{t('searchResults.pricePerNight')}</label>
               <PriceRangeSlider
                 min={0}
                 max={maxPrice}
@@ -268,14 +268,14 @@ export default function SearchResults() {
 
             {/* Hotel Stars */}
             <div className="sr-filter-section">
-              <label className="sr-filter-label">Hotel Stars</label>
+              <label className="sr-filter-label">{t('searchResults.hotelStars')}</label>
               <div className="sr-star-row">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <button
                     key={s}
                     className={`sr-star-btn ${selectedStars.includes(s) ? 'active' : ''}`}
                     onClick={() => toggleStar(s)}
-                    title={`${s} star${s > 1 ? 's' : ''}`}
+                    title={s > 1 ? t('searchResults.starTitleOther', { count: s }) : t('searchResults.starTitleOne', { count: s })}
                   >
                     {'★'.repeat(s)}
                   </button>
@@ -285,7 +285,7 @@ export default function SearchResults() {
 
             {/* Review Score */}
             <div className="sr-filter-section">
-              <label className="sr-filter-label">Guest Review Score</label>
+              <label className="sr-filter-label">{t('searchResults.guestReviewScore')}</label>
               <div className="sr-score-row">
                 {SCORE_OPTIONS.map((opt) => (
                   <button
@@ -304,8 +304,8 @@ export default function SearchResults() {
         {/* ── Results ── */}
         <div className="sr-results">
           <p className="sr-count">
-            {results.length} room{results.length !== 1 ? 's' : ''} found
-            {guests > 1 && <> · {guests} guests</>}
+            {t('searchResults.roomsFoundCount', { count: results.length })}
+            {guests > 1 && <> · {t('searchResults.guestsCount', { count: guests })}</>}
           </p>
 
           <div className="sr-grid">
@@ -332,24 +332,24 @@ export default function SearchResults() {
                     <button className="rv-badge" onClick={(e) => { e.stopPropagation(); setReviewsRoom(room); }}>
                       ★ {room.avgScore}/10 · {room.reviewCount} review{room.reviewCount !== 1 ? 's' : ''}
                     </button>
-                  ) : <p className="sr-card-no-reviews">No reviews yet</p>}
+                  ) : <p className="sr-card-no-reviews">{t('searchResults.noReviewsYet')}</p>}
 
                   {room.availableCount > 0 && room.availableCount < 3 && (
-                    <p className="sr-low-stock">Only {room.availableCount} left</p>
+                    <p className="sr-low-stock">{t('searchResults.onlyLeft', { count: room.availableCount })}</p>
                   )}
 
                   <div className="sr-card-footer">
                     <p className="sr-card-price">
                       <span className="sr-price-amount">${room.price}</span>
-                      <span className="sr-price-night"> / night</span>
+                      <span className="sr-price-night">{t('searchResults.perNight')}</span>
                       {/* CHANGED BY AI (2026-07-15): please review — clarifies that a room's
                           listed capacity can be extended with an (automatic) extra bed, since the
                           guest filter above now matches on that effective capacity too. */}
                       <span className="sr-capacity">
-                        {' '}· Sleeps {room.capacity}{room.allowExtraBed && room.maxExtraBeds > 0 ? ` (up to ${room.capacity + room.maxExtraBeds} with extra bed)` : ''}
+                        {t('searchResults.sleeps', { count: room.capacity })}{room.allowExtraBed && room.maxExtraBeds > 0 ? t('searchResults.withExtraBed', { count: room.capacity + room.maxExtraBeds }) : ''}
                       </span>
                     </p>
-                    <button className="sr-book-btn" onClick={(e) => { e.stopPropagation(); handleViewRoom(room); }}>View Details</button>
+                    <button className="sr-book-btn" onClick={(e) => { e.stopPropagation(); handleViewRoom(room); }}>{t('searchResults.viewDetails')}</button>
                   </div>
                 </div>
               </div>
@@ -359,10 +359,10 @@ export default function SearchResults() {
           {!loading && !error && results.length === 0 && (
             <div className="sr-empty">
               <p style={{ fontSize: 40, marginBottom: 8 }}>🔍</p>
-              <p style={{ fontWeight: 700, fontSize: 18, color: '#1a2340' }}>No rooms match your filters</p>
-              <p style={{ color: '#6b7280', marginTop: 4 }}>Try adjusting your filters or clearing them.</p>
+              <p style={{ fontWeight: 700, fontSize: 18, color: '#1a2340' }}>{t('searchResults.noRoomsMatch')}</p>
+              <p style={{ color: '#6b7280', marginTop: 4 }}>{t('searchResults.tryAdjusting')}</p>
               {activeFilterCount > 0 && (
-                <button className="sr-clear-btn-lg" onClick={clearFilters}>Clear all filters</button>
+                <button className="sr-clear-btn-lg" onClick={clearFilters}>{t('searchResults.clearAllFilters')}</button>
               )}
             </div>
           )}

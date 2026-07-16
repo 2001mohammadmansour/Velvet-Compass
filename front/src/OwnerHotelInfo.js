@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./ownerDashboard.css";
 import * as ownerSvc from "./services/owner";
 import { getCurrentUser } from "./services/auth";
@@ -14,6 +15,7 @@ const initialForm = {
 const MAX_HOTEL_PHOTOS = 8;
 
 export default function OwnerHotelInfo() {
+  const { t } = useTranslation();
   const hotelId = useMemo(() => {
     const envHotelId = process.env.REACT_APP_HOTEL_ID;
     if (envHotelId) return envHotelId;
@@ -57,7 +59,7 @@ export default function OwnerHotelInfo() {
         setStars(Number(profile?.starRating) || 0);
       } catch (err) {
         if (!mounted) return;
-        setError(err.message || "Unable to load hotel profile.");
+        setError(err.message || t('ownerHotelInfo.loadError'));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -67,7 +69,7 @@ export default function OwnerHotelInfo() {
     return () => {
       mounted = false;
     };
-  }, [hotelId]);
+  }, [hotelId, t]);
 
   useEffect(() => {
     newPhotoPreviewsRef.current = newPhotoPreviews;
@@ -115,7 +117,7 @@ export default function OwnerHotelInfo() {
       setExistingPhotoUrls((prev) => prev.filter((_, i) => i !== index));
       setSuccess("");
     } catch (err) {
-      setError(err.message || "Unable to remove photo.");
+      setError(err.message || t('ownerHotelInfo.removePhotoError'));
     }
   }
 
@@ -196,9 +198,9 @@ export default function OwnerHotelInfo() {
         );
       } catch (storageError) {}
 
-      setSuccess("Hotel information saved.");
+      setSuccess(t('ownerHotelInfo.saved'));
     } catch (err) {
-      setError(err.message || "Unable to save changes.");
+      setError(err.message || t('ownerHotelInfo.saveError'));
     } finally {
       setSaving(false);
     }
@@ -207,23 +209,23 @@ export default function OwnerHotelInfo() {
   return (
     <div className="owner-dashboard">
       <header className="od-header">
-        <h1>Edit Hotel Information</h1>
-        <p className="muted">Update your hotel profile details shown across the owner experience.</p>
+        <h1>{t('ownerHotelInfo.title')}</h1>
+        <p className="muted">{t('ownerHotelInfo.subtitle')}</p>
       </header>
 
       <div style={{ marginBottom: 14 }}>
         <Link to="/ownerhome" className="cta" style={{ textDecoration: "none", display: "inline-block" }}>
-          Back to Owner Home
+          {t('ownerHotelInfo.backToOwnerHome')}
         </Link>
       </div>
 
-      {loading && <div className="muted small" style={{ marginBottom: 12 }}>Loading profile...</div>}
-      {error && <div className="od-error" style={{ color: "#9b1c1c", padding: 10, borderRadius: 6, background: "#fff1f0", marginBottom: 12 }}>Error: {error}</div>}
+      {loading && <div className="muted small" style={{ marginBottom: 12 }}>{t('ownerHotelInfo.loadingProfile')}</div>}
+      {error && <div className="od-error" style={{ color: "#9b1c1c", padding: 10, borderRadius: 6, background: "#fff1f0", marginBottom: 12 }}>{error}</div>}
       {success && <div style={{ color: "#166534", padding: 10, borderRadius: 6, background: "#f0fdf4", marginBottom: 12 }}>{success}</div>}
 
       {!loading && !hotelId && (
         <div className="muted" style={{ padding: 10 }}>
-          You don't have an approved hotel yet. Once an admin approves your hotel request, it will appear here.
+          {t('ownerHotelInfo.noHotelYet')}
         </div>
       )}
 
@@ -232,18 +234,18 @@ export default function OwnerHotelInfo() {
         <form onSubmit={handleSave}>
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
             <label>
-              <div className="small muted" style={{ marginBottom: 4 }}>Hotel Name</div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.hotelName')}</div>
               <input
                 value={form.hotelName}
                 onChange={(e) => updateField("hotelName", e.target.value)}
-                placeholder="Your hotel name"
+                placeholder={t('ownerHotelInfo.hotelNamePlaceholder')}
                 required
                 style={{ width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8 }}
               />
             </label>
 
             <label>
-              <div className="small muted" style={{ marginBottom: 4 }}>City <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>(cannot be changed)</span></div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.city')} <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>{t('ownerHotelInfo.cannotBeChanged')}</span></div>
               <input
                 value={form.city}
                 readOnly
@@ -252,11 +254,11 @@ export default function OwnerHotelInfo() {
             </label>
 
             <label style={{ gridColumn: "1 / -1" }}>
-              <div className="small muted" style={{ marginBottom: 4 }}>Address <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>(cannot be changed)</span></div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.address')} <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>{t('ownerHotelInfo.cannotBeChanged')}</span></div>
               <input
                 value={form.address}
                 readOnly
-                placeholder="Street, district, and details"
+                placeholder={t('ownerHotelInfo.addressPlaceholder')}
                 style={{ width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", color: "#64748b", cursor: "not-allowed" }}
               />
             </label>
@@ -265,16 +267,16 @@ export default function OwnerHotelInfo() {
               {/* CHANGED BY AI (2026-07-13): please review — read-only star rating, matching the
                   City/Address pattern. Stars can't be edited here; changing them requires an
                   approved Hotel Request (see Hotel Requests page). */}
-              <div className="small muted" style={{ marginBottom: 4 }}>Star Rating <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>(cannot be changed here — submit a Hotel Request)</span></div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.starRating')} <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>{t('ownerHotelInfo.starRatingHint')}</span></div>
               <div
                 style={{ width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", color: "#f59e0b", letterSpacing: 2 }}
               >
-                {stars > 0 ? `${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}` : <span style={{ color: '#94a3b8', letterSpacing: 0 }}>Not set</span>}
+                {stars > 0 ? `${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}` : <span style={{ color: '#94a3b8', letterSpacing: 0 }}>{t('ownerHotelInfo.starRatingNotSet')}</span>}
               </div>
             </label>
 
             <label>
-              <div className="small muted" style={{ marginBottom: 4 }}>Phone Number</div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.phoneNumber')}</div>
               <input
                 value={form.phoneNumber}
                 onChange={(e) => updateField("phoneNumber", e.target.value)}
@@ -284,11 +286,11 @@ export default function OwnerHotelInfo() {
             </label>
 
             <label style={{ gridColumn: "1 / -1" }}>
-              <div className="small muted" style={{ marginBottom: 4 }}>Description</div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.description')}</div>
               <textarea
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
-                placeholder="Short description of your hotel"
+                placeholder={t('ownerHotelInfo.descriptionPlaceholder')}
                 rows={4}
                 style={{ width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8, resize: "vertical" }}
               />
@@ -296,7 +298,7 @@ export default function OwnerHotelInfo() {
 
             <label style={{ gridColumn: "1 / -1" }}>
               <div className="small muted" style={{ marginBottom: 4 }}>
-                Hotel Photos (first photo will be used as hotel card image)
+                {t('ownerHotelInfo.hotelPhotos')}
               </div>
               <input type="file" accept="image/*" multiple onChange={handlePhotoChange} />
               <div className="room-photo-preview-list">
@@ -308,7 +310,7 @@ export default function OwnerHotelInfo() {
                         className="small"
                         style={{
                           position: "absolute",
-                          left: 4,
+                          insetInlineStart: 4,
                           bottom: 4,
                           background: "rgba(15,23,42,0.78)",
                           color: "#fff",
@@ -317,14 +319,14 @@ export default function OwnerHotelInfo() {
                           fontSize: 10,
                         }}
                       >
-                        Card image
+                        {t('ownerHotelInfo.cardImage')}
                       </span>
                     )}
                     <button
                       type="button"
                       className="room-photo-remove"
                       onClick={() => removeExistingPhoto(index)}
-                      aria-label="Remove hotel photo"
+                      aria-label={t('ownerHotelInfo.removePhoto')}
                     >
                       ×
                     </button>
@@ -337,7 +339,7 @@ export default function OwnerHotelInfo() {
                       type="button"
                       className="room-photo-remove"
                       onClick={() => removeNewPhoto(index)}
-                      aria-label="Remove new hotel photo"
+                      aria-label={t('ownerHotelInfo.removeNewPhoto')}
                     >
                       ×
                     </button>
@@ -345,14 +347,14 @@ export default function OwnerHotelInfo() {
                 ))}
               </div>
               <div className="muted small" style={{ marginTop: 6 }}>
-                {existingPhotoUrls.length + newPhotos.length}/{MAX_HOTEL_PHOTOS} photos
+                {t('ownerHotelInfo.photosCount', { count: existingPhotoUrls.length + newPhotos.length, max: MAX_HOTEL_PHOTOS })}
               </div>
             </label>
           </div>
 
           <div style={{ marginTop: 14 }}>
             <button className="save-btn" type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? t('ownerHotelInfo.saving') : t('ownerHotelInfo.saveChanges')}
             </button>
           </div>
         </form>

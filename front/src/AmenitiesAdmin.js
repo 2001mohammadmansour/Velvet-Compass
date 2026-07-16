@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAllAmenities, createAmenity, updateAmenity, deactivateAmenity, reactivateAmenity } from './services/amenities';
 
 // CHANGED BY AI (2026-07-15): new admin screen for the amenities catalog (hotel-level and
@@ -9,6 +10,7 @@ import { getAllAmenities, createAmenity, updateAmenity, deactivateAmenity, react
 const EMPTY_FORM = { name: '' };
 
 function ScopeSection({ scope, title, hint }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -23,7 +25,7 @@ function ScopeSection({ scope, title, hint }) {
     setError('');
     return getAllAmenities(scope)
       .then(setItems)
-      .catch((err) => setError(err.message || 'Unable to load amenities.'))
+      .catch((err) => setError(err.message || t('amenitiesAdmin.loadError')))
       .finally(() => setLoading(false));
   }
 
@@ -38,7 +40,7 @@ function ScopeSection({ scope, title, hint }) {
       setAddForm(EMPTY_FORM);
       await load();
     } catch (err) {
-      alert('Unable to add amenity: ' + (err.message || err));
+      alert(t('amenitiesAdmin.addAmenityError') + (err.message || err));
     } finally {
       setAdding(false);
     }
@@ -56,20 +58,20 @@ function ScopeSection({ scope, title, hint }) {
       setEditingId(null);
       await load();
     } catch (err) {
-      alert('Unable to save amenity: ' + (err.message || err));
+      alert(t('amenitiesAdmin.saveAmenityError') + (err.message || err));
     } finally {
       setSavingId(null);
     }
   }
 
   async function handleDeactivate(item) {
-    if (!window.confirm(`Deactivate "${item.name}"? It will disappear from owner/guest picklists but stays linked to any hotel or room type that already uses it.`)) return;
+    if (!window.confirm(t('amenitiesAdmin.deactivateConfirm', { name: item.name }))) return;
     setSavingId(item.id);
     try {
       await deactivateAmenity(item.id);
       await load();
     } catch (err) {
-      alert('Unable to deactivate amenity: ' + (err.message || err));
+      alert(t('amenitiesAdmin.deactivateError') + (err.message || err));
     } finally {
       setSavingId(null);
     }
@@ -81,7 +83,7 @@ function ScopeSection({ scope, title, hint }) {
       await reactivateAmenity(item.id);
       await load();
     } catch (err) {
-      alert('Unable to reactivate amenity: ' + (err.message || err));
+      alert(t('amenitiesAdmin.reactivateError') + (err.message || err));
     } finally {
       setSavingId(null);
     }
@@ -96,16 +98,16 @@ function ScopeSection({ scope, title, hint }) {
         <input
           className="sr-filter-input"
           style={{ maxWidth: 220 }}
-          placeholder="Amenity name (e.g. Free WiFi)"
+          placeholder={t('amenitiesAdmin.namePlaceholder')}
           value={addForm.name}
           onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
         />
         <button type="submit" className="ha-sort-btn active" disabled={adding || !addForm.name.trim()}>
-          {adding ? 'Adding...' : '+ Add'}
+          {adding ? t('amenitiesAdmin.adding') : t('amenitiesAdmin.add')}
         </button>
       </form>
 
-      {loading && <p className="muted small">Loading...</p>}
+      {loading && <p className="muted small">{t('amenitiesAdmin.loading')}</p>}
       {error && <p className="muted small" style={{ color: '#e05555' }}>{error}</p>}
 
       {!loading && !error && (
@@ -113,9 +115,9 @@ function ScopeSection({ scope, title, hint }) {
           <table className="ha-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t('amenitiesAdmin.name')}</th>
+                <th>{t('amenitiesAdmin.status')}</th>
+                <th>{t('amenitiesAdmin.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -132,15 +134,15 @@ function ScopeSection({ scope, title, hint }) {
                       </td>
                       <td>
                         <span className={`booking-status booking-status-${item.isActive ? 'confirmed' : 'cancelled'}`}>
-                          {item.isActive ? 'Active' : 'Inactive'}
+                          {item.isActive ? t('amenitiesAdmin.active') : t('amenitiesAdmin.inactive')}
                         </span>
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: 6 }}>
                           <button className="ha-sort-btn active" disabled={savingId === item.id} onClick={() => saveEdit(item)}>
-                            {savingId === item.id ? '...' : 'Save'}
+                            {savingId === item.id ? t('amenitiesAdmin.saving') : t('amenitiesAdmin.save')}
                           </button>
-                          <button className="ha-sort-btn" onClick={() => setEditingId(null)}>Cancel</button>
+                          <button className="ha-sort-btn" onClick={() => setEditingId(null)}>{t('amenitiesAdmin.cancel')}</button>
                         </div>
                       </td>
                     </>
@@ -149,19 +151,19 @@ function ScopeSection({ scope, title, hint }) {
                       <td><strong>{item.name}</strong></td>
                       <td>
                         <span className={`booking-status booking-status-${item.isActive ? 'confirmed' : 'cancelled'}`}>
-                          {item.isActive ? 'Active' : 'Inactive'}
+                          {item.isActive ? t('amenitiesAdmin.active') : t('amenitiesAdmin.inactive')}
                         </span>
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          <button className="ha-sort-btn" onClick={() => startEdit(item)}>Edit</button>
+                          <button className="ha-sort-btn" onClick={() => startEdit(item)}>{t('amenitiesAdmin.edit')}</button>
                           {item.isActive ? (
                             <button className="ha-sort-btn" disabled={savingId === item.id} onClick={() => handleDeactivate(item)}>
-                              {savingId === item.id ? '...' : 'Deactivate'}
+                              {savingId === item.id ? t('amenitiesAdmin.saving') : t('amenitiesAdmin.deactivate')}
                             </button>
                           ) : (
                             <button className="ha-sort-btn active" disabled={savingId === item.id} onClick={() => handleReactivate(item)}>
-                              {savingId === item.id ? '...' : 'Reactivate'}
+                              {savingId === item.id ? t('amenitiesAdmin.saving') : t('amenitiesAdmin.reactivate')}
                             </button>
                           )}
                         </div>
@@ -171,7 +173,7 @@ function ScopeSection({ scope, title, hint }) {
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td colSpan={3} className="ha-hint">No amenities yet — add one above.</td></tr>
+                <tr><td colSpan={3} className="ha-hint">{t('amenitiesAdmin.noAmenitiesYet')}</td></tr>
               )}
             </tbody>
           </table>
@@ -182,17 +184,18 @@ function ScopeSection({ scope, title, hint }) {
 }
 
 export default function AmenitiesAdmin() {
+  const { t } = useTranslation();
   return (
     <div className="ha-root">
       <ScopeSection
         scope="Hotel"
-        title="🏨 Hotel Amenities"
-        hint="Shown on a hotel's own page — wifi, parking, gym, pool, etc."
+        title={t('amenitiesAdmin.hotelTitle')}
+        hint={t('amenitiesAdmin.hotelHint')}
       />
       <ScopeSection
         scope="RoomType"
-        title="🛏️ Room Amenities"
-        hint="Shown on a specific room type — sea view, minibar, balcony, etc."
+        title={t('amenitiesAdmin.roomTitle')}
+        hint={t('amenitiesAdmin.roomHint')}
       />
     </div>
   );

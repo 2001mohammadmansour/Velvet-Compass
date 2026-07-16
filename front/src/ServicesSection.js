@@ -1,65 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getStats } from "./services/hotels";
 import "./services.css";
 
-const SERVICES = [
-  {
-    id: 1,
-    icon: "⚡",
-    title: "Frictionless Booking",
-    desc: "Choose your room in seconds with a clear, modern interface and instant confirmation.",
-    tag: "Fastest flow",
-    color: "#2A3D66",
-  },
-  {
-    id: 2,
-    icon: "🛡️",
-    title: "Trusted Hotel Quality",
-    desc: "Every property is validated with care so guests enjoy a reliable stay every time.",
-    tag: "Verified stays",
-    color: "#6C8BC7",
-  },
-  {
-    id: 3,
-    icon: "🌐",
-    title: "Real Guest Reviews",
-    desc: "Genuine feedback from real travelers helps you choose the ideal hotel with confidence.",
-    tag: "Authentic voices",
-    color: "#2A3D66",
-  },
-  {
-    id: 4,
-    icon: "⏱️",
-    title: "24/7 Support",
-    desc: "Our team is ready around the clock to assist with bookings, changes, and questions.",
-    tag: "Always available",
-    color: "#6C8BC7",
-  },
-  {
-    id: 5,
-    icon: "💎",
-    title: "Exclusive Deals",
-    desc: "Enjoy competitive rates, special promotions, and curated offers for loyal travelers.",
-    tag: "Premium value",
-    color: "#E8B86D",
-  },
-  {
-    id: 6,
-    icon: "🔒",
-    title: "Secure Payments",
-    desc: "Payments are protected with advanced encryption and privacy-first handling.",
-    tag: "Safe checkout",
-    color: "#2A3D66",
-  },
-  {
-    id: 7,
-    icon: "🗓️",
-    title: "Free Cancellation",
-    desc: "Change your mind? Most rooms offer a free cancellation window before check-in.",
-    tag: "Peace of mind",
-    color: "#E8B86D",
-  },
+const SERVICE_META = [
+  { id: 1, icon: "⚡", key: "booking", color: "#2A3D66" },
+  { id: 2, icon: "🛡️", key: "quality", color: "#6C8BC7" },
+  { id: 3, icon: "🌐", key: "reviews", color: "#2A3D66" },
+  { id: 4, icon: "⏱️", key: "support", color: "#6C8BC7" },
+  { id: 5, icon: "💎", key: "deals", color: "#E8B86D" },
+  { id: 6, icon: "🔒", key: "payments", color: "#2A3D66" },
+  { id: 7, icon: "🗓️", key: "cancellation", color: "#E8B86D" },
 ];
 
 function ServiceCard({ service, index }) {
@@ -93,6 +45,7 @@ function ServiceCard({ service, index }) {
 }
 
 export default function ServicesSection() {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [stats, setStats] = useState({ hotels: 0, bookings: 0, cities: 0 });
   const navigate = useNavigate();
@@ -108,20 +61,27 @@ export default function ServicesSection() {
 
   const visibilityClass = visible ? "svc-visible" : "svc-hidden";
 
+  const services = SERVICE_META.map((meta) => ({
+    ...meta,
+    title: t(`services.cards.${meta.key}.title`),
+    tag: t(`services.cards.${meta.key}.tag`),
+    desc: t(`services.cards.${meta.key}.desc`),
+  }));
+
   const displayStats = [
-    { n: stats.hotels.toLocaleString(), l: "Verified hotels" },
-    { n: stats.bookings.toLocaleString(), l: "Successful bookings" },
-    { n: stats.cities.toLocaleString(), l: "Cities covered" },
-    { n: "24/7", l: "Support coverage" },
+    { n: stats.hotels.toLocaleString(), l: t('services.statHotels') },
+    { n: stats.bookings.toLocaleString(), l: t('services.statBookings') },
+    { n: stats.cities.toLocaleString(), l: t('services.statCities') },
+    { n: "24/7", l: t('services.statSupport') },
   ];
 
   return (
     <section className="svc-sec">
       <div className="svc-container">
         <div className={`svc-header ${visibilityClass}`}>
-          <div className="svc-badge">Signature Services</div>
-          <h2 className="svc-title">Everything your stay deserves in one place</h2>
-          <p className="svc-sub">Built to be effortless, elegant, and dependable — from discovery to checkout.</p>
+          <div className="svc-badge">{t('services.badge')}</div>
+          <h2 className="svc-title">{t('services.title')}</h2>
+          <p className="svc-sub">{t('services.subtitle')}</p>
         </div>
 
         <div className={`svc-stats-bar ${visibilityClass}`}>
@@ -137,20 +97,20 @@ export default function ServicesSection() {
         </div>
 
         <div className="svc-grid-3">
-          {SERVICES.slice(0, 3).map((service, i) => (
+          {services.slice(0, 3).map((service, i) => (
             <ServiceCard key={service.id} service={service} index={i} />
           ))}
         </div>
 
         <div className="svc-grid-4">
-          {SERVICES.slice(3).map((service, i) => (
+          {services.slice(3).map((service, i) => (
             <ServiceCard key={service.id} service={service} index={i + 3} />
           ))}
         </div>
 
         <div className={`svc-cta-row ${visibilityClass}`}>
           <button className="svc-btn-primary" onClick={() => navigate("/hotels")}>
-            Start booking now
+            {t('services.startBooking')}
           </button>
         </div>
       </div>

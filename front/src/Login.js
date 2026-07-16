@@ -2,8 +2,11 @@
 import React, { useState } from "react";
 import "./signUp.css";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import LanguageToggle from "./LanguageToggle";
 
 export default function Login() {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ email: "", password: "", remember: false });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -63,17 +66,18 @@ export default function Login() {
   return (
     <div className="page">
       <div className="overlay" />
-      <Link to="/" className="auth-back-btn">← Back</Link>
+      <Link to="/" className="auth-back-btn">{t('common.backButton')}</Link>
+      <LanguageToggle className="auth-lang-toggle" />
       <main className="card">
-        <h1>Welcome back</h1>
-        <p className="subtitle">Log in to continue</p>
+        <h1>{t('auth.login.welcomeBack')}</h1>
+        <p className="subtitle">{t('auth.login.subtitle')}</p>
         <form onSubmit={handleSubmit} noValidate>
           <label>
-            Email
+            {t('auth.login.email')}
             <input
               type="email"
               name="email"
-              placeholder="example@email.com"
+              placeholder={t('auth.login.emailPlaceholder')}
               value={form.email}
               onChange={handleChange}
               autoComplete="email"
@@ -81,11 +85,11 @@ export default function Login() {
             />
           </label>
           <label>
-            Password
+            {t('auth.login.password')}
             <input
               type="password"
               name="password"
-              placeholder="Enter your password"
+              placeholder={t('auth.login.passwordPlaceholder')}
               value={form.password}
               onChange={handleChange}
               autoComplete="current-password"
@@ -99,13 +103,13 @@ export default function Login() {
               checked={form.remember}
               onChange={handleChange}
             />
-            <span>Remember me</span>
+            <span>{t('auth.login.rememberMe')}</span>
           </label>
           <button type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Log In"}
+            {loading ? t('auth.login.loggingIn') : t('auth.login.logIn')}
           </button>
           <button type="button" className="link-button" onClick={() => navigate("/signup")}>
-            Create an account
+            {t('auth.login.createAccount')}
           </button>
         </form>
       </main>

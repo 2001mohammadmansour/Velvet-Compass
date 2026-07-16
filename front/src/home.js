@@ -2,6 +2,7 @@ import './home.css';
 import heroImage from './assets/homepage_slider.webp';
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSiteContent } from './useSiteContent';
 import { getStats } from './services/hotels';
 import { getPartners } from './services/partners';
@@ -25,6 +26,7 @@ const TOP_CITIES = [
 ];
 
 export default function Home() {
+  const { t } = useTranslation();
   const content = useSiteContent();
   const navigate = useNavigate();
 
@@ -79,17 +81,17 @@ export default function Home() {
           <p>{content.hero.tagline}</p>
           <form className="home-search-bar" onSubmit={handleSearchSubmit}>
             <label className="home-search-field">
-              <span className="home-search-label">Where do you want to go?</span>
+              <span className="home-search-label">{t('home.whereTo')}</span>
               <input
                 type="text"
                 name="destination"
-                placeholder="City or destination"
+                placeholder={t('home.destinationPlaceholder')}
                 value={searchForm.destination}
                 onChange={handleSearchChange}
               />
             </label>
             <label className="home-search-field">
-              <span className="home-search-label">Check-in</span>
+              <span className="home-search-label">{t('home.checkIn')}</span>
               <input
                 type="date"
                 name="checkIn"
@@ -99,7 +101,7 @@ export default function Home() {
               />
             </label>
             <label className="home-search-field">
-              <span className="home-search-label">Check-out</span>
+              <span className="home-search-label">{t('home.checkOut')}</span>
               <input
                 type="date"
                 name="checkOut"
@@ -109,7 +111,7 @@ export default function Home() {
               />
             </label>
             <label className="home-search-field home-search-field-guests">
-              <span className="home-search-label">Guests</span>
+              <span className="home-search-label">{t('home.guests')}</span>
               <input
                 type="number"
                 name="guests"
@@ -118,7 +120,7 @@ export default function Home() {
                 onChange={handleSearchChange}
               />
             </label>
-            <button type="submit" className="home-search-btn">Search</button>
+            <button type="submit" className="home-search-btn">{t('home.search')}</button>
           </form>
         </div>
         <div className="hero-image"><img src={heroImage} alt="Hero" /></div>
@@ -136,15 +138,15 @@ export default function Home() {
           ))}
         </div>
         <div className="services-more-wrapper" data-reveal>
-          <a href="/services" className="services-more-btn">Explore More Services →</a>
+          <a href="/services" className="services-more-btn">{t('home.exploreMoreServices')}</a>
         </div>
       </section>
 
       {/* ── Explore by City ── */}
       <section className="ec-section">
         <div className="ec-header" data-reveal>
-          <h2 className="ec-title">Explore by City</h2>
-          <Link to="/cities" className="ec-all-btn">All Cities →</Link>
+          <h2 className="ec-title">{t('home.exploreByCity')}</h2>
+          <Link to="/cities" className="ec-all-btn">{t('home.allCities')}</Link>
         </div>
         <div className="ec-grid">
           {TOP_CITIES.map((city, i) => (
@@ -163,7 +165,7 @@ export default function Home() {
               </div>
               <div className="ec-card-body">
                 <h3 className="ec-city-name">{city.name}</h3>
-                <button className="ec-explore-btn">Explore Hotels →</button>
+                <button className="ec-explore-btn">{t('home.exploreHotels')}</button>
               </div>
             </div>
           ))}
@@ -174,12 +176,12 @@ export default function Home() {
       {partners.length > 0 && (
         <section className="fh-section">
           <div className="fh-header" data-reveal>
-            <h2 className="fh-title">Our Partners</h2>
+            <h2 className="fh-title">{t('home.ourPartners')}</h2>
             <button
               className="fh-more-btn"
               onClick={() => navigate('/partners')}
             >
-              View More →
+              {t('home.viewMore')}
             </button>
           </div>
           <div className="fh-grid">
@@ -210,8 +212,8 @@ export default function Home() {
       {/* ── Live Stats ── */}
       <section className="ls-section">
         <div className="ls-heading">
-          <h2 className="ls-title">Numbers</h2>
-          <p className="ls-subtitle">Live data from our platform</p>
+          <h2 className="ls-title">{t('home.numbers')}</h2>
+          <p className="ls-subtitle">{t('home.liveData')}</p>
         </div>
         <div className="ls-grid">
           <div className="ls-card">
@@ -221,7 +223,7 @@ export default function Home() {
             <div className="ls-card-overlay" />
             <div className="ls-card-body">
               <span className="ls-num">{hotelStats.hotels || '—'}</span>
-              <span className="ls-label">Verified Hotels</span>
+              <span className="ls-label">{t('home.verifiedHotels')}</span>
             </div>
           </div>
           <div className="ls-card">
@@ -231,7 +233,7 @@ export default function Home() {
             <div className="ls-card-overlay" />
             <div className="ls-card-body">
               <span className="ls-num">{hotelStats.cities || '—'}</span>
-              <span className="ls-label">Cities Covered</span>
+              <span className="ls-label">{t('home.citiesCovered')}</span>
             </div>
           </div>
           <div className="ls-card">
@@ -241,7 +243,7 @@ export default function Home() {
             <div className="ls-card-overlay" />
             <div className="ls-card-body">
               <span className="ls-num">{hotelStats.bookings || '—'}</span>
-              <span className="ls-label">Total Bookings</span>
+              <span className="ls-label">{t('home.totalBookings')}</span>
             </div>
           </div>
           <div className="ls-card">
@@ -251,7 +253,7 @@ export default function Home() {
             <div className="ls-card-overlay" />
             <div className="ls-card-body">
               <span className="ls-num">{hotelStats.rooms || '—'}</span>
-              <span className="ls-label">Rooms Available</span>
+              <span className="ls-label">{t('home.roomsAvailable')}</span>
             </div>
           </div>
         </div>
@@ -261,7 +263,7 @@ export default function Home() {
         <div className="contact-left" data-reveal="left">
           <h2>{content.contact.heading}</h2>
           <p>{content.contact.subtext}</p>
-          <a href="/contact" className="contact-btn">Go to Contact Page →</a>
+          <a href="/contact" className="contact-btn">{t('home.goToContact')}</a>
         </div>
         <div className="contact-divider"></div>
         <div className="contact-right" data-reveal="right">

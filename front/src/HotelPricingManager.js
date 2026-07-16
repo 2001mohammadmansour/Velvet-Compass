@@ -3,6 +3,7 @@
 // season) and occupancy price tiers (demand-based surge), each with inline add/edit/delete. Applies
 // to every room type in the hotel; rendered once in OwnerDashboard.js's hotel settings, not per room.
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   getSeasonalRules, createSeasonalRule, updateSeasonalRule, deleteSeasonalRule,
   getOccupancyTiers, createOccupancyTier, updateOccupancyTier, deleteOccupancyTier,
@@ -17,11 +18,12 @@ function formatAdjustment(type, value) {
 }
 
 function AdjustmentFields({ form, setForm }) {
+  const { t } = useTranslation();
   return (
     <>
       <select value={form.adjustmentType} onChange={(e) => setForm((f) => ({ ...f, adjustmentType: e.target.value }))}>
-        <option value="Percentage">% of base price</option>
-        <option value="Flat">Flat $ per night</option>
+        <option value="Percentage">{t('pricingManager.percentOfBase')}</option>
+        <option value="Flat">{t('pricingManager.flatPerNight')}</option>
       </select>
       <input
         type="number"
@@ -35,6 +37,7 @@ function AdjustmentFields({ form, setForm }) {
 }
 
 function SeasonalRulesSection({ hotelId }) {
+  const { t } = useTranslation();
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -48,7 +51,7 @@ function SeasonalRulesSection({ hotelId }) {
     setError('');
     return getSeasonalRules(hotelId)
       .then(setRules)
-      .catch((err) => setError(err.message || 'Unable to load pricing rules.'))
+      .catch((err) => setError(err.message || t('pricingManager.loadRulesError')))
       .finally(() => setLoading(false));
   }
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -62,7 +65,7 @@ function SeasonalRulesSection({ hotelId }) {
       setForm(EMPTY_SEASONAL);
       await load();
     } catch (err) {
-      alert('Unable to add rule: ' + (err.message || err));
+      alert(t('pricingManager.addRuleError') + (err.message || err));
     } finally {
       setSaving(false);
     }
@@ -80,64 +83,65 @@ function SeasonalRulesSection({ hotelId }) {
       setEditingId(null);
       await load();
     } catch (err) {
-      alert('Unable to save rule: ' + (err.message || err));
+      alert(t('pricingManager.saveRuleError') + (err.message || err));
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(ruleId) {
-    if (!window.confirm('Delete this seasonal pricing rule?')) return;
+    if (!window.confirm(t('pricingManager.deleteRuleConfirm'))) return;
     try {
       await deleteSeasonalRule(hotelId, ruleId);
       await load();
     } catch (err) {
-      alert('Unable to delete rule: ' + (err.message || err));
+      alert(t('pricingManager.deleteRuleError') + (err.message || err));
     }
   }
 
   return (
     <div className="campaign-section">
-      <label>Seasonal Pricing (holidays, high season, etc.) — applies to every room type in this hotel</label>
-      {loading && <p className="muted small">Loading...</p>}
+      <label>{t('pricingManager.seasonalLabel')}</label>
+      {loading && <p className="muted small">{t('pricingManager.loading')}</p>}
       {error && <p className="muted small" style={{ color: '#e05555' }}>{error}</p>}
 
       {!loading && rules.map((r) => (
         <div key={r.id} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
           {editingId === r.id ? (
             <>
-              <input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} placeholder="Name" style={{ width: 160 }} />
+              <input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} placeholder={t('pricingManager.name')} style={{ width: 160 }} />
               <input type="date" value={editForm.startDate} onChange={(e) => setEditForm((f) => ({ ...f, startDate: e.target.value }))} />
               <input type="date" min={editForm.startDate} value={editForm.endDate} onChange={(e) => setEditForm((f) => ({ ...f, endDate: e.target.value }))} />
               <AdjustmentFields form={editForm} setForm={setEditForm} />
-              <button type="button" className="campaign-next" disabled={saving} onClick={() => saveEdit(r.id)}>Save</button>
-              <button type="button" className="campaign-back" onClick={() => setEditingId(null)}>Cancel</button>
+              <button type="button" className="campaign-next" disabled={saving} onClick={() => saveEdit(r.id)}>{t('pricingManager.save')}</button>
+              <button type="button" className="campaign-back" onClick={() => setEditingId(null)}>{t('pricingManager.cancel')}</button>
             </>
           ) : (
             <>
               <span style={{ flex: 1, minWidth: 200 }}>
                 <strong>{r.name}</strong> · {r.startDate} → {r.endDate} · {formatAdjustment(r.adjustmentType, r.adjustmentValue)}
               </span>
-              <button type="button" className="campaign-back" onClick={() => startEdit(r)}>Edit</button>
-              <button type="button" className="room-form-actions-delete room-form-actions-btn" onClick={() => handleDelete(r.id)}>Delete</button>
+              <button type="button" className="campaign-back" onClick={() => startEdit(r)}>{t('pricingManager.edit')}</button>
+              <button type="button" className="room-form-actions-delete room-form-actions-btn" onClick={() => handleDelete(r.id)}>{t('pricingManager.delete')}</button>
             </>
           )}
         </div>
       ))}
-      {!loading && rules.length === 0 && <p className="muted small">No seasonal rules yet.</p>}
+      {!loading && rules.length === 0 && <p className="muted small">{t('pricingManager.noRulesYet')}</p>}
 
       <form onSubmit={handleAdd} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
-        <input placeholder="Name (e.g. Winter Holidays)" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} style={{ width: 160 }} />
+        <input placeholder={t('pricingManager.namePlaceholder')} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} style={{ width: 160 }} />
         <input type="date" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} />
         <input type="date" min={form.startDate} value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} />
         <AdjustmentFields form={form} setForm={setForm} />
-        <button type="submit" className="campaign-next" disabled={saving}>+ Add</button>
+        <button type="submit" className="campaign-next" disabled={saving}>{t('pricingManager.add')}</button>
       </form>
     </div>
   );
 }
 
 function OccupancyTiersSection({ hotelId }) {
+  const { t } = useTranslation();
   const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -151,7 +155,7 @@ function OccupancyTiersSection({ hotelId }) {
     setError('');
     return getOccupancyTiers(hotelId)
       .then(setTiers)
-      .catch((err) => setError(err.message || 'Unable to load pricing tiers.'))
+      .catch((err) => setError(err.message || t('pricingManager.loadTiersError')))
       .finally(() => setLoading(false));
   }
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -165,7 +169,7 @@ function OccupancyTiersSection({ hotelId }) {
       setForm(EMPTY_TIER);
       await load();
     } catch (err) {
-      alert('Unable to add tier: ' + (err.message || err));
+      alert(t('pricingManager.addTierError') + (err.message || err));
     } finally {
       setSaving(false);
     }
@@ -183,66 +187,66 @@ function OccupancyTiersSection({ hotelId }) {
       setEditingId(null);
       await load();
     } catch (err) {
-      alert('Unable to save tier: ' + (err.message || err));
+      alert(t('pricingManager.saveTierError') + (err.message || err));
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(tierId) {
-    if (!window.confirm('Delete this demand-based pricing tier?')) return;
+    if (!window.confirm(t('pricingManager.deleteTierConfirm'))) return;
     try {
       await deleteOccupancyTier(hotelId, tierId);
       await load();
     } catch (err) {
-      alert('Unable to delete tier: ' + (err.message || err));
+      alert(t('pricingManager.deleteTierError') + (err.message || err));
     }
   }
 
   return (
     <div className="campaign-section">
-      <label>Demand-Based Pricing (price climbs as a room type sells out for a given night) — applies to every room type in this hotel</label>
-      {loading && <p className="muted small">Loading...</p>}
+      <label>{t('pricingManager.demandLabel')}</label>
+      {loading && <p className="muted small">{t('pricingManager.loading')}</p>}
       {error && <p className="muted small" style={{ color: '#e05555' }}>{error}</p>}
 
-      {!loading && tiers.map((t) => (
-        <div key={t.id} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-          {editingId === t.id ? (
+      {!loading && tiers.map((tier) => (
+        <div key={tier.id} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+          {editingId === tier.id ? (
             <>
-              <span>At</span>
+              <span>{t('pricingManager.at')}</span>
               <input
                 type="number" min={1} max={100} style={{ width: 70 }}
                 value={editForm.minOccupancyPercent}
                 onChange={(e) => setEditForm((f) => ({ ...f, minOccupancyPercent: e.target.value }))}
               />
-              <span>% occupied:</span>
+              <span>{t('pricingManager.occupied')}</span>
               <AdjustmentFields form={editForm} setForm={setEditForm} />
-              <button type="button" className="campaign-next" disabled={saving} onClick={() => saveEdit(t.id)}>Save</button>
-              <button type="button" className="campaign-back" onClick={() => setEditingId(null)}>Cancel</button>
+              <button type="button" className="campaign-next" disabled={saving} onClick={() => saveEdit(tier.id)}>{t('pricingManager.save')}</button>
+              <button type="button" className="campaign-back" onClick={() => setEditingId(null)}>{t('pricingManager.cancel')}</button>
             </>
           ) : (
             <>
               <span style={{ flex: 1, minWidth: 200 }}>
-                At <strong>{t.minOccupancyPercent}%</strong> occupied: {formatAdjustment(t.adjustmentType, t.adjustmentValue)}
+                {t('pricingManager.at')} <strong>{tier.minOccupancyPercent}%</strong> {t('pricingManager.occupied')} {formatAdjustment(tier.adjustmentType, tier.adjustmentValue)}
               </span>
-              <button type="button" className="campaign-back" onClick={() => startEdit(t)}>Edit</button>
-              <button type="button" className="room-form-actions-delete room-form-actions-btn" onClick={() => handleDelete(t.id)}>Delete</button>
+              <button type="button" className="campaign-back" onClick={() => startEdit(tier)}>{t('pricingManager.edit')}</button>
+              <button type="button" className="room-form-actions-delete room-form-actions-btn" onClick={() => handleDelete(tier.id)}>{t('pricingManager.delete')}</button>
             </>
           )}
         </div>
       ))}
-      {!loading && tiers.length === 0 && <p className="muted small">No demand-based tiers yet.</p>}
+      {!loading && tiers.length === 0 && <p className="muted small">{t('pricingManager.noTiersYet')}</p>}
 
       <form onSubmit={handleAdd} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
-        <span>At</span>
+        <span>{t('pricingManager.at')}</span>
         <input
           type="number" min={1} max={100} placeholder="e.g. 80" style={{ width: 70 }}
           value={form.minOccupancyPercent}
           onChange={(e) => setForm((f) => ({ ...f, minOccupancyPercent: e.target.value }))}
         />
-        <span>% occupied:</span>
+        <span>{t('pricingManager.occupied')}</span>
         <AdjustmentFields form={form} setForm={setForm} />
-        <button type="submit" className="campaign-next" disabled={saving}>+ Add</button>
+        <button type="submit" className="campaign-next" disabled={saving}>{t('pricingManager.add')}</button>
       </form>
     </div>
   );

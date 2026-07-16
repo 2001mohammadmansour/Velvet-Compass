@@ -1,7 +1,7 @@
 .nb-root {
   position: fixed;
   top: 16px;
-  right: 16px;
+  inset-inline-end: 16px;
   z-index: 2000;
 }
 
@@ -11,7 +11,7 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  margin-right: 8px;
+  margin-inline-end: 8px;
 }
 
 .nb-bell {
@@ -46,7 +46,7 @@
 .nb-badge {
   position: absolute;
   top: -4px;
-  right: -4px;
+  inset-inline-end: -4px;
   background: #e05555;
   color: #fff;
   font-size: 11px;
@@ -68,7 +68,7 @@
 .nb-panel {
   position: absolute;
   top: 50px;
-  right: 0;
+  inset-inline-end: 0;
   width: 320px;
   max-height: 420px;
   background: #fff;

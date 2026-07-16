@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAdminDashboard, getRoomTypesForHotel, deleteReview } from './services/hotels';
 import { getRoomReviews } from './services/guest';
 
@@ -6,12 +7,12 @@ function formatMoney(value) {
   return `$${Math.round(Number(value) || 0).toLocaleString()}`;
 }
 
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
 // CHANGED BY AI (2026-07-15): please review. New All Time / Year / Month filter for the whole
 // analytics tab — scopes revenue, booking stats, and both ranking tables to the selected period
 // (bookings filtered server-side by check-in date; see getAdminDashboard).
 function PeriodFilter({ mode, setMode, year, setYear, month, setMonth }) {
+  const { t } = useTranslation();
+  const monthNames = t('common.fullMonths', { returnObjects: true });
   const now = new Date();
   const years = [now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2];
 
@@ -24,7 +25,7 @@ function PeriodFilter({ mode, setMode, year, setYear, month, setMonth }) {
             className={`ha-sort-btn ${mode === m ? 'active' : ''}`}
             onClick={() => setMode(m)}
           >
-            {m === 'all' ? 'All Time' : m === 'year' ? 'Year' : 'Month'}
+            {m === 'all' ? t('hotelsAnalytics.allTime') : m === 'year' ? t('hotelsAnalytics.year') : t('hotelsAnalytics.month')}
           </button>
         ))}
       </div>
@@ -37,7 +38,7 @@ function PeriodFilter({ mode, setMode, year, setYear, month, setMonth }) {
 
       {mode === 'month' && (
         <select className="sr-filter-input" style={{ width: 150 }} value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-          {MONTH_NAMES.map((label, i) => <option key={label} value={i + 1}>{label}</option>)}
+          {monthNames.map((label, i) => <option key={label} value={i + 1}>{label}</option>)}
         </select>
       )}
     </div>
@@ -48,6 +49,7 @@ function PeriodFilter({ mode, setMode, year, setYear, month, setMonth }) {
 // its reviews shown/moderated inline (view + delete). Manages its own reviews fetch/expand state
 // so opening one room's reviews doesn't affect its siblings.
 function RoomTypeCard({ hotelId, room }) {
+  const { t } = useTranslation();
   const [reviewsOpen, setReviewsOpen] = useState(false);
   const [reviewData, setReviewData] = useState(null);
   const [reviewsError, setReviewsError] = useState('');
@@ -61,7 +63,7 @@ function RoomTypeCard({ hotelId, room }) {
       const data = await getRoomReviews(hotelId, room.id);
       setReviewData(data);
     } catch (err) {
-      setReviewsError(err.message || 'Unable to load reviews.');
+      setReviewsError(err.message || t('hotelsAnalytics.loadReviewsError'));
     } finally {
       setLoadingReviews(false);
     }
@@ -74,13 +76,13 @@ function RoomTypeCard({ hotelId, room }) {
   }
 
   async function handleDelete(reviewId) {
-    if (!window.confirm('Permanently delete this review? This cannot be undone.')) return;
+    if (!window.confirm(t('hotelsAnalytics.deleteReviewConfirm'))) return;
     setDeletingId(reviewId);
     try {
       await deleteReview(reviewId);
       await loadReviews();
     } catch (err) {
-      alert('Unable to delete review: ' + (err.message || err));
+      alert(t('hotelsAnalytics.deleteReviewError') + (err.message || err));
     } finally {
       setDeletingId(null);
     }
@@ -91,20 +93,20 @@ function RoomTypeCard({ hotelId, room }) {
       <div className="ha-room-card-header">
         <div className="ha-room-card-main">
           <strong>{room.name}</strong>
-          <span className="muted small">{room.capacity} guest{room.capacity !== 1 ? 's' : ''} · {formatMoney(room.price)}/night</span>
+          <span className="muted small">{room.capacity} guest{room.capacity !== 1 ? 's' : ''} · {formatMoney(room.price)}{t('hotelsAnalytics.perNight')}</span>
         </div>
         <button className="ha-sort-btn" onClick={toggleReviews}>
-          {room.reviewCount > 0 ? `★ ${room.avgScore}/10 · ${room.reviewCount} review${room.reviewCount !== 1 ? 's' : ''}` : 'No reviews yet'}
-          <span style={{ marginLeft: 6 }}>{reviewsOpen ? '▲' : '▼'}</span>
+          {room.reviewCount > 0 ? `★ ${room.avgScore}/10 · ${room.reviewCount} review${room.reviewCount !== 1 ? 's' : ''}` : t('hotelsAnalytics.noReviewsYet')}
+          <span style={{ marginInlineStart: 6 }}>{reviewsOpen ? '▲' : '▼'}</span>
         </button>
       </div>
 
       {reviewsOpen && (
         <div className="ha-review-list">
-          {loadingReviews && <p className="ha-hint">Loading reviews...</p>}
+          {loadingReviews && <p className="ha-hint">{t('hotelsAnalytics.loadingReviews')}</p>}
           {reviewsError && <p className="ha-hint" style={{ color: '#e05555' }}>{reviewsError}</p>}
           {!loadingReviews && !reviewsError && reviewData && reviewData.reviews.length === 0 && (
-            <p className="ha-hint">No reviews yet.</p>
+            <p className="ha-hint">{t('hotelsAnalytics.noReviewsYet')}</p>
           )}
           {!loadingReviews && !reviewsError && reviewData && reviewData.reviews.map((r) => (
             <div key={r.id} className="ha-review-item">
@@ -116,7 +118,7 @@ function RoomTypeCard({ hotelId, room }) {
                   className="ha-review-delete-btn"
                   disabled={deletingId === r.id}
                   onClick={() => handleDelete(r.id)}
-                  title="Delete this review"
+                  title={t('hotelsAnalytics.deleteReviewTitle')}
                 >
                   {deletingId === r.id ? '...' : '🗑'}
                 </button>
@@ -133,6 +135,7 @@ function RoomTypeCard({ hotelId, room }) {
 // New room-type drill-down for a hotel row in the admin analytics ranking tables (previously
 // there was no way to see a hotel's rooms here at all).
 function HotelRoomsRow({ hotelId }) {
+  const { t } = useTranslation();
   const [rooms, setRooms] = useState(null);
   const [error, setError] = useState('');
 
@@ -140,16 +143,16 @@ function HotelRoomsRow({ hotelId }) {
     let mounted = true;
     getRoomTypesForHotel(hotelId)
       .then((list) => { if (mounted) setRooms(list); })
-      .catch((err) => { if (mounted) setError(err.message || 'Unable to load rooms.'); });
+      .catch((err) => { if (mounted) setError(err.message || t('hotelsAnalytics.loadRoomsError')); });
     return () => { mounted = false; };
-  }, [hotelId]);
+  }, [hotelId, t]);
 
   return (
     <tr className="ha-row-active">
       <td colSpan={5} style={{ padding: '12px 14px' }}>
         {error && <p className="ha-hint" style={{ color: '#e05555' }}>{error}</p>}
-        {!error && !rooms && <p className="ha-hint">Loading rooms...</p>}
-        {!error && rooms && rooms.length === 0 && <p className="ha-hint">This hotel has no room types yet.</p>}
+        {!error && !rooms && <p className="ha-hint">{t('hotelsAnalytics.loadingRooms')}</p>}
+        {!error && rooms && rooms.length === 0 && <p className="ha-hint">{t('hotelsAnalytics.noRoomTypesYet')}</p>}
         {!error && rooms && rooms.length > 0 && (
           <div className="ha-room-list">
             {rooms.map((r) => (
@@ -186,20 +189,21 @@ function BarChart({ items, valueKey, labelKey, color = '#6C8BC7', formatValue })
 }
 
 function RankingTable({ title, icon, items, valueKey, valueLabel, formatValue }) {
+  const { t } = useTranslation();
   const [expandedHotelId, setExpandedHotelId] = useState(null);
 
   return (
     <div className="admin-card">
       <div className="admin-card-title">{icon} {title}</div>
-      <p className="ha-hint" style={{ margin: '2px 0 8px' }}>Click a hotel to see its rooms.</p>
+      <p className="ha-hint" style={{ margin: '2px 0 8px' }}>{t('hotelsAnalytics.clickHint')}</p>
       <div className="ha-table-wrap">
         <table className="ha-table">
           <thead>
             <tr>
-              <th>Hotel</th>
-              <th>City</th>
-              <th>Country</th>
-              <th className="ha-stars-col">Stars</th>
+              <th>{t('hotelsAnalytics.hotel')}</th>
+              <th>{t('hotelsAnalytics.city')}</th>
+              <th>{t('hotelsAnalytics.country')}</th>
+              <th className="ha-stars-col">{t('hotelsAnalytics.stars')}</th>
               <th className="ha-num">{valueLabel}</th>
             </tr>
           </thead>
@@ -229,7 +233,7 @@ function RankingTable({ title, icon, items, valueKey, valueLabel, formatValue })
               );
             })}
             {items.length === 0 && (
-              <tr><td colSpan={5} className="ha-hint">No hotels yet.</td></tr>
+              <tr><td colSpan={5} className="ha-hint">{t('hotelsAnalytics.noHotelsYet')}</td></tr>
             )}
           </tbody>
         </table>
@@ -239,6 +243,7 @@ function RankingTable({ title, icon, items, valueKey, valueLabel, formatValue })
 }
 
 export default function HotelsAnalytics() {
+  const { t } = useTranslation();
   const now = new Date();
   const [mode, setMode] = useState('all'); // 'all' | 'year' | 'month'
   const [year, setYear] = useState(now.getFullYear());
@@ -255,14 +260,14 @@ export default function HotelsAnalytics() {
     const filters = mode === 'all' ? {} : mode === 'year' ? { year } : { year, month };
     getAdminDashboard(filters)
       .then((d) => { if (mounted) setData(d); })
-      .catch((err) => { if (mounted) setError(err.message || 'Unable to load platform analytics.'); })
+      .catch((err) => { if (mounted) setError(err.message || t('hotelsAnalytics.loadError')); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
-  }, [mode, year, month]);
+  }, [mode, year, month, t]);
 
   const filterBar = <PeriodFilter mode={mode} setMode={setMode} year={year} setYear={setYear} month={month} setMonth={setMonth} />;
 
-  if (loading) return <div className="ha-root">{filterBar}<p className="admin-stat-sub">Loading platform analytics...</p></div>;
+  if (loading) return <div className="ha-root">{filterBar}<p className="admin-stat-sub">{t('hotelsAnalytics.loading')}</p></div>;
   if (error) return <div className="ha-root">{filterBar}<p className="admin-stat-sub" style={{ color: '#e05555' }}>{error}</p></div>;
   if (!data) return null;
 
@@ -280,58 +285,58 @@ export default function HotelsAnalytics() {
       {/* Summary stat cards */}
       <div className="admin-stats-row">
         <div className="admin-stat-card">
-          <div className="admin-stat-label">Platform Revenue</div>
+          <div className="admin-stat-label">{t('hotelsAnalytics.platformRevenue')}</div>
           <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(revenue.totalRevenue)}</div>
-          <div className="admin-stat-sub">Booking fees + cancellation penalties</div>
+          <div className="admin-stat-sub">{t('hotelsAnalytics.platformRevenueSub')}</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-label">Booking Fees</div>
+          <div className="admin-stat-label">{t('hotelsAnalytics.bookingFees')}</div>
           <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(revenue.totalPlatformRevenue)}</div>
-          <div className="admin-stat-sub">15% of confirmed/completed bookings</div>
+          <div className="admin-stat-sub">{t('hotelsAnalytics.bookingFeesSub')}</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-label">Cancellation Revenue</div>
+          <div className="admin-stat-label">{t('hotelsAnalytics.cancellationRevenue')}</div>
           <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(revenue.totalCancellationRevenue)}</div>
-          <div className="admin-stat-sub">Penalty share from cancellations</div>
+          <div className="admin-stat-sub">{t('hotelsAnalytics.cancellationRevenueSub')}</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-label">Hotels / Users</div>
+          <div className="admin-stat-label">{t('hotelsAnalytics.hotelsUsers')}</div>
           <div className="admin-stat-value" style={{ fontSize: 20 }}>{bookingStats.totalHotels} / {bookingStats.totalUsers}</div>
-          <div className="admin-stat-sub">Total registered</div>
+          <div className="admin-stat-sub">{t('hotelsAnalytics.totalRegistered')}</div>
         </div>
       </div>
 
       <div className="admin-card">
-        <div className="admin-card-title">📅 Bookings by Status</div>
+        <div className="admin-card-title">{t('hotelsAnalytics.bookingsByStatus')}</div>
         <BarChart
           items={[
-            { key: 'Confirmed', value: bookingStats.confirmedBookings },
-            { key: 'Pending', value: bookingStats.pendingBookings },
-            { key: 'Completed', value: bookingStats.completedBookings },
-            { key: 'Cancelled', value: bookingStats.cancelledBookings },
+            { key: t('myBookings.statuses.confirmed'), value: bookingStats.confirmedBookings },
+            { key: t('myBookings.statuses.pending'), value: bookingStats.pendingBookings },
+            { key: t('myBookings.statuses.completed'), value: bookingStats.completedBookings },
+            { key: t('myBookings.statuses.cancelled'), value: bookingStats.cancelledBookings },
           ]}
           valueKey="value"
           labelKey="key"
           color="#6C8BC7"
         />
-        <p className="ha-hint">{bookingStats.totalBookings} bookings total across the platform.</p>
+        <p className="ha-hint">{t('hotelsAnalytics.bookingsTotal', { count: bookingStats.totalBookings })}</p>
       </div>
 
       <RankingTable
-        title="Top Hotels by Revenue"
+        title={t('hotelsAnalytics.topHotelsByRevenue')}
         icon="💰"
         items={topHotelsByRevenue}
         valueKey="grossRevenue"
-        valueLabel="Gross Revenue"
+        valueLabel={t('hotelsAnalytics.grossRevenue')}
         formatValue={formatMoney}
       />
 
       <RankingTable
-        title="Top Hotels by Bookings"
+        title={t('hotelsAnalytics.topHotelsByBookings')}
         icon="📊"
         items={topHotelsByBookings}
         valueKey="bookingsCount"
-        valueLabel="Bookings"
+        valueLabel={t('hotelsAnalytics.bookings')}
         formatValue={(v) => v}
       />
     </div>

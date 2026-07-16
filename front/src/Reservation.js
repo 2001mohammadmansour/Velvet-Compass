@@ -6,10 +6,12 @@
 import { useState } from "react";
 import "./reservation.css";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "./services/auth";
 import { createBooking, initiatePayment, confirmPayment } from "./services/guest";
 
 export default function Reservation() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const incoming = location.state || {};
@@ -36,11 +38,11 @@ export default function Reservation() {
     setError("");
 
     if (!customer.name || !customer.email) {
-      setError("Please enter your name and email.");
+      setError(t('reservation.errors.nameEmailRequired'));
       return;
     }
     if (!payment.method) {
-      setError("Please select a payment method.");
+      setError(t('reservation.errors.paymentMethodRequired'));
       return;
     }
 
@@ -68,7 +70,7 @@ export default function Reservation() {
       }
       setConfirmation({ status });
     } catch (err) {
-      setError(err.message || "Unable to complete booking. Please try again.");
+      setError(err.message || t('reservation.errors.bookingFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -80,16 +82,16 @@ export default function Reservation() {
         <div className="section-card confirmation-card">
           {confirmation.status === "confirmed" ? (
             <>
-              <h2 className="section-title">Booking confirmed!</h2>
-              <p>Your reservation at {room.hotel} is confirmed. We've saved your details for {room.name}.</p>
+              <h2 className="section-title">{t('reservation.bookingConfirmed')}</h2>
+              <p>{t('reservation.confirmedMessage', { hotel: room.hotel, room: room.name })}</p>
             </>
           ) : (
             <>
-              <h2 className="section-title">Booking request sent</h2>
-              <p>Your request for {room.name} at {room.hotel} is pending the hotel's approval. You'll be notified once it's reviewed.</p>
+              <h2 className="section-title">{t('reservation.requestSent')}</h2>
+              <p>{t('reservation.pendingMessage', { room: room.name, hotel: room.hotel })}</p>
             </>
           )}
-          <Link to="/" className="back-btn">Back to home</Link>
+          <Link to="/" className="back-btn">{t('reservation.backToHome')}</Link>
         </div>
       </div>
     );
@@ -99,10 +101,10 @@ export default function Reservation() {
     return (
       <div className="reservation-page">
         <div className="back-wrapper">
-          <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Back</button>
+          <button type="button" className="back-btn" onClick={() => navigate(-1)}>{t('reservation.back')}</button>
         </div>
         <div className="section-card">
-          <p>No room selected. <Link to="/hotels">Browse hotels</Link></p>
+          <p>{t('reservation.noRoomSelected')} <Link to="/hotels">{t('reservation.browseHotels')}</Link></p>
         </div>
       </div>
     );
@@ -111,14 +113,14 @@ export default function Reservation() {
   return (
     <div className="reservation-page">
       <div className="back-wrapper">
-        <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Back</button>
+        <button type="button" className="back-btn" onClick={() => navigate(-1)}>{t('reservation.back')}</button>
       </div>
 
-      <h1 className="title">Checkout</h1>
+      <h1 className="title">{t('reservation.checkout')}</h1>
 
       {/* ROOM + PRICE SUMMARY */}
       <div className="section-card">
-        <h2 className="section-title">Your Stay</h2>
+        <h2 className="section-title">{t('reservation.yourStay')}</h2>
         <div className="room-details">
           {room.img && <img src={room.img} className="room-img" alt={room.name} />}
           <div>
@@ -131,51 +133,54 @@ export default function Reservation() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 15, marginTop: 18, paddingTop: 14, borderTop: '1px solid #f0f2f8' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>{checkIn} → {checkOut} · {nights} night{nights !== 1 ? 's' : ''} · {guests} guest{guests !== 1 ? 's' : ''}{extraBeds > 0 ? ` · ${extraBeds} extra bed${extraBeds === 1 ? '' : 's'}` : ''}</span>
+            <span>
+              {checkIn} → {checkOut} · {t('reservation.nightsCount', { count: nights })} · {t('reservation.guestsCount', { count: guests })}
+              {extraBeds > 0 ? t('reservation.extraBedsSuffix', { count: extraBeds }) : ''}
+            </span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Room ({nights} night{nights !== 1 ? 's' : ''} × ${room.price})</span>
+            <span>{t('reservation.roomNightsPrice', { count: nights, price: room.price })}</span>
             <span>${roomTotal}</span>
           </div>
           {breakfast && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Breakfast</span>
+              <span>{t('reservation.breakfast')}</span>
               <span>${breakfastTotal}</span>
             </div>
           )}
           {extraBeds > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Extra bed{extraBeds === 1 ? '' : 's'}</span>
+              <span>{t('reservation.extraBed', { count: extraBeds })}</span>
               <span>${extraBedTotal.toFixed(2)}</span>
             </div>
           )}
           {discountApplied && (
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
-              <span>Discount (alhamid)</span>
+              <span>{t('reservation.discountLabel', { code: 'alhamid' })}</span>
               <span>-${grandTotal.toFixed(2)}</span>
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, borderTop: '1px solid #e5e7eb', paddingTop: 8, marginTop: 4 }}>
-            <span>Total</span>
+            <span>{t('reservation.total')}</span>
             <span>${finalTotal.toFixed(2)}</span>
           </div>
         </div>
 
         <input
           type="text"
-          placeholder="Discount code"
+          placeholder={t('reservation.discountCodePlaceholder')}
           value={discountCode}
           onChange={(e) => setDiscountCode(e.target.value)}
           style={{ marginTop: 12 }}
         />
-        {discountApplied && <p style={{ color: '#16a34a', margin: '6px 0 0' }}>100% discount applied!</p>}
+        {discountApplied && <p style={{ color: '#16a34a', margin: '6px 0 0' }}>{t('reservation.discountApplied')}</p>}
       </div>
 
       {!currentUser && (
         <div className="section-card">
-          <h2 className="section-title">Please log in to book</h2>
-          <p>You need an account to complete a booking.</p>
-          <Link to="/login" className="back-btn">Log in</Link>
+          <h2 className="section-title">{t('reservation.pleaseLogin')}</h2>
+          <p>{t('reservation.needAccount')}</p>
+          <Link to="/login" className="back-btn">{t('reservation.login')}</Link>
         </div>
       )}
 
@@ -183,25 +188,25 @@ export default function Reservation() {
         <form onSubmit={handleSubmit}>
           {/* CUSTOMER INFO */}
           <div className="section-card">
-            <h2 className="section-title">Your Information</h2>
+            <h2 className="section-title">{t('reservation.yourInformation')}</h2>
 
             <input
               type="text"
-              placeholder="Full Name"
+              placeholder={t('reservation.fullName')}
               value={customer.name}
               onChange={(e) => handleCustomer("name", e.target.value)}
             />
 
             <input
               type="email"
-              placeholder="Email"
+              placeholder={t('reservation.email')}
               value={customer.email}
               onChange={(e) => handleCustomer("email", e.target.value)}
             />
 
             <input
               type="tel"
-              placeholder="Phone Number"
+              placeholder={t('reservation.phoneNumber')}
               value={customer.phone}
               onChange={(e) => handleCustomer("phone", e.target.value)}
             />
@@ -209,7 +214,7 @@ export default function Reservation() {
 
           {/* PAYMENT */}
           <div className="section-card">
-            <h2 className="section-title">Payment Method</h2>
+            <h2 className="section-title">{t('reservation.paymentMethod')}</h2>
 
             <div className="payment-methods">
               <button
@@ -217,7 +222,7 @@ export default function Reservation() {
                 className={`method ${payment.method === "card" ? "active" : ""}`}
                 onClick={() => setPayment({ ...payment, method: "card" })}
               >
-                Credit Card
+                {t('reservation.creditCard')}
               </button>
 
               <button
@@ -225,7 +230,7 @@ export default function Reservation() {
                 className={`method ${payment.method === "cash" ? "active" : ""}`}
                 onClick={() => setPayment({ ...payment, method: "cash" })}
               >
-                Pay on Arrival
+                {t('reservation.payOnArrival')}
               </button>
             </div>
 
@@ -233,21 +238,21 @@ export default function Reservation() {
               <div className="card-fields">
                 <input
                   type="text"
-                  placeholder="Card Number"
+                  placeholder={t('reservation.cardNumber')}
                   value={payment.cardNumber}
                   onChange={(e) => handlePayment("cardNumber", e.target.value)}
                 />
 
                 <input
                   type="text"
-                  placeholder="Expiry Date (MM/YY)"
+                  placeholder={t('reservation.expiryDate')}
                   value={payment.expiry}
                   onChange={(e) => handlePayment("expiry", e.target.value)}
                 />
 
                 <input
                   type="text"
-                  placeholder="CVV"
+                  placeholder={t('reservation.cvv')}
                   value={payment.cvv}
                   onChange={(e) => handlePayment("cvv", e.target.value)}
                 />
@@ -258,7 +263,7 @@ export default function Reservation() {
           {error && <p className="form-error">{error}</p>}
 
           <button type="submit" className="confirm-btn" disabled={submitting}>
-            {submitting ? "Booking..." : "Confirm Booking"}
+            {submitting ? t('reservation.booking') : t('reservation.confirmBooking')}
           </button>
         </form>
       )}

@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './room.css';
 import { getMyBookings, cancelBooking, updateBooking, submitReview } from './services/guest';
 import { getCurrentUser } from './services/auth';
 
-const CATEGORIES = [
-  { key: 'staff',       label: 'Staff',          question: 'How helpful and friendly was the property staff?' },
-  { key: 'location',    label: 'Location',        question: 'How would you rate the safety and convenience of the location?' },
-  { key: 'facilities',  label: 'Facilities',      question: 'How were the common areas? (Lobby, elevator, pool, gym, etc.)' },
-  { key: 'cleanliness', label: 'Cleanliness',     question: 'Was your room spotless, fresh, and well-maintained?', highWeight: true },
-  { key: 'comfort',     label: 'Comfort',         question: "How comfortable was the bed and the room's noise levels?", highWeight: true },
-  { key: 'value',       label: 'Value for Money', question: 'Considering what you paid, did the stay meet your expectations?' },
+const CATEGORY_KEYS = [
+  { key: 'staff' },
+  { key: 'location' },
+  { key: 'facilities' },
+  { key: 'cleanliness', highWeight: true },
+  { key: 'comfort', highWeight: true },
+  { key: 'value' },
 ];
 
 function computePreview(ratings) {
@@ -19,6 +20,7 @@ function computePreview(ratings) {
 }
 
 function ReviewModal({ booking, userId, onClose, onSubmitted }) {
+  const { t } = useTranslation();
   const [ratings, setRatings] = useState({ staff: 7, location: 7, facilities: 7, cleanliness: 7, comfort: 7, value: 7 });
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -28,7 +30,7 @@ function ReviewModal({ booking, userId, onClose, onSubmitted }) {
 
   const handleSubmit = async () => {
     if (comment.trim().length < 10) {
-      setSubmitError('Comment must be at least 10 characters.');
+      setSubmitError(t('myBookings.review.commentTooShort'));
       return;
     }
     setSubmitting(true);
@@ -37,7 +39,7 @@ function ReviewModal({ booking, userId, onClose, onSubmitted }) {
       await submitReview(booking.id, userId, ratings, comment.trim());
       onSubmitted();
     } catch (err) {
-      setSubmitError(err.message || 'Unable to submit review.');
+      setSubmitError(err.message || t('myBookings.review.submitError'));
       setSubmitting(false);
     }
   };
@@ -47,25 +49,25 @@ function ReviewModal({ booking, userId, onClose, onSubmitted }) {
       <div className="rv-modal" onClick={(e) => e.stopPropagation()}>
         <div className="rv-modal-header">
           <div>
-            <h3>Rate your stay</h3>
+            <h3>{t('myBookings.review.title')}</h3>
             <p>{booking.roomName} · {booking.hotelName} · {booking.checkIn} → {booking.checkOut}</p>
           </div>
-          <button className="rv-close" onClick={onClose} aria-label="Close">×</button>
+          <button className="rv-close" onClick={onClose} aria-label={t('common.close')}>×</button>
         </div>
 
         <div className="rv-score-preview">
-          Weighted overall score
+          {t('myBookings.review.weightedScore')}
           <strong>{overallScore} / 10</strong>
         </div>
 
-        {CATEGORIES.map((cat) => (
+        {CATEGORY_KEYS.map((cat) => (
           <div key={cat.key} className="rv-category">
             <div className="rv-cat-header">
-              <span className="rv-cat-label">{cat.label}</span>
-              {cat.highWeight && <span className="rv-cat-weight">Higher weight</span>}
+              <span className="rv-cat-label">{t(`myBookings.review.categories.${cat.key}.label`)}</span>
+              {cat.highWeight && <span className="rv-cat-weight">{t('myBookings.review.higherWeight')}</span>}
               <span className="rv-cat-value">{ratings[cat.key]} / 10</span>
             </div>
-            <p className="rv-cat-question">{cat.question}</p>
+            <p className="rv-cat-question">{t(`myBookings.review.categories.${cat.key}.question`)}</p>
             <input
               type="range"
               min={1}
@@ -79,27 +81,27 @@ function ReviewModal({ booking, userId, onClose, onSubmitted }) {
         ))}
 
         <div className="rv-comment">
-          <label>Your comment</label>
+          <label>{t('myBookings.review.yourComment')}</label>
           <textarea
             rows={4}
-            placeholder="Share your experience… (minimum 10 characters)"
+            placeholder={t('myBookings.review.commentPlaceholder')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
-          <span className="rv-char-count">{comment.length} characters</span>
+          <span className="rv-char-count">{t('myBookings.review.charactersCount', { count: comment.length })}</span>
         </div>
 
         {submitError && <p className="rv-error">{submitError}</p>}
 
         <div className="rv-actions">
-          <button type="button" className="back-btn" onClick={onClose} disabled={submitting}>Cancel</button>
+          <button type="button" className="back-btn" onClick={onClose} disabled={submitting}>{t('myBookings.review.cancel')}</button>
           <button
             type="button"
             className="cta"
             onClick={handleSubmit}
             disabled={submitting || comment.trim().length < 10}
           >
-            {submitting ? 'Submitting…' : 'Submit Review'}
+            {submitting ? t('myBookings.review.submitting') : t('myBookings.review.submitReview')}
           </button>
         </div>
       </div>
@@ -137,6 +139,7 @@ function computeModificationFee(booking) {
 }
 
 export default function MyBookings() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = getCurrentUser();
 
@@ -162,27 +165,27 @@ export default function MyBookings() {
       })
       .catch((err) => {
         if (!mounted) return;
-        setError(err.message || 'Unable to load your bookings.');
+        setError(err.message || t('myBookings.loadError'));
       })
       .finally(() => {
         if (!mounted) return;
         setLoading(false);
       });
     return () => { mounted = false; };
-  }, [user?.id]);
+  }, [user?.id, t]);
 
   const handleCancel = async (booking) => {
     const free = isCancellationFree(booking);
     const penalty = free ? 0 : computeCancellationPenalty(booking);
     const message = free
-      ? `Cancel your booking for ${booking.roomName} at ${booking.hotelName}? This cancellation is free.`
-      : `Cancel your booking for ${booking.roomName} at ${booking.hotelName}? Per this hotel's cancellation policy, you'll be charged a $${penalty.toFixed(2)} fee. Cancel anyway?`;
+      ? t('myBookings.cancelConfirmFree', { room: booking.roomName, hotel: booking.hotelName })
+      : t('myBookings.cancelConfirmFee', { room: booking.roomName, hotel: booking.hotelName, fee: penalty.toFixed(2) });
     if (!window.confirm(message)) return;
     try {
       await cancelBooking(booking.id, user.id);
       setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, status: 'cancelled' } : b)));
     } catch (err) {
-      alert(err.message || 'Unable to cancel this booking.');
+      alert(err.message || t('myBookings.cancelGenericError'));
     }
   };
 
@@ -196,10 +199,10 @@ export default function MyBookings() {
 
   const handleModifySubmit = async (booking) => {
     setModifyError('');
-    if (!modifyDates.checkIn || !modifyDates.checkOut) { setModifyError('Please select both dates.'); return; }
-    if (modifyDates.checkIn >= modifyDates.checkOut) { setModifyError('Check-out must be after check-in.'); return; }
+    if (!modifyDates.checkIn || !modifyDates.checkOut) { setModifyError(t('myBookings.selectBothDates')); return; }
+    if (modifyDates.checkIn >= modifyDates.checkOut) { setModifyError(t('myBookings.checkoutAfterCheckin')); return; }
     const lateFee = computeModificationFee(booking);
-    if (lateFee > 0 && !window.confirm(`This is within 24 hours of check-in, so a $${lateFee.toFixed(2)} late-modification fee applies. Continue?`)) {
+    if (lateFee > 0 && !window.confirm(t('myBookings.lateFeeConfirm', { fee: lateFee.toFixed(2) }))) {
       return;
     }
     setModifySaving(true);
@@ -215,12 +218,15 @@ export default function MyBookings() {
       } : b)));
       closeModify();
       if (updated.modificationFee) {
-        alert(`Dates updated. A $${Number(updated.modificationFee).toFixed(2)} late-modification fee was applied.${updated.status === 'pending' ? ' This booking now needs the hotel to re-confirm it.' : ''}`);
+        alert(
+          t('myBookings.datesUpdatedFeeApplied', { fee: Number(updated.modificationFee).toFixed(2) }) +
+          (updated.status === 'pending' ? t('myBookings.needsReconfirmSuffix') : '')
+        );
       } else if (updated.status === 'pending' && booking.status === 'confirmed') {
-        alert('Dates updated. This booking now needs the hotel to re-confirm it.');
+        alert(t('myBookings.datesUpdatedNeedsReconfirm'));
       }
     } catch (err) {
-      setModifyError(err.message || 'Unable to modify this booking.');
+      setModifyError(err.message || t('myBookings.modifyGenericError'));
     } finally {
       setModifySaving(false);
     }
@@ -234,13 +240,13 @@ export default function MyBookings() {
   return (
     <div className="rooms-page">
       <div className="back-wrapper">
-        <button type="button" className="back-btn" onClick={() => navigate('/')}>← Back to home</button>
+        <button type="button" className="back-btn" onClick={() => navigate('/')}>{t('myBookings.backToHome')}</button>
       </div>
 
-      <h1 className="section-title">My Bookings</h1>
+      <h1 className="section-title">{t('myBookings.title')}</h1>
 
-      {!user?.id && <div className="empty-state"><p>Please log in to see your bookings.</p></div>}
-      {loading && <p style={{ textAlign: 'center', marginBottom: 20 }}>Loading your bookings...</p>}
+      {!user?.id && <div className="empty-state"><p>{t('myBookings.pleaseLogin')}</p></div>}
+      {loading && <p style={{ textAlign: 'center', marginBottom: 20 }}>{t('myBookings.loading')}</p>}
       {error && <p style={{ textAlign: 'center', color: '#9b1c1c', marginBottom: 20 }}>{error}</p>}
 
       {user?.id && !loading && !error && (
@@ -252,62 +258,62 @@ export default function MyBookings() {
                 <p className="hotel-name">{b.hotelName}</p>
               </div>
               <div className="booking-row-dates">{b.checkIn} → {b.checkOut}</div>
-              <span className={`booking-status booking-status-${b.status}`}>{b.status}</span>
+              <span className={`booking-status booking-status-${b.status}`}>{t(`myBookings.statuses.${b.status}`, b.status)}</span>
               {b.modificationFee ? (
-                <span className="muted small" title="A late-modification fee was charged when these dates were last changed.">
-                  (${Number(b.modificationFee).toFixed(2)} late fee applied)
+                <span className="muted small" title={t('myBookings.lateFeeTooltip')}>
+                  {t('myBookings.lateFeeApplied', { amount: Number(b.modificationFee).toFixed(2) })}
                 </span>
               ) : null}
 
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 {(b.status === 'pending' || b.status === 'confirmed') && (
                   <>
-                    <button type="button" className="back-btn" onClick={() => openModify(b)}>Modify</button>
-                    <button type="button" className="back-btn" onClick={() => handleCancel(b)}>Cancel</button>
+                    <button type="button" className="back-btn" onClick={() => openModify(b)}>{t('myBookings.modify')}</button>
+                    <button type="button" className="back-btn" onClick={() => handleCancel(b)}>{t('myBookings.cancel')}</button>
                   </>
                 )}
                 {b.reviewable && (
                   <button type="button" className="cta" style={{ fontSize: 13, padding: '6px 14px' }} onClick={() => setReviewingBooking(b)}>
-                    ✍ Write a Review
+                    {t('myBookings.writeReview')}
                   </button>
                 )}
                 {b.hasReview && (
-                  <span className="rv-reviewed">✓ Reviewed</span>
+                  <span className="rv-reviewed">{t('myBookings.reviewed')}</span>
                 )}
               </div>
 
               {modifyingId === b.id && (
                 <div style={{ width: '100%', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '16px', marginTop: 4 }}>
-                  <p style={{ margin: '0 0 12px', fontWeight: 600 }}>Change dates</p>
+                  <p style={{ margin: '0 0 12px', fontWeight: 600 }}>{t('myBookings.changeDates')}</p>
                   {computeModificationFee(b) > 0 && (
                     <p style={{ margin: '0 0 12px', fontSize: 13, color: '#9b1c1c' }}>
-                      ⚠ This is within 24 hours of check-in — modifying will charge a ${computeModificationFee(b).toFixed(2)} late fee.
+                      {t('myBookings.lateFeeWarning', { amount: computeModificationFee(b).toFixed(2) })}
                     </p>
                   )}
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                     <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                      Check-in
+                      {t('myBookings.checkIn')}
                       <input type="date" value={modifyDates.checkIn} min={new Date().toISOString().split('T')[0]}
                         onChange={(e) => setModifyDates((d) => ({ ...d, checkIn: e.target.value }))}
                         style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                     </label>
                     <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                      Check-out
+                      {t('myBookings.checkOut')}
                       <input type="date" value={modifyDates.checkOut} min={modifyDates.checkIn || new Date().toISOString().split('T')[0]}
                         onChange={(e) => setModifyDates((d) => ({ ...d, checkOut: e.target.value }))}
                         style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                     </label>
                     <button type="button" className="cta" onClick={() => handleModifySubmit(b)} disabled={modifySaving} style={{ height: 36 }}>
-                      {modifySaving ? 'Saving…' : 'Save'}
+                      {modifySaving ? t('myBookings.saving') : t('myBookings.save')}
                     </button>
-                    <button type="button" className="back-btn" onClick={closeModify} disabled={modifySaving} style={{ height: 36 }}>Cancel</button>
+                    <button type="button" className="back-btn" onClick={closeModify} disabled={modifySaving} style={{ height: 36 }}>{t('myBookings.cancel')}</button>
                   </div>
                   {modifyError && <p style={{ color: '#9b1c1c', marginTop: 8, fontSize: 13 }}>{modifyError}</p>}
                 </div>
               )}
             </div>
           ))}
-          {bookings.length === 0 && <div className="empty-state"><p>You don't have any bookings yet.</p></div>}
+          {bookings.length === 0 && <div className="empty-state"><p>{t('myBookings.noBookings')}</p></div>}
         </div>
       )}
 

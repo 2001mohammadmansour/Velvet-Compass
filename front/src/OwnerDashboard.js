@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./ownerDashboard.css";
 import * as ownerSvc from "./services/owner";
 import { getAmenities, createAmenity } from "./services/amenities";
@@ -95,6 +96,7 @@ function groupBlockedRanges(days) {
 }
 
 export default function OwnerDashboard() {
+  const { t } = useTranslation();
   const hotelId = useMemo(() => {
     const envHotelId = process.env.REACT_APP_HOTEL_ID;
     if (envHotelId) return envHotelId;
@@ -413,15 +415,15 @@ export default function OwnerDashboard() {
 
   async function handleBlockDates(unitId) {
     const form = blockForm[unitId] || {};
-    if (!form.from || !form.to) { alert('Pick both a from and to date.'); return; }
-    if (form.from > form.to) { alert('The "to" date must be on or after the "from" date.'); return; }
+    if (!form.from || !form.to) { alert(t('ownerDashboard.errors.pickBothDates')); return; }
+    if (form.from > form.to) { alert(t('ownerDashboard.errors.toAfterFrom')); return; }
     setBlockSavingId(unitId);
     try {
       await ownerSvc.setRoomAvailability(hotelId, availabilityRoomType.id, unitId, { from: form.from, to: form.to, status: 'Blocked' });
       await refreshUnitAvailability(unitId);
       setBlockForm((prev) => ({ ...prev, [unitId]: { from: '', to: '' } }));
     } catch (err) {
-      alert('Unable to block these dates: ' + (err.message || err));
+      alert(t('ownerDashboard.errors.blockDatesFailed') + (err.message || err));
     } finally {
       setBlockSavingId(null);
     }
@@ -433,7 +435,7 @@ export default function OwnerDashboard() {
       await ownerSvc.setRoomAvailability(hotelId, availabilityRoomType.id, unitId, { from: range.from, to: range.to, status: 'Free' });
       await refreshUnitAvailability(unitId);
     } catch (err) {
-      alert('Unable to unblock these dates: ' + (err.message || err));
+      alert(t('ownerDashboard.errors.unblockDatesFailed') + (err.message || err));
     } finally {
       setBlockSavingId(null);
     }
@@ -463,7 +465,7 @@ export default function OwnerDashboard() {
       await ownerSvc.deleteRoomTypePhoto(hotelId, selectedRoomId, photo.id);
       setExistingPhotoUrls((prev) => prev.filter((_, i) => i !== idx));
     } catch (err) {
-      alert('Unable to remove photo: ' + (err.message || err));
+      alert(t('ownerDashboard.errors.removePhotoFailed') + (err.message || err));
     }
   }
 
@@ -503,7 +505,7 @@ export default function OwnerDashboard() {
       setHotelAmenityIds((prev) => [...prev, created.id]);
       setNewHotelAmenityName('');
     } catch (err) {
-      alert('Unable to add amenity: ' + (err.message || err));
+      alert(t('ownerDashboard.errors.addAmenityFailed') + (err.message || err));
     } finally {
       setAddingHotelAmenity(false);
     }
@@ -519,15 +521,15 @@ export default function OwnerDashboard() {
       setRoomAmenityIds((prev) => [...prev, created.id]);
       setNewRoomAmenityName('');
     } catch (err) {
-      alert('Unable to add amenity: ' + (err.message || err));
+      alert(t('ownerDashboard.errors.addAmenityFailed') + (err.message || err));
     } finally {
       setAddingRoomAmenity(false);
     }
   }
 
   async function saveRoom() {
-    if (!roomName.trim()) return alert('Room name is required');
-    if (roomPrice < 0) return alert('Price must be >= 0');
+    if (!roomName.trim()) return alert(t('ownerDashboard.errors.roomNameRequired'));
+    if (roomPrice < 0) return alert(t('ownerDashboard.errors.priceMustBeNonNegative'));
     setAddSaving(true);
     try {
       const payload = {
@@ -579,7 +581,7 @@ export default function OwnerDashboard() {
       if (updated) setRooms(updated);
       closeAddRoom();
     } catch (err) {
-      alert('Unable to save room: ' + (err.message || err));
+      alert(t('ownerDashboard.errors.saveRoomFailed') + (err.message || err));
     } finally {
       setAddSaving(false);
     }
@@ -681,7 +683,7 @@ export default function OwnerDashboard() {
       await ownerSvc.updateSettings(hotelId, { autoAcceptBookings: next });
       setAutoAcceptBookings(next);
     } catch (err) {
-      alert('Unable to update setting: ' + (err.message || err));
+      alert(t('ownerDashboard.errors.updateSettingFailed') + (err.message || err));
     }
   }
 
@@ -690,7 +692,7 @@ export default function OwnerDashboard() {
       await ownerSvc.acceptReservation(hotelId, reservationId);
       const updated = await ownerSvc.getReservations(hotelId).catch(() => null);
       if (updated) setReservations(updated);
-    } catch (err) { alert('Unable to accept reservation: ' + (err.message || err)); }
+    } catch (err) { alert(t('ownerDashboard.errors.acceptReservationFailed') + (err.message || err)); }
   }
 
   async function handleReject(reservationId) {
@@ -698,7 +700,7 @@ export default function OwnerDashboard() {
       await ownerSvc.rejectReservation(hotelId, reservationId);
       const updated = await ownerSvc.getReservations(hotelId).catch(() => null);
       if (updated) setReservations(updated);
-    } catch (err) { alert('Unable to reject reservation: ' + (err.message || err)); }
+    } catch (err) { alert(t('ownerDashboard.errors.rejectReservationFailed') + (err.message || err)); }
   }
 
   return (
@@ -706,54 +708,54 @@ export default function OwnerDashboard() {
       <header className="od-header">
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <Link to="/ownerhome" className="cta" style={{ textDecoration: "none", display: "inline-block" }}>
-            Back
+            {t('ownerDashboard.back')}
           </Link>
-          <h1 style={{ margin: 0 }}>Owner Dashboard</h1>
+          <h1 style={{ margin: 0 }}>{t('ownerDashboard.title')}</h1>
           <Link
             to="/owner/requests"
             className="cta"
-            style={{ textDecoration: "none", display: "inline-block", marginLeft: "auto" }}
+            style={{ textDecoration: "none", display: "inline-block", marginInlineStart: "auto" }}
           >
-            📨 Hotel Requests
+            {t('ownerDashboard.hotelRequests')}
           </Link>
         </div>
-        <p className="muted">Overview of your hotel's performance and settings</p>
+        <p className="muted">{t('ownerDashboard.subtitle')}</p>
         {/* CHANGED BY AI (2026-07-13): please review — was reading getCurrentUser()?.stars, a
             field never populated anywhere in the real-backend-integrated app; now reads the
             hotel's actual starRating via getMetrics(). */}
         {(() => { const s = Number(metrics?.stars) || 0; return s > 0 ? (
           <p style={{ margin: '4px 0 0', fontSize: 22, color: '#f59e0b', letterSpacing: 3 }}>
             {'★'.repeat(s)}{'☆'.repeat(5 - s)}
-            <span style={{ fontSize: 13, color: '#6b7280', letterSpacing: 0, marginLeft: 8 }}>{s}-star hotel</span>
+            <span style={{ fontSize: 13, color: '#6b7280', letterSpacing: 0, marginInlineStart: 8 }}>{t('ownerDashboard.starHotel', { stars: s })}</span>
           </p>
         ) : null; })()}
       </header>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input type="checkbox" checked={autoAcceptBookings} onChange={toggleAutoAccept} /> Auto-accept bookings
+          <input type="checkbox" checked={autoAcceptBookings} onChange={toggleAutoAccept} /> {t('ownerDashboard.autoAcceptBookings')}
         </label>
-        <div className="muted small">When off, new bookings arrive as <strong>pending</strong> and require approval.</div>
+        <div className="muted small">{t('ownerDashboard.autoAcceptHint')}</div>
       </div>
-      {error && <div className="od-error" style={{ color: '#9b1c1c', padding: 10, borderRadius: 6, background: '#fff1f0', marginBottom: 12 }}>Error: {error}</div>}
-      {loading && <div className="muted small" style={{ marginBottom: 12 }}>Loading data...</div>}
+      {error && <div className="od-error" style={{ color: '#9b1c1c', padding: 10, borderRadius: 6, background: '#fff1f0', marginBottom: 12 }}>{error}</div>}
+      {loading && <div className="muted small" style={{ marginBottom: 12 }}>{t('ownerDashboard.loadingData')}</div>}
 
       <section className="od-row od-bills">
-        <h2>Bills</h2>
+        <h2>{t('ownerDashboard.bills.title')}</h2>
         <div className="bills-grid">
           <div className="bill-card">
-            <div className="label">Gross Earnings</div>
+            <div className="label">{t('ownerDashboard.bills.grossEarnings')}</div>
             <div className="value">${(bills?.gross || 0).toLocaleString()}</div>
           </div>
           <div className="bill-card">
-            <div className="label">Platform Cut</div>
+            <div className="label">{t('ownerDashboard.bills.platformCut')}</div>
             <div className="value">{bills?.platformCutPercent ?? 0}%</div>
           </div>
           <div className="bill-card">
-            <div className="label">Net to Owner</div>
+            <div className="label">{t('ownerDashboard.bills.netToOwner')}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               <div className="value">${Math.round(net).toLocaleString()}</div>
               <Link to="/owner/stats" className="cta" style={{ display: 'inline-block', textDecoration: 'none' }}>
-                View Stats
+                {t('ownerDashboard.bills.viewStats')}
               </Link>
             </div>
           </div>
@@ -761,11 +763,11 @@ export default function OwnerDashboard() {
       </section>
 
       <section className="od-row od-metrics">
-        <h2>Views & Actions</h2>
+        <h2>{t('ownerDashboard.metrics.title')}</h2>
         <div className="metrics-grid">
           <div className="metric">
             <div className="m-num">{(metrics?.impressions || 0).toLocaleString()}</div>
-            <div className="m-label">Views</div>
+            <div className="m-label">{t('ownerDashboard.metrics.views')}</div>
           </div>
           {SHOW_CLICKS && (
             <div className="metric">
@@ -775,11 +777,11 @@ export default function OwnerDashboard() {
           )}
           <div className="metric">
             <div className="m-num">{metrics?.bookings || 0}</div>
-            <div className="m-label">Bookings</div>
+            <div className="m-label">{t('ownerDashboard.metrics.bookings')}</div>
           </div>
           <div className="metric">
             <div className="m-num">{metrics?.cancellations || 0}</div>
-            <div className="m-label">Cancellations</div>
+            <div className="m-label">{t('ownerDashboard.metrics.cancellations')}</div>
           </div>
         </div>
       </section>
@@ -823,18 +825,18 @@ export default function OwnerDashboard() {
 
       <section className="od-row od-calendar">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <h2>Reservations Calendar</h2>
+          <h2>{t('ownerDashboard.calendar.title')}</h2>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="campaign-back" onClick={() => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}>Prev</button>
-            <button className="campaign-back" onClick={() => setCalendarMonth(startOfMonth(new Date()))}>Today</button>
-            <button className="campaign-back" onClick={() => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}>Next</button>
+            <button className="campaign-back" onClick={() => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}>{t('ownerDashboard.calendar.prev')}</button>
+            <button className="campaign-back" onClick={() => setCalendarMonth(startOfMonth(new Date()))}>{t('ownerDashboard.calendar.today')}</button>
+            <button className="campaign-back" onClick={() => setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}>{t('ownerDashboard.calendar.next')}</button>
           </div>
         </div>
 
         <p className="muted small" style={{ marginTop: 8 }}>{formatMonthLabel(calendarMonth)}</p>
 
         <div className="calendar-grid calendar-weekdays">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+          {t('ownerDashboard.calendar.weekdays', { returnObjects: true }).map((day) => (
             <div key={day} className="calendar-weekday">{day}</div>
           ))}
         </div>
@@ -865,10 +867,10 @@ export default function OwnerDashboard() {
                 <div className="calendar-day-events">
                   {dayReservations.slice(0, 2).map((reservation) => (
                     <div key={reservation.id} className={`calendar-pill ${reservation.status}`}>
-                      {sameDay(day, toDate(reservation.checkIn)) ? 'Check-in' : sameDay(day, toDate(reservation.checkOut)) ? 'Check-out' : reservation.roomName}
+                      {sameDay(day, toDate(reservation.checkIn)) ? t('ownerDashboard.calendar.checkIn') : sameDay(day, toDate(reservation.checkOut)) ? t('ownerDashboard.calendar.checkOut') : reservation.roomName}
                     </div>
                   ))}
-                  {dayReservations.length > 2 && <div className="calendar-more">+{dayReservations.length - 2} more</div>}
+                  {dayReservations.length > 2 && <div className="calendar-more">{t('ownerDashboard.calendar.more', { count: dayReservations.length - 2 })}</div>}
                 </div>
               </div>
             );
@@ -876,9 +878,9 @@ export default function OwnerDashboard() {
         </div>
 
         <div className="calendar-list">
-          <h3>Upcoming stays</h3>
+          <h3>{t('ownerDashboard.calendar.upcomingStays')}</h3>
           {calendarReservations.length === 0 ? (
-            <p className="muted small">No stays in this month yet.</p>
+            <p className="muted small">{t('ownerDashboard.calendar.noStaysThisMonth')}</p>
           ) : (
             calendarReservations.map((reservation) => (
               <div key={reservation.id} className="calendar-list-item">
@@ -890,15 +892,15 @@ export default function OwnerDashboard() {
                 )}
                 <span>{reservation.roomName}</span>
                 <span>{reservation.checkIn} → {reservation.checkOut}</span>
-                <span className={`calendar-badge ${reservation.status}`}>{reservation.status}</span>
+                <span className={`calendar-badge ${reservation.status}`}>{t(`myBookings.statuses.${reservation.status}`, reservation.status)}</span>
               </div>
             ))
           )}
         </div>
         <div style={{ marginTop: 12 }} className="pending-reservations">
-          <h3>Pending Bookings</h3>
+          <h3>{t('ownerDashboard.calendar.pendingBookings')}</h3>
           {reservations.filter(r => r.status === 'pending').length === 0 ? (
-            <p className="muted small">No pending bookings.</p>
+            <p className="muted small">{t('ownerDashboard.calendar.noPendingBookings')}</p>
           ) : (
             reservations.filter(r => r.status === 'pending').map((reservation) => (
               <div key={`pending-${reservation.id}`} className="pending-row" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
@@ -909,11 +911,11 @@ export default function OwnerDashboard() {
                       {[reservation.guestEmail, reservation.guestPhone].filter(Boolean).join(' · ')}
                     </div>
                   )}
-                  <div className="muted small">{reservation.roomName || `Room ${reservation.roomId}`} — {reservation.checkIn} → {reservation.checkOut}</div>
+                  <div className="muted small">{reservation.roomName || t('ownerDashboard.calendar.room', { id: reservation.roomId })} — {reservation.checkIn} → {reservation.checkOut}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="cta" onClick={() => handleAccept(reservation.id)}>Accept</button>
-                  <button className="campaign-back" onClick={() => handleReject(reservation.id)}>Reject</button>
+                  <button className="cta" onClick={() => handleAccept(reservation.id)}>{t('ownerDashboard.calendar.accept')}</button>
+                  <button className="campaign-back" onClick={() => handleReject(reservation.id)}>{t('ownerDashboard.calendar.reject')}</button>
                 </div>
               </div>
             ))
@@ -926,20 +928,20 @@ export default function OwnerDashboard() {
           <div className="campaign-modal calendar-day-modal" onClick={(e) => e.stopPropagation()}>
             <div className="campaign-modal-header">
               <h3>{selectedCalendarDay.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</h3>
-              <button className="close-modal" onClick={closeCalendarDay} aria-label="Close">×</button>
+              <button className="close-modal" onClick={closeCalendarDay} aria-label={t('ownerDashboard.calendar.close')}>×</button>
             </div>
 
             <div className="calendar-day-stats">
-              <div><strong>Reservations</strong><p>{selectedDayInfo.dayReservations.length}</p></div>
-              <div><strong>Occupied rooms</strong><p>{selectedDayInfo.occupiedRoomCount}</p></div>
-              <div><strong>Blocked rooms</strong><p>{selectedDayInfo.blockedRoomCount}</p></div>
-              <div><strong>Available rooms</strong><p>{selectedDayInfo.availableRoomCount}</p></div>
+              <div><strong>{t('ownerDashboard.calendar.reservations')}</strong><p>{selectedDayInfo.dayReservations.length}</p></div>
+              <div><strong>{t('ownerDashboard.calendar.occupiedRooms')}</strong><p>{selectedDayInfo.occupiedRoomCount}</p></div>
+              <div><strong>{t('ownerDashboard.calendar.blockedRooms')}</strong><p>{selectedDayInfo.blockedRoomCount}</p></div>
+              <div><strong>{t('ownerDashboard.calendar.availableRooms')}</strong><p>{selectedDayInfo.availableRoomCount}</p></div>
             </div>
 
             <div className="calendar-day-panels">
               <div className="calendar-day-panel">
-                <h4>Check-ins</h4>
-                {selectedDayInfo.checkIns.length === 0 ? <p className="muted small">None</p> : selectedDayInfo.checkIns.map((reservation) => (
+                <h4>{t('ownerDashboard.calendar.checkIns')}</h4>
+                {selectedDayInfo.checkIns.length === 0 ? <p className="muted small">{t('ownerDashboard.calendar.none')}</p> : selectedDayInfo.checkIns.map((reservation) => (
                   <div key={`in-${reservation.id}`} className="calendar-popup-row">
                     <strong>{reservation.guestName}</strong>
                     <span>{reservation.roomName}</span>
@@ -948,8 +950,8 @@ export default function OwnerDashboard() {
               </div>
 
               <div className="calendar-day-panel">
-                <h4>Check-outs</h4>
-                {selectedDayInfo.checkOuts.length === 0 ? <p className="muted small">None</p> : selectedDayInfo.checkOuts.map((reservation) => (
+                <h4>{t('ownerDashboard.calendar.checkOuts')}</h4>
+                {selectedDayInfo.checkOuts.length === 0 ? <p className="muted small">{t('ownerDashboard.calendar.none')}</p> : selectedDayInfo.checkOuts.map((reservation) => (
                   <div key={`out-${reservation.id}`} className="calendar-popup-row">
                     <strong>{reservation.guestName}</strong>
                     <span>{reservation.roomName}</span>
@@ -958,8 +960,8 @@ export default function OwnerDashboard() {
               </div>
 
               <div className="calendar-day-panel">
-                <h4>In-house guests</h4>
-                {selectedDayInfo.inHouse.length === 0 ? <p className="muted small">None</p> : selectedDayInfo.inHouse.map((reservation) => (
+                <h4>{t('ownerDashboard.calendar.inHouseGuests')}</h4>
+                {selectedDayInfo.inHouse.length === 0 ? <p className="muted small">{t('ownerDashboard.calendar.none')}</p> : selectedDayInfo.inHouse.map((reservation) => (
                   <div key={`house-${reservation.id}`} className="calendar-popup-row">
                     <strong>{reservation.guestName}</strong>
                     <span>{reservation.roomName}</span>
@@ -968,26 +970,26 @@ export default function OwnerDashboard() {
               </div>
 
               <div className="calendar-day-panel">
-                <h4>Blocked rooms</h4>
-                {selectedDayInfo.blockedRooms.length === 0 ? <p className="muted small">None</p> : selectedDayInfo.blockedRooms.map((room) => (
+                <h4>{t('ownerDashboard.calendar.blockedRooms')}</h4>
+                {selectedDayInfo.blockedRooms.length === 0 ? <p className="muted small">{t('ownerDashboard.calendar.none')}</p> : selectedDayInfo.blockedRooms.map((room) => (
                   <div key={`blocked-${room.id}`} className="calendar-popup-row">
                     <strong>{room.name}</strong>
-                    <span>Blocked</span>
+                    <span>{t('ownerDashboard.calendar.blocked')}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="calendar-day-notes">
-              <h4>Notes</h4>
+              <h4>{t('ownerDashboard.calendar.notes')}</h4>
               <textarea
                 className="calendar-notes-input"
                 rows={4}
-                placeholder="Add notes for this date..."
+                placeholder={t('ownerDashboard.calendar.notesPlaceholder')}
                 value={calendarNotes[toDateKey(selectedCalendarDay)] || ''}
                 onChange={(e) => updateCalendarNote(e.target.value)}
               />
-              <p className="muted small" style={{ marginTop: 8 }}>Notes are saved locally for now until we connect the backend.</p>
+              <p className="muted small" style={{ marginTop: 8 }}>{t('ownerDashboard.calendar.notesHint')}</p>
             </div>
           </div>
         </div>
@@ -995,8 +997,8 @@ export default function OwnerDashboard() {
 
       <section className="od-row od-rooms">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2>Manage Rooms</h2>
-          <button className="add-room-btn cta" onClick={openAddRoom}>+ Add Room</button>
+          <h2>{t('ownerDashboard.rooms.title')}</h2>
+          <button className="add-room-btn cta" onClick={openAddRoom}>{t('ownerDashboard.rooms.addRoom')}</button>
         </div>
         <div className="rooms-list">
           {rooms.map((r) => (
@@ -1010,7 +1012,7 @@ export default function OwnerDashboard() {
               )}
               <div className="room-card-body">
                 <div className="room-name">{r.name}</div>
-                <div className="muted small">${r.price} / night</div>
+                <div className="muted small">${r.price}{t('ownerDashboard.rooms.perNight')}</div>
                 {r.reviewCount > 0 && (
                   <div className="muted small" style={{ marginTop: 2, color: '#2a3d66', fontWeight: 600 }}>
                     ★ {r.avgScore}/10 · {r.reviewCount} review{r.reviewCount !== 1 ? 's' : ''}
@@ -1019,7 +1021,7 @@ export default function OwnerDashboard() {
               </div>
               <div className="room-actions">
                 <button onClick={() => openAvailability(r)} className="booking-toggle on">
-                  Manage Availability
+                  {t('ownerDashboard.rooms.manageAvailability')}
                 </button>
               </div>
             </div>
@@ -1028,20 +1030,20 @@ export default function OwnerDashboard() {
       </section>
 
       <section className="od-row">
-        <h2>Guest Reviews</h2>
+        <h2>{t('ownerDashboard.reviews.title')}</h2>
         {!hotelReviews || hotelReviews.reviewCount === 0 ? (
-          <p className="muted small">No guest reviews yet. Reviews appear here after guests check out and submit their ratings.</p>
+          <p className="muted small">{t('ownerDashboard.reviews.none')}</p>
         ) : (
           <>
             <div style={{ marginBottom: 16 }}>
               <span style={{ fontSize: 28, fontWeight: 800, color: '#2a3d66' }}>{hotelReviews.avgScore}</span>
-              <span style={{ fontSize: 14, color: '#6b7280', marginLeft: 8 }}>/ 10 overall · {hotelReviews.reviewCount} review{hotelReviews.reviewCount !== 1 ? 's' : ''}</span>
+              <span style={{ fontSize: 14, color: '#6b7280', marginInlineStart: 8 }}>{t('ownerDashboard.reviews.overall')} · {hotelReviews.reviewCount} review{hotelReviews.reviewCount !== 1 ? 's' : ''}</span>
             </div>
             {hotelReviews.categoryAverages && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
                 {Object.entries(CAT_LABELS).map(([key, label]) => (
                   <div key={key} style={{ background: '#f3f4f6', borderRadius: 8, padding: '6px 12px', textAlign: 'center', minWidth: 90 }}>
-                    <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 2 }}>{t(`myBookings.review.categories.${key}.label`, label)}</div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2340' }}>{hotelReviews.categoryAverages[key]}</div>
                   </div>
                 ))}
@@ -1051,11 +1053,11 @@ export default function OwnerDashboard() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                    <th style={{ textAlign: 'left', padding: '6px 10px', color: '#6b7280', fontWeight: 600 }}>Room</th>
-                    <th style={{ textAlign: 'left', padding: '6px 10px', color: '#6b7280', fontWeight: 600 }}>Guest</th>
-                    <th style={{ textAlign: 'center', padding: '6px 10px', color: '#6b7280', fontWeight: 600 }}>Score</th>
-                    <th style={{ textAlign: 'left', padding: '6px 10px', color: '#6b7280', fontWeight: 600 }}>Comment</th>
-                    <th style={{ textAlign: 'right', padding: '6px 10px', color: '#6b7280', fontWeight: 600 }}>Date</th>
+                    <th style={{ textAlign: 'start', padding: '6px 10px', color: '#6b7280', fontWeight: 600 }}>{t('ownerDashboard.reviews.room')}</th>
+                    <th style={{ textAlign: 'start', padding: '6px 10px', color: '#6b7280', fontWeight: 600 }}>{t('ownerDashboard.reviews.guest')}</th>
+                    <th style={{ textAlign: 'center', padding: '6px 10px', color: '#6b7280', fontWeight: 600 }}>{t('ownerDashboard.reviews.score')}</th>
+                    <th style={{ textAlign: 'start', padding: '6px 10px', color: '#6b7280', fontWeight: 600 }}>{t('ownerDashboard.reviews.comment')}</th>
+                    <th style={{ textAlign: 'end', padding: '6px 10px', color: '#6b7280', fontWeight: 600 }}>{t('ownerDashboard.reviews.date')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1069,7 +1071,7 @@ export default function OwnerDashboard() {
                       <td style={{ padding: '8px 10px', color: '#374151', maxWidth: 300 }}>
                         {r.comment.length > 80 ? r.comment.slice(0, 80) + '…' : r.comment}
                       </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', color: '#9ca3af', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '8px 10px', textAlign: 'end', color: '#9ca3af', whiteSpace: 'nowrap' }}>
                         {new Date(r.createdAt).toLocaleDateString()}
                       </td>
                     </tr>
@@ -1082,13 +1084,13 @@ export default function OwnerDashboard() {
       </section>
 
       <section className="od-row od-cancel">
-        <h2>Cancellation Policy</h2>
+        <h2>{t('ownerDashboard.cancellation.title')}</h2>
         <div className="cancel-row">
           <label>
-            <input type="checkbox" checked={cancelPolicy.freeCancel} onChange={(e) => setCancelPolicy(p => ({ ...p, freeCancel: e.target.checked }))} /> Free cancellation
+            <input type="checkbox" checked={cancelPolicy.freeCancel} onChange={(e) => setCancelPolicy(p => ({ ...p, freeCancel: e.target.checked }))} /> {t('ownerDashboard.cancellation.freeCancellation')}
           </label>
-          <label style={{ marginLeft: 12 }}>
-            Days before check-in required:
+          <label style={{ marginInlineStart: 12 }}>
+            {t('ownerDashboard.cancellation.daysBeforeRequired')}
             <input type="number" min={0} value={cancelPolicy.daysBefore} onChange={(e) => setCancelPolicy(p => ({ ...p, daysBefore: Number(e.target.value) }))} />
           </label>
         </div>
@@ -1097,18 +1099,18 @@ export default function OwnerDashboard() {
             turned off entirely). Previously this whole section posted to a mock endpoint. */}
         <div className="cancel-row" style={{ marginTop: 10 }}>
           <label>
-            Otherwise charge:
+            {t('ownerDashboard.cancellation.otherwiseCharge')}
             <select
               value={cancelPolicy.feeType}
               onChange={(e) => setCancelPolicy(p => ({ ...p, feeType: e.target.value }))}
-              style={{ marginLeft: 6 }}
+              style={{ marginInlineStart: 6 }}
             >
-              <option value="percentage">% of booking total</option>
-              <option value="flat">Flat amount ($)</option>
+              <option value="percentage">{t('ownerDashboard.cancellation.percentOfTotal')}</option>
+              <option value="flat">{t('ownerDashboard.cancellation.flatAmount')}</option>
             </select>
           </label>
-          <label style={{ marginLeft: 12 }}>
-            {cancelPolicy.feeType === 'flat' ? 'Amount ($):' : 'Percentage (%):'}
+          <label style={{ marginInlineStart: 12 }}>
+            {cancelPolicy.feeType === 'flat' ? t('ownerDashboard.cancellation.amount') : t('ownerDashboard.cancellation.percentage')}
             <input
               type="number"
               min={0}
@@ -1122,52 +1124,52 @@ export default function OwnerDashboard() {
           <button className="save-btn" onClick={async () => {
             try {
               await ownerSvc.updateCancelPolicy(hotelId, cancelPolicy);
-              alert('Cancellation policy saved');
+              alert(t('ownerDashboard.cancellation.saved'));
             } catch (err) {
-              alert('Unable to save policy: ' + err.message);
+              alert(t('ownerDashboard.cancellation.saveError') + err.message);
             }
-          }}>Save Policy</button>
+          }}>{t('ownerDashboard.cancellation.savePolicy')}</button>
         </div>
       </section>
 
       <section className="od-row">
-        <h2>Breakfast</h2>
+        <h2>{t('ownerDashboard.breakfast.title')}</h2>
         <div className="cancel-row">
           <label>
             <input
               type="checkbox"
               checked={breakfastAvailable}
               onChange={(e) => setBreakfastAvailable(e.target.checked)}
-            /> Offer breakfast to guests
+            /> {t('ownerDashboard.breakfast.offer')}
           </label>
           {breakfastAvailable && (
-            <label style={{ marginLeft: 12 }}>
-              Price per person per night ($):
+            <label style={{ marginInlineStart: 12 }}>
+              {t('ownerDashboard.breakfast.pricePerPerson')}
               <input
                 type="number"
                 min={0}
                 step="0.01"
                 value={breakfastPrice}
                 onChange={(e) => setBreakfastPrice(Number(e.target.value) || 0)}
-                style={{ width: 90, marginLeft: 8 }}
+                style={{ width: 90, marginInlineStart: 8 }}
               />
             </label>
           )}
           <button className="save-btn" onClick={async () => {
             try {
               await ownerSvc.updateSettings(hotelId, { breakfast: { available: breakfastAvailable, price: breakfastPrice } });
-              alert('Breakfast settings saved');
+              alert(t('ownerDashboard.breakfast.saved'));
             } catch (err) {
-              alert('Unable to save: ' + err.message);
+              alert(t('ownerDashboard.breakfast.saveError') + err.message);
             }
-          }}>Save</button>
+          }}>{t('ownerDashboard.breakfast.save')}</button>
         </div>
       </section>
 
       {/* CHANGED BY AI (2026-07-15): please review. New hotel-level amenities checkbox grid, with
           its own dedicated Save button (matching the Breakfast/Cancellation Policy sections above). */}
       <section className="od-row">
-        <h2>Hotel Amenities</h2>
+        <h2>{t('ownerDashboard.amenities.hotelTitle')}</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {hotelAmenityCatalog.map((a) => (
             <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 400 }}>
@@ -1179,7 +1181,7 @@ export default function OwnerDashboard() {
               {a.icon ? `${a.icon} ` : ''}{a.name}
             </label>
           ))}
-          {hotelAmenityCatalog.length === 0 && <span className="muted small">No hotel amenities in the catalog yet.</span>}
+          {hotelAmenityCatalog.length === 0 && <span className="muted small">{t('ownerDashboard.amenities.noneYet')}</span>}
         </div>
         {/* CHANGED BY AI (2026-07-15): please review. New: add a custom amenity if the admin
             catalog doesn't have what this hotel needs. */}
@@ -1187,12 +1189,12 @@ export default function OwnerDashboard() {
           <input
             className="sr-filter-input"
             style={{ maxWidth: 220 }}
-            placeholder="Add a custom amenity..."
+            placeholder={t('ownerDashboard.amenities.addCustomPlaceholder')}
             value={newHotelAmenityName}
             onChange={(e) => setNewHotelAmenityName(e.target.value)}
           />
           <button className="ha-sort-btn" disabled={addingHotelAmenity || !newHotelAmenityName.trim()} onClick={handleAddHotelAmenity}>
-            {addingHotelAmenity ? 'Adding...' : '+ Add'}
+            {addingHotelAmenity ? t('ownerDashboard.amenities.adding') : t('ownerDashboard.amenities.add')}
           </button>
         </div>
         <div className="cancel-row" style={{ marginTop: 10 }}>
@@ -1200,42 +1202,42 @@ export default function OwnerDashboard() {
             setHotelAmenitiesSaving(true);
             try {
               await ownerSvc.updateHotelAmenities(hotelId, hotelAmenityIds);
-              alert('Hotel amenities saved');
+              alert(t('ownerDashboard.amenities.saved'));
             } catch (err) {
-              alert('Unable to save amenities: ' + (err.message || err));
+              alert(t('ownerDashboard.amenities.saveError') + (err.message || err));
             } finally {
               setHotelAmenitiesSaving(false);
             }
-          }}>{hotelAmenitiesSaving ? 'Saving...' : 'Save'}</button>
+          }}>{hotelAmenitiesSaving ? t('ownerDashboard.amenities.saving') : t('ownerDashboard.amenities.save')}</button>
         </div>
       </section>
 
       {/* CHANGED BY AI (2026-07-15): please review. Seasonal/demand pricing moved from per-room-type
           to hotel scope — configured once here and applied to every room type in this hotel. */}
       <section className="od-row">
-        <h2>Seasonal &amp; Demand-Based Pricing</h2>
+        <h2>{t('ownerDashboard.pricing.title')}</h2>
         <HotelPricingManager hotelId={hotelId} />
       </section>
 
-      <footer style={{ marginTop: 28, opacity: .8 }} className="muted small">Data shown is mocked unless backend is connected — add REACT_APP_API_BASE_URL and REACT_APP_HOTEL_ID.</footer>
+      <footer style={{ marginTop: 28, opacity: .8 }} className="muted small">{t('ownerDashboard.footer')}</footer>
 
       {addRoomOpen && (
         <div className="campaign-modal-overlay" onClick={closeAddRoom}>
           <div className="campaign-modal" onClick={(e) => e.stopPropagation()}>
             <div className="campaign-modal-header">
-              <h3>{selectedRoomId ? 'Edit Room' : 'Add Room'}</h3>
-              <button className="close-modal" onClick={closeAddRoom} aria-label="Close">×</button>
+              <h3>{selectedRoomId ? t('ownerDashboard.roomModal.editTitle') : t('ownerDashboard.roomModal.addTitle')}</h3>
+              <button className="close-modal" onClick={closeAddRoom} aria-label={t('ownerDashboard.calendar.close')}>×</button>
             </div>
 
             <div className="campaign-section">
-              <label>Room name</label>
+              <label>{t('ownerDashboard.roomModal.roomName')}</label>
               <input value={roomName} onChange={(e) => setRoomName(e.target.value)} />
             </div>
 
             {/* CHANGED BY AI (2026-07-15): please review. Description already existed end-to-end on
                 the backend but had no UI to set it until now. */}
             <div className="campaign-section">
-              <label>Description (shown to guests when booking)</label>
+              <label>{t('ownerDashboard.roomModal.description')}</label>
               <textarea
                 rows={3}
                 value={roomDescription}
@@ -1245,20 +1247,20 @@ export default function OwnerDashboard() {
             </div>
 
             <div className="campaign-section" style={{ display: 'flex', gap: 12 }}>
-              <label style={{ flex: 1 }}>Amount
+              <label style={{ flex: 1 }}>{t('ownerDashboard.roomModal.amount')}
                 <input type="number" min={1} value={roomAmount} onChange={(e) => setRoomAmount(Number(e.target.value) || 1)} />
               </label>
-              <label style={{ flex: 1 }}>Capacity
+              <label style={{ flex: 1 }}>{t('ownerDashboard.roomModal.capacity')}
                 <input type="number" min={1} value={roomCapacity} onChange={(e) => setRoomCapacity(Number(e.target.value) || 1)} />
               </label>
-              <label style={{ flex: 1 }}>Price
+              <label style={{ flex: 1 }}>{t('ownerDashboard.roomModal.price')}
                 <input type="number" min={0} value={roomPrice} onChange={(e) => setRoomPrice(Number(e.target.value) || 0)} />
               </label>
             </div>
 
             {/* CHANGED BY AI (2026-07-15): please review. New room-type amenities checkbox grid. */}
             <div className="campaign-section">
-              <label>Room Amenities</label>
+              <label>{t('ownerDashboard.amenities.roomTitle')}</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                 {roomAmenityCatalog.map((a) => (
                   <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 400 }}>
@@ -1270,7 +1272,7 @@ export default function OwnerDashboard() {
                     {a.icon ? `${a.icon} ` : ''}{a.name}
                   </label>
                 ))}
-                {roomAmenityCatalog.length === 0 && <span className="muted small">No room amenities in the catalog yet.</span>}
+                {roomAmenityCatalog.length === 0 && <span className="muted small">{t('ownerDashboard.amenities.roomNoneYet')}</span>}
               </div>
               {/* CHANGED BY AI (2026-07-15): please review. New: add a custom amenity if the admin
                   catalog doesn't have what this room needs. */}
@@ -1278,12 +1280,12 @@ export default function OwnerDashboard() {
                 <input
                   className="sr-filter-input"
                   style={{ maxWidth: 220 }}
-                  placeholder="Add a custom amenity..."
+                  placeholder={t('ownerDashboard.amenities.addCustomPlaceholder')}
                   value={newRoomAmenityName}
                   onChange={(e) => setNewRoomAmenityName(e.target.value)}
                 />
                 <button className="ha-sort-btn" disabled={addingRoomAmenity || !newRoomAmenityName.trim()} onClick={handleAddRoomAmenity}>
-                  {addingRoomAmenity ? 'Adding...' : '+ Add'}
+                  {addingRoomAmenity ? t('ownerDashboard.amenities.adding') : t('ownerDashboard.amenities.add')}
                 </button>
               </div>
             </div>
@@ -1298,26 +1300,26 @@ export default function OwnerDashboard() {
                   checked={allowExtraBed}
                   onChange={(e) => setAllowExtraBed(e.target.checked)}
                 />
-                Allow extra bed
+                {t('ownerDashboard.roomModal.allowExtraBed')}
               </label>
               {allowExtraBed && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                    <label style={{ flex: '1 1 140px' }}>Max extra beds
+                    <label style={{ flex: '1 1 140px' }}>{t('ownerDashboard.roomModal.maxExtraBeds')}
                       <select value={maxExtraBeds} onChange={(e) => setMaxExtraBeds(Number(e.target.value))}>
                         <option value={1}>1</option>
                         <option value={2}>2</option>
                       </select>
                     </label>
-                    <label style={{ flex: '1 1 160px' }}>Price type
+                    <label style={{ flex: '1 1 160px' }}>{t('ownerDashboard.roomModal.priceType')}
                       <select value={extraBedPriceType} onChange={(e) => setExtraBedPriceType(e.target.value)}>
-                        <option value="percentage">% of room price</option>
-                        <option value="fixed">Flat amount ($)</option>
+                        <option value="percentage">{t('ownerDashboard.roomModal.percentOfRoomPrice')}</option>
+                        <option value="fixed">{t('ownerDashboard.roomModal.flatAmount')}</option>
                       </select>
                     </label>
                   </div>
                   <label>
-                    Price for 1 extra bed {extraBedPriceType === 'percentage' ? '(%)' : '($)'}
+                    {t('ownerDashboard.roomModal.priceForOneBed')} {extraBedPriceType === 'percentage' ? '(%)' : '($)'}
                     <input
                       type="number"
                       min={0}
@@ -1328,7 +1330,7 @@ export default function OwnerDashboard() {
                   </label>
                   {maxExtraBeds === 2 && (
                     <label>
-                      Price for 2 extra bed {extraBedPriceType === 'percentage' ? '(%)' : '($)'}
+                      {t('ownerDashboard.roomModal.priceForTwoBeds')} {extraBedPriceType === 'percentage' ? '(%)' : '($)'}
                       <input
                         type="number"
                         min={0}
@@ -1343,7 +1345,7 @@ export default function OwnerDashboard() {
             </div>
 
             <div className="campaign-section">
-              <label>Photos (max 5)</label>
+              <label>{t('ownerDashboard.roomModal.photos')}</label>
               <input type="file" accept="image/*" multiple onChange={handlePhotoChange} />
               <div className="room-photo-preview-list">
                 {existingPhotoUrls.map((p, i) => (
@@ -1353,7 +1355,7 @@ export default function OwnerDashboard() {
                       type="button"
                       className="room-photo-remove"
                       onClick={() => removeExistingPhoto(i)}
-                      aria-label="Remove photo"
+                      aria-label={t('ownerDashboard.roomModal.removePhoto')}
                     >
                       ×
                     </button>
@@ -1366,7 +1368,7 @@ export default function OwnerDashboard() {
                       type="button"
                       className="room-photo-remove"
                       onClick={() => removeNewPhoto(i)}
-                      aria-label="Remove photo"
+                      aria-label={t('ownerDashboard.roomModal.removePhoto')}
                     >
                       ×
                     </button>
@@ -1376,16 +1378,16 @@ export default function OwnerDashboard() {
             </div>
 
             <div className="campaign-section">
-              <label>Variants</label>
+              <label>{t('ownerDashboard.roomModal.variants')}</label>
               {variants.map((v, i) => (
                 <div key={i} className="variant-row">
-                  <input placeholder="Variant name" value={v.name} onChange={(e) => updateVariant(i, 'name', e.target.value)} />
-                  <input type="number" min={1} placeholder="Amount" value={v.amount} onChange={(e) => updateVariant(i, 'amount', Number(e.target.value) || 1)} />
-                  <input type="number" min={0} step="0.01" placeholder="Add-on price" value={v.price} onChange={(e) => updateVariant(i, 'price', Number(e.target.value) || 0)} />
-                  <button onClick={() => removeVariant(i)}>Remove</button>
+                  <input placeholder={t('ownerDashboard.roomModal.variantNamePlaceholder')} value={v.name} onChange={(e) => updateVariant(i, 'name', e.target.value)} />
+                  <input type="number" min={1} placeholder={t('ownerDashboard.roomModal.amountPlaceholder')} value={v.amount} onChange={(e) => updateVariant(i, 'amount', Number(e.target.value) || 1)} />
+                  <input type="number" min={0} step="0.01" placeholder={t('ownerDashboard.roomModal.addOnPricePlaceholder')} value={v.price} onChange={(e) => updateVariant(i, 'price', Number(e.target.value) || 0)} />
+                  <button onClick={() => removeVariant(i)}>{t('ownerDashboard.roomModal.removeVariant')}</button>
                 </div>
               ))}
-              <button className="campaign-next" onClick={addVariant}>Add Variant</button>
+              <button className="campaign-next" onClick={addVariant}>{t('ownerDashboard.roomModal.addVariant')}</button>
             </div>
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
@@ -1394,21 +1396,21 @@ export default function OwnerDashboard() {
                   <button
                     className="room-form-actions-btn room-form-actions-delete"
                     onClick={async () => {
-                      if (!window.confirm(`Delete room "${roomName || 'room'}"? This cannot be undone.`)) return;
+                      if (!window.confirm(t('ownerDashboard.roomModal.deleteConfirm', { name: roomName || 'room' }))) return;
                       try {
                         await ownerSvc.deleteRoom(hotelId, selectedRoomId);
                         setRooms(rs => rs.filter(x => x.id !== selectedRoomId));
                         closeAddRoom();
                       } catch (err) {
-                        alert('Unable to delete room: ' + (err.message || err));
+                        alert(t('ownerDashboard.roomModal.deleteError') + (err.message || err));
                       }
                     }}
                   >
-                    Delete
+                    {t('ownerDashboard.roomModal.delete')}
                   </button>
                 )}
-                <button className="campaign-back room-form-actions-btn" onClick={closeAddRoom} disabled={addSaving}>Cancel</button>
-                <button className="campaign-next room-form-actions-btn" onClick={saveRoom} disabled={addSaving}>{addSaving ? 'Saving...' : 'Save'}</button>
+                <button className="campaign-back room-form-actions-btn" onClick={closeAddRoom} disabled={addSaving}>{t('ownerDashboard.roomModal.cancel')}</button>
+                <button className="campaign-next room-form-actions-btn" onClick={saveRoom} disabled={addSaving}>{addSaving ? t('ownerDashboard.roomModal.saving') : t('ownerDashboard.roomModal.save')}</button>
               </div>
             </div>
           </div>
@@ -1419,31 +1421,31 @@ export default function OwnerDashboard() {
         <div className="campaign-modal-overlay" onClick={closeAvailability}>
           <div className="campaign-modal" onClick={(e) => e.stopPropagation()}>
             <div className="campaign-modal-header">
-              <h3>Availability — {availabilityRoomType.name}</h3>
-              <button className="close-modal" onClick={closeAvailability} aria-label="Close">×</button>
+              <h3>{t('ownerDashboard.availabilityModal.title', { name: availabilityRoomType.name })}</h3>
+              <button className="close-modal" onClick={closeAvailability} aria-label={t('ownerDashboard.calendar.close')}>×</button>
             </div>
 
             <p className="muted small" style={{ marginBottom: 12 }}>
-              Block a specific room for maintenance or other reasons over a date range, without affecting the other rooms of this type.
+              {t('ownerDashboard.availabilityModal.description')}
             </p>
 
-            {availabilityLoading && <p className="muted small">Loading rooms...</p>}
-            {availabilityError && <p className="od-error" style={{ color: "#9b1c1c" }}>Error: {availabilityError}</p>}
+            {availabilityLoading && <p className="muted small">{t('ownerDashboard.availabilityModal.loading')}</p>}
+            {availabilityError && <p className="od-error" style={{ color: "#9b1c1c" }}>{availabilityError}</p>}
 
             {!availabilityLoading && availabilityUnits.length === 0 && !availabilityError && (
-              <p className="muted small">This room type has no individual rooms yet.</p>
+              <p className="muted small">{t('ownerDashboard.availabilityModal.noUnitsYet')}</p>
             )}
 
             {availabilityUnits.map((unit) => (
               <div key={unit.id} style={{ borderTop: '1px solid #e5e7eb', paddingTop: 12, marginTop: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong>Room {unit.roomNumber}</strong>
+                  <strong>{t('ownerDashboard.availabilityModal.room', { number: unit.roomNumber })}</strong>
                   <span className="muted small">{unit.status}</span>
                 </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
                   {unit.blockedRanges.length === 0 ? (
-                    <span className="muted small">No blocked dates</span>
+                    <span className="muted small">{t('ownerDashboard.availabilityModal.noBlockedDates')}</span>
                   ) : (
                     unit.blockedRanges.map((range, i) => (
                       <span key={i} className="muted small" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#f3f4f6', borderRadius: 6, padding: '4px 8px' }}>
@@ -1454,7 +1456,7 @@ export default function OwnerDashboard() {
                           onClick={() => handleUnblockRange(unit.id, range)}
                           style={{ border: 'none', background: 'none', color: '#9b1c1c', cursor: 'pointer', fontWeight: 600 }}
                         >
-                          Unblock
+                          {t('ownerDashboard.availabilityModal.unblock')}
                         </button>
                       </span>
                     ))
@@ -1463,7 +1465,7 @@ export default function OwnerDashboard() {
 
                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 8, flexWrap: 'wrap' }}>
                   <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                    From
+                    {t('ownerDashboard.availabilityModal.from')}
                     <input
                       type="date"
                       value={blockForm[unit.id]?.from || ''}
@@ -1472,7 +1474,7 @@ export default function OwnerDashboard() {
                     />
                   </label>
                   <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
-                    To
+                    {t('ownerDashboard.availabilityModal.to')}
                     <input
                       type="date"
                       min={blockForm[unit.id]?.from || undefined}
@@ -1488,14 +1490,14 @@ export default function OwnerDashboard() {
                     onClick={() => handleBlockDates(unit.id)}
                     style={{ height: 36 }}
                   >
-                    {blockSavingId === unit.id ? 'Saving...' : 'Block these dates'}
+                    {blockSavingId === unit.id ? t('ownerDashboard.availabilityModal.saving') : t('ownerDashboard.availabilityModal.blockDates')}
                   </button>
                 </div>
               </div>
             ))}
 
             <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="campaign-back room-form-actions-btn" onClick={closeAvailability}>Close</button>
+              <button className="campaign-back room-form-actions-btn" onClick={closeAvailability}>{t('ownerDashboard.availabilityModal.close')}</button>
             </div>
           </div>
         </div>

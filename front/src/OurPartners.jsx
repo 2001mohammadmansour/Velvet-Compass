@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getCurrentRole } from "./services/auth";
 import { getPartners, createPartner, updatePartner, deletePartner, uploadPartnerPhoto } from "./services/partners";
 import "./OurPartners.css";
@@ -30,6 +31,7 @@ const emptyPartner = {
 };
 
 function PartnerFormModal({ initialPartner, onSave, onCancel, saving }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState(initialPartner || emptyPartner);
   const [file, setFile] = useState(null);
   const isEditing = Boolean(initialPartner);
@@ -48,15 +50,15 @@ function PartnerFormModal({ initialPartner, onSave, onCancel, saving }) {
   return (
     <div className="partner-form-overlay" onClick={onCancel}>
       <div className="partner-form-modal" onClick={(e) => e.stopPropagation()}>
-        <h2>{isEditing ? "Edit partner" : "Add partner"}</h2>
+        <h2>{isEditing ? t('partners.form.editTitle') : t('partners.form.addTitle')}</h2>
         <form onSubmit={handleSubmit}>
           <label>
-            Name
+            {t('partners.form.name')}
             <input name="name" type="text" value={form.name} onChange={handleChange} required />
           </label>
 
           <label>
-            City
+            {t('partners.form.city')}
             <select name="city" value={form.city} onChange={handleChange}>
               {cityOptions.map((city) => (
                 <option key={city} value={city}>{city}</option>
@@ -65,12 +67,12 @@ function PartnerFormModal({ initialPartner, onSave, onCancel, saving }) {
           </label>
 
           <label>
-            Description
+            {t('partners.form.description')}
             <textarea name="description" rows={3} value={form.description} onChange={handleChange} required />
           </label>
 
           <label>
-            Photo
+            {t('partners.form.photo')}
             <input
               name="photo"
               type="file"
@@ -81,10 +83,10 @@ function PartnerFormModal({ initialPartner, onSave, onCancel, saving }) {
 
           <div className="partner-form-actions">
             <button type="submit" className="partner-form-save" disabled={saving}>
-              {saving ? "Saving..." : isEditing ? "Save changes" : "Add partner"}
+              {saving ? t('partners.form.saving') : isEditing ? t('common.save') : t('partners.form.addSubmit')}
             </button>
             <button type="button" className="partner-form-cancel" onClick={onCancel} disabled={saving}>
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </form>
@@ -94,6 +96,7 @@ function PartnerFormModal({ initialPartner, onSave, onCancel, saving }) {
 }
 
 export default function OurPartners() {
+  const { t } = useTranslation();
   const isAdmin = useMemo(() => getCurrentRole() === "admin", []);
 
   const [partners, setPartners] = useState([]);
@@ -109,10 +112,10 @@ export default function OurPartners() {
     let mounted = true;
     getPartners()
       .then((data) => { if (mounted) setPartners(data); })
-      .catch((err) => { if (mounted) setError(err.message || 'Unable to load partners.'); })
+      .catch((err) => { if (mounted) setError(err.message || t('partners.loadError')); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
-  }, []);
+  }, [t]);
 
   const [selectedCity, setSelectedCity] = useState('');
 
@@ -130,7 +133,7 @@ export default function OurPartners() {
       setPartners((prev) => [...prev, created]);
       setShowAddForm(false);
     } catch (err) {
-      alert('Unable to add partner: ' + (err.message || err));
+      alert(t('partners.addError') + (err.message || err));
     } finally {
       setSaving(false);
     }
@@ -144,26 +147,26 @@ export default function OurPartners() {
       setPartners((prev) => prev.map((p) => (p.id === editingPartner.id ? saved : p)));
       setEditingPartner(null);
     } catch (err) {
-      alert('Unable to save partner: ' + (err.message || err));
+      alert(t('partners.saveError') + (err.message || err));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeletePartner = async (partnerId) => {
-    if (!window.confirm("Delete this partner? This cannot be undone.")) return;
+    if (!window.confirm(t('partners.confirmDelete'))) return;
     try {
       await deletePartner(partnerId);
       setPartners((prev) => prev.filter((p) => p.id !== partnerId));
     } catch (err) {
-      alert('Unable to delete partner: ' + (err.message || err));
+      alert(t('partners.deleteError') + (err.message || err));
     }
   };
 
   if (loading) {
     return (
       <div className="facilities-page">
-        <p className="muted" style={{ textAlign: 'center', padding: '80px 20px' }}>Loading partners...</p>
+        <p className="muted" style={{ textAlign: 'center', padding: '80px 20px' }}>{t('partners.loading')}</p>
       </div>
     );
   }
@@ -180,24 +183,24 @@ export default function OurPartners() {
     <div className="facilities-page">
       <header className="facilities-hero">
         <div className="facilities-hero-copy">
-          <p className="eyebrow">Our Partners</p>
-          <h1>Our Partners</h1>
+          <p className="eyebrow">{t('partners.eyebrow')}</p>
+          <h1>{t('partners.title')}</h1>
           <p className="hero-description">
-            Restaurants, shops, and experiences we work with across Syria.
+            {t('partners.heroDescription')}
           </p>
         </div>
 
         <div className="facilities-hero-card">
-          <span>Partners</span>
-          <strong>{partners.length} partners</strong>
-          <p>Browse our partners by city.</p>
+          <span>{t('partners.partnersLabel')}</span>
+          <strong>{t('partners.partnersCount', { count: partners.length })}</strong>
+          <p>{t('partners.browseByCity')}</p>
           {isAdmin && (
             <button
               type="button"
               className={`admin-manage-toggle${manageMode ? " active" : ""}`}
               onClick={() => setManageMode((v) => !v)}
             >
-              {manageMode ? "Done editing" : "✎ Manage partners"}
+              {manageMode ? t('partners.doneEditing') : t('partners.managePartners')}
             </button>
           )}
         </div>
@@ -206,13 +209,13 @@ export default function OurPartners() {
       <main className="facilities-layout">
         <section className="trips-section">
           <div className="section-head">
-            <h2>All Partners</h2>
-            <p>{visiblePartners.length} partners available</p>
+            <h2>{t('partners.allPartners')}</h2>
+            <p>{t('partners.partnersAvailable', { count: visiblePartners.length })}</p>
           </div>
 
           {manageMode && (
             <button type="button" className="add-trip-btn" onClick={() => setShowAddForm(true)}>
-              + Add partner
+              {t('partners.addPartner')}
             </button>
           )}
 
@@ -231,10 +234,10 @@ export default function OurPartners() {
                 {manageMode && (
                   <div className="trip-card-admin-actions">
                     <button type="button" onClick={() => setEditingPartner(partner)}>
-                      Edit
+                      {t('common.edit')}
                     </button>
                     <button type="button" className="danger" onClick={() => handleDeletePartner(partner.id)}>
-                      Delete
+                      {t('common.delete')}
                     </button>
                   </div>
                 )}
@@ -243,26 +246,26 @@ export default function OurPartners() {
           </div>
 
           {visiblePartners.length === 0 && (
-            <div className="empty-state">No partners match the selected city.</div>
+            <div className="empty-state">{t('partners.noMatch')}</div>
           )}
         </section>
 
         <aside className="filters-panel">
           <div className="sr-sidebar-header">
-            <span className="sr-sidebar-title">Filters</span>
+            <span className="sr-sidebar-title">{t('common.filters')}</span>
             {selectedCity && (
-              <button className="sr-clear-btn" onClick={clearFilters}>Clear all</button>
+              <button className="sr-clear-btn" onClick={clearFilters}>{t('common.clearAll')}</button>
             )}
           </div>
 
           <div className="sr-filter-section">
-            <span className="sr-filter-label">City</span>
+            <span className="sr-filter-label">{t('common.city')}</span>
             <select
               className="sr-filter-input"
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
             >
-              <option value="">All cities</option>
+              <option value="">{t('common.allCities')}</option>
               {cityOptions.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}

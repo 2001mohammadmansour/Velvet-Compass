@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import './contact.css';
 
-const INFO_ITEMS = [
-  { icon: '📧', label: 'Email',         value: 'support@velvetcompass.com' },
-  { icon: '📞', label: 'Phone',         value: '+1-800-555-0123' },
-  { icon: '📍', label: 'Address',       value: '123 Booking Avenue, Travel City' },
-  { icon: '⏰', label: 'Support Hours', value: 'Mon – Fri, 9 AM – 6 PM' },
-];
-
 export default function Contact() {
+  const { t } = useTranslation();
+
+  const INFO_ITEMS = [
+    { icon: '📧', label: t('contact.infoLabels.email'), value: 'support@velvetcompass.com' },
+    { icon: '📞', label: t('contact.infoLabels.phone'), value: '+1-800-555-0123' },
+    { icon: '📍', label: t('contact.infoLabels.address'), value: '123 Booking Avenue, Travel City' },
+    { icon: '⏰', label: t('contact.infoLabels.supportHours'), value: t('contact.supportHoursValue') },
+  ];
+
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -34,7 +37,7 @@ export default function Contact() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.message) {
-      setError('Please fill in your name, email, and message.');
+      setError(t('contact.fillRequired'));
       return;
     }
     setError('');
@@ -44,22 +47,19 @@ export default function Contact() {
   return (
     <div className="cp-page">
       <header className="cp-hero">
-        <h1>Get in Touch</h1>
-        <p>We'd love to hear from you — questions, feedback, or just a hello.</p>
+        <h1>{t('contact.title')}</h1>
+        <p>{t('contact.subtitle')}</p>
       </header>
 
       <section className="cp-body">
         <div className="cp-form-card" data-reveal>
-          <h2>Send us a message</h2>
+          <h2>{t('contact.sendMessage')}</h2>
 
           {sent ? (
             <div className="cp-success">
               <div className="cp-success-icon">✉️</div>
-              <h3>Message sent!</h3>
-              <p>
-                Thanks, <strong>{form.name}</strong>. We'll get back to you at{' '}
-                <strong>{form.email}</strong> shortly.
-              </p>
+              <h3>{t('contact.messageSent')}</h3>
+              <p>{t('contact.thanksMessage', { name: form.name, email: form.email })}</p>
               <button
                 className="cp-reset-btn"
                 onClick={() => {
@@ -67,55 +67,55 @@ export default function Contact() {
                   setForm({ name: '', email: '', subject: '', message: '' });
                 }}
               >
-                Send another message
+                {t('contact.sendAnother')}
               </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="cp-form">
               <div className="cp-field">
-                <label htmlFor="cp-name">Full Name</label>
+                <label htmlFor="cp-name">{t('contact.fullName')}</label>
                 <input
                   id="cp-name"
                   name="name"
-                  placeholder="Jane Doe"
+                  placeholder={t('contact.fullNamePlaceholder')}
                   value={form.name}
                   onChange={handleChange}
                 />
               </div>
               <div className="cp-field">
-                <label htmlFor="cp-email">Email Address</label>
+                <label htmlFor="cp-email">{t('contact.emailAddress')}</label>
                 <input
                   id="cp-email"
                   name="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder={t('contact.emailPlaceholder')}
                   value={form.email}
                   onChange={handleChange}
                 />
               </div>
               <div className="cp-field">
-                <label htmlFor="cp-subject">Subject</label>
+                <label htmlFor="cp-subject">{t('contact.subject')}</label>
                 <input
                   id="cp-subject"
                   name="subject"
-                  placeholder="What is this about?"
+                  placeholder={t('contact.subjectPlaceholder')}
                   value={form.subject}
                   onChange={handleChange}
                 />
               </div>
               <div className="cp-field">
-                <label htmlFor="cp-message">Message</label>
+                <label htmlFor="cp-message">{t('contact.message')}</label>
                 <textarea
                   id="cp-message"
                   name="message"
                   rows={6}
-                  placeholder="Write your message here…"
+                  placeholder={t('contact.messagePlaceholder')}
                   value={form.message}
                   onChange={handleChange}
                 />
               </div>
               {error && <p className="cp-error">{error}</p>}
-              <button type="submit" className="cp-submit-btn">Send Message</button>
+              <button type="submit" className="cp-submit-btn">{t('contact.sendMessageBtn')}</button>
             </form>
           )}
         </div>
@@ -139,7 +139,7 @@ export default function Contact() {
       </section>
 
       <footer className="cp-footer">
-        <p>© 2026 Velvet Compass. All rights reserved.</p>
+        <p>{t('contact.footer')}</p>
       </footer>
     </div>
   );

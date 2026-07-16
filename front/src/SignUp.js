@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./signUp.css";
 import { signUpUser, signInUser, verifySignUpCode } from "./services/auth";
 import { submitHotelRequest } from "./services/hotelRequests";
 import { fileToResizedDataUrl } from "./data/imageUtil";
+import LanguageToggle from "./LanguageToggle";
 
 const initialForm = {
   username: "",
@@ -66,6 +68,7 @@ const LEGAL_CONTENT = {
 };
 
 function SignUp() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
   const [doc, setDoc] = useState(null); // { name, dataUrl } — hotel document image
@@ -103,33 +106,32 @@ function SignUp() {
   const validate = (data) => {
     const nextErrors = {};
 
-    if (!data.username.trim()) nextErrors.username = "Username is required.";
+    if (!data.username.trim()) nextErrors.username = t('auth.signup.errors.usernameRequired');
     if (!emailRegex.test(data.email.trim())) {
-      nextErrors.email = "Enter a valid email address.";
+      nextErrors.email = t('auth.signup.errors.emailInvalid');
     }
     if (!phoneRegex.test(data.phoneNumber.trim())) {
-      nextErrors.phoneNumber = "Enter a valid phone number.";
+      nextErrors.phoneNumber = t('auth.signup.errors.phoneInvalid');
     }
     if (isOwnerSignUp && !data.hotelName.trim()) {
-      nextErrors.hotelName = "Hotel name is required.";
+      nextErrors.hotelName = t('auth.signup.errors.hotelNameRequired');
     }
     if (isOwnerSignUp && !data.city.trim()) {
-      nextErrors.city = "City is required.";
+      nextErrors.city = t('auth.signup.errors.cityRequired');
     }
     if (isOwnerSignUp && !data.stars) {
-      nextErrors.stars = "Please select your hotel star rating.";
+      nextErrors.stars = t('auth.signup.errors.starsRequired');
     }
     if (!passwordRegex.test(data.password)) {
-      nextErrors.password =
-        "Password must be at least 8 characters with uppercase, lowercase, and special character.";
+      nextErrors.password = t('auth.signup.errors.passwordInvalid');
     }
     if (!data.confirmPassword) {
-      nextErrors.confirmPassword = "Please confirm your password.";
+      nextErrors.confirmPassword = t('auth.signup.errors.confirmPasswordRequired');
     } else if (data.confirmPassword !== data.password) {
-      nextErrors.confirmPassword = "Passwords do not match.";
+      nextErrors.confirmPassword = t('auth.signup.errors.passwordsDontMatch');
     }
     if (!data.acceptTerms) {
-      nextErrors.acceptTerms = "You must accept the Terms and Privacy Policy.";
+      nextErrors.acceptTerms = t('auth.signup.errors.acceptTermsRequired');
     }
 
     return nextErrors;
@@ -148,7 +150,7 @@ function SignUp() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 8 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, document: "Document image is too large (max 8MB)." }));
+      setErrors((prev) => ({ ...prev, document: t('auth.signup.errors.documentTooLarge') }));
       e.target.value = "";
       return;
     }
@@ -157,7 +159,7 @@ function SignUp() {
       setDoc({ name: file.name, dataUrl });
       setErrors((prev) => ({ ...prev, document: undefined }));
     } catch {
-      setErrors((prev) => ({ ...prev, document: "Could not read the image. Try another file." }));
+      setErrors((prev) => ({ ...prev, document: t('auth.signup.errors.documentUnreadable') }));
     }
     e.target.value = "";
   };
@@ -189,7 +191,7 @@ function SignUp() {
     e.preventDefault();
     const nextErrors = validate(form);
     if (isOwnerSignUp && !doc) {
-      nextErrors.document = "Please attach a document image (license / ownership proof).";
+      nextErrors.document = t('auth.signup.errors.documentRequired');
     }
     setErrors(nextErrors);
 
@@ -239,9 +241,7 @@ function SignUp() {
       if (isFetchConnectionError(err)) {
         setVerificationEmail(payload.email);
         setVerificationPassword(payload.password);
-        setVerificationNotice(
-          "We could not reach the server right now, but you can continue to verification."
-        );
+        setVerificationNotice(t('auth.signup.errors.connectionErrorNotice'));
         setVerificationCode("");
         setVerificationError("");
         setVerificationSuccess("");
@@ -250,7 +250,7 @@ function SignUp() {
         setErrors({});
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        setSubmitError(err.message || "Sign up failed. Please try again.");
+        setSubmitError(err.message || t('auth.signup.errors.signUpFailed'));
       }
     } finally {
       setLoading(false);
@@ -267,7 +267,7 @@ function SignUp() {
     e.preventDefault();
     const normalizedCode = verificationCode.trim();
     if (!normalizedCode) {
-      setVerificationError("Verification code is required.");
+      setVerificationError(t('auth.signup.errors.verificationCodeRequired'));
       return;
     }
 
@@ -277,7 +277,7 @@ function SignUp() {
 
     try {
       await verifySignUpCode({ email: verificationEmail, code: normalizedCode });
-      setVerificationSuccess("Code verified successfully.");
+      setVerificationSuccess(t('auth.signup.errors.codeVerifiedSuccess'));
 
       try {
         const res = await signInUser({
@@ -305,9 +305,7 @@ function SignUp() {
           try {
             await submitHotelRequest({ type: "create", ...pendingOwnerRequest });
           } catch (reqErr) {
-            setVerificationNotice(
-              "Account created, but we couldn't submit your hotel request. Please submit it again from your owner dashboard."
-            );
+            setVerificationNotice(t('auth.signup.errors.hotelRequestSubmitFailedNotice'));
           }
           setPendingOwnerRequest(null);
         }
@@ -315,12 +313,10 @@ function SignUp() {
         // CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page.
         navigate("/");
       } catch (signInErr) {
-        setVerificationNotice(
-          "Account verified, but we couldn't sign you in automatically. Please sign in manually."
-        );
+        setVerificationNotice(t('auth.signup.errors.signInAfterVerifyFailedNotice'));
       }
     } catch (err) {
-      setVerificationError(err.message || "Unable to verify code.");
+      setVerificationError(err.message || t('auth.signup.errors.verifyCodeGenericError'));
     } finally {
       setVerifying(false);
     }
@@ -330,33 +326,34 @@ function SignUp() {
     return (
       <div className="page">
         <div className="overlay" />
-        <Link to="/" className="auth-back-btn">← Back</Link>
+        <Link to="/" className="auth-back-btn">{t('common.backButton')}</Link>
+        <LanguageToggle className="auth-lang-toggle" />
         <main className="card">
-          <h1>Verification</h1>
-          <p className="subtitle">One more step to finish creating your account.</p>
+          <h1>{t('auth.signup.verification.title')}</h1>
+          <p className="subtitle">{t('auth.signup.verification.subtitle')}</p>
           <p className="verification-copy">
-            We sent a verification code to <strong>{verificationEmail || "your email"}</strong>.
-            Enter it below to verify your account.
+            {t('auth.signup.verification.sentTo')} <strong>{verificationEmail || t('auth.signup.verification.yourEmail')}</strong>.
+            {' '}{t('auth.signup.verification.enterBelow')}
           </p>
           {verificationNotice && <p className="verification-note">{verificationNotice}</p>}
           <form onSubmit={handleVerifyCodeSubmit} noValidate>
             <label>
-              Verification code
+              {t('auth.signup.verification.codeLabel')}
               <input
                 name="verificationCode"
                 type="text"
                 value={verificationCode}
                 onChange={handleVerificationCodeChange}
-                placeholder="Enter verification code"
+                placeholder={t('auth.signup.verification.codePlaceholder')}
                 autoComplete="one-time-code"
               />
             </label>
             <div className="verification-actions">
               <button type="submit" disabled={verifying}>
-                {verifying ? "Verifying..." : "Verify code"}
+                {verifying ? t('auth.signup.verification.verifying') : t('auth.signup.verification.verifyCode')}
               </button>
               <button type="button" onClick={handleBackToSignUp}>
-                Back to sign up
+                {t('auth.signup.verification.backToSignUp')}
               </button>
             </div>
             {verificationSuccess && <p className="success">{verificationSuccess}</p>}
@@ -370,42 +367,43 @@ function SignUp() {
   return (
     <div className="page">
       <div className="overlay" />
-      <Link to="/" className="auth-back-btn">← Back</Link>
+      <Link to="/" className="auth-back-btn">{t('common.backButton')}</Link>
+      <LanguageToggle className="auth-lang-toggle" />
       <main className="card">
-        <h1>{isOwnerSignUp ? "Create hotel owner account" : "Create your account"}</h1>
+        <h1>{isOwnerSignUp ? t('auth.signup.createOwnerAccount') : t('auth.signup.createAccount')}</h1>
         <p className="subtitle">
-          {isOwnerSignUp ? "Sign up as a hotel owner" : "Sign up to continue"}
+          {isOwnerSignUp ? t('auth.signup.subtitleOwner') : t('auth.signup.subtitleGuest')}
         </p>
 
         <form onSubmit={handleSubmit} noValidate>
           <label>
-            Username
+            {t('auth.signup.username')}
             <input
               name="username"
               type="text"
               value={form.username}
               onChange={handleChange}
-              placeholder="Enter username"
+              placeholder={t('auth.signup.usernamePlaceholder')}
               autoComplete="username"
             />
             {errors.username && <span className="error">{errors.username}</span>}
           </label>
 
           <label>
-            Email
+            {t('auth.signup.email')}
             <input
               name="email"
               type="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="Enter email"
+              placeholder={t('auth.signup.emailPlaceholder')}
               autoComplete="email"
             />
             {errors.email && <span className="error">{errors.email}</span>}
           </label>
 
           <label>
-            Phone number
+            {t('auth.signup.phoneNumber')}
             <input
               name="phoneNumber"
               type="tel"
@@ -422,26 +420,26 @@ function SignUp() {
           {isOwnerSignUp && (
             <>
               <label>
-                Hotel name
+                {t('auth.signup.hotelName')}
                 <input
                   name="hotelName"
                   type="text"
                   value={form.hotelName}
                   onChange={handleChange}
-                  placeholder="Enter hotel name"
+                  placeholder={t('auth.signup.hotelNamePlaceholder')}
                   autoComplete="organization"
                 />
                 {errors.hotelName && <span className="error">{errors.hotelName}</span>}
               </label>
 
               <label>
-                City
+                {t('auth.signup.city')}
                 <select
                   name="city"
                   value={form.city}
                   onChange={handleChange}
                 >
-                  <option value="">Select a city</option>
+                  <option value="">{t('auth.signup.selectCity')}</option>
                   {SYRIAN_CITIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
@@ -450,7 +448,7 @@ function SignUp() {
               </label>
 
               <div>
-                <label style={{ display: 'block', marginBottom: 6 }}>Hotel star rating</label>
+                <label style={{ display: 'block', marginBottom: 6 }}>{t('auth.signup.starRating')}</label>
                 <StarPicker
                   value={form.stars}
                   onChange={(n) => { setSubmitError(""); setForm((prev) => ({ ...prev, stars: n })); }}
@@ -459,7 +457,7 @@ function SignUp() {
               </div>
 
               <label>
-                Document image (license / ownership proof)
+                {t('auth.signup.documentImage')}
                 <input type="file" accept="image/*" onChange={handleDocChange} />
                 {doc && (
                   <span className="signup-doc-preview">
@@ -473,33 +471,33 @@ function SignUp() {
           )}
 
           <label>
-            Password
+            {t('auth.signup.password')}
             <input
               name="password"
               type="password"
               value={form.password}
               onChange={handleChange}
-              placeholder="Enter password"
+              placeholder={t('auth.signup.passwordPlaceholder')}
               autoComplete="new-password"
             />
             {errors.password && <span className="error">{errors.password}</span>}
           </label>
 
           <ul className="password-hint">
-            <li className={passwordRules.minLength ? "ok" : ""}>At least 8 characters</li>
-            <li className={passwordRules.hasUpper ? "ok" : ""}>At least 1 uppercase letter</li>
-            <li className={passwordRules.hasLower ? "ok" : ""}>At least 1 lowercase letter</li>
-            <li className={passwordRules.hasSpecial ? "ok" : ""}>At least 1 special character</li>
+            <li className={passwordRules.minLength ? "ok" : ""}>{t('auth.signup.passwordHints.minLength')}</li>
+            <li className={passwordRules.hasUpper ? "ok" : ""}>{t('auth.signup.passwordHints.hasUpper')}</li>
+            <li className={passwordRules.hasLower ? "ok" : ""}>{t('auth.signup.passwordHints.hasLower')}</li>
+            <li className={passwordRules.hasSpecial ? "ok" : ""}>{t('auth.signup.passwordHints.hasSpecial')}</li>
           </ul>
 
           <label>
-            Confirm password
+            {t('auth.signup.confirmPassword')}
             <input
               name="confirmPassword"
               type="password"
               value={form.confirmPassword}
               onChange={handleChange}
-              placeholder="Confirm password"
+              placeholder={t('auth.signup.confirmPasswordPlaceholder')}
               autoComplete="new-password"
             />
             {errors.confirmPassword && (
@@ -515,7 +513,7 @@ function SignUp() {
               onChange={handleChange}
             />
             <span>
-              I accept the{" "}
+              {t('auth.signup.acceptPrefix')}{" "}
               <span
                 className="legal-link"
                 role="button"
@@ -523,9 +521,9 @@ function SignUp() {
                 onClick={() => setLegalModal("terms")}
                 onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setLegalModal("terms")}
               >
-                Terms
+                {t('auth.signup.terms')}
               </span>{" "}
-              and{" "}
+              {t('auth.signup.and')}{" "}
               <span
                 className="legal-link"
                 role="button"
@@ -533,7 +531,7 @@ function SignUp() {
                 onClick={() => setLegalModal("privacy")}
                 onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setLegalModal("privacy")}
               >
-                Privacy Policy
+                {t('auth.signup.privacyPolicy')}
               </span>
               .
             </span>
@@ -543,14 +541,14 @@ function SignUp() {
           )}
 
           <button type="submit" disabled={loading}>
-            {loading ? "Signing up..." : "Sign Up"}
+            {loading ? t('auth.signup.signingUp') : t('auth.signup.signUp')}
           </button>
           <button
             type="button"
             className="link-button"
             onClick={handleSignUpModeToggle}
           >
-            {isOwnerSignUp ? "Back to regular sign up" : "Sign up as a hotel owner"}
+            {isOwnerSignUp ? t('auth.signup.backToRegular') : t('auth.signup.signUpAsOwner')}
           </button>
 
           {submitError && <p className="error submit-error">{submitError}</p>}
@@ -572,7 +570,7 @@ function SignUp() {
               ))}
             </div>
             <button type="button" className="legal-modal-done" onClick={() => setLegalModal(null)}>
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>

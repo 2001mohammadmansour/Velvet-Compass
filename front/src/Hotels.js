@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import './room.css'
 import * as hotelsSvc from './services/hotels'
 const SYRIA_CITIES = [
@@ -11,6 +12,7 @@ const SYRIA_CITIES = [
 const STAR_OPTIONS = [5, 4, 3, 2, 1]
 
 export default function Hotels() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -30,10 +32,10 @@ export default function Hotels() {
     setError('')
     hotelsSvc.getHotels()
       .then((data) => { if (mounted) setHotelsData(Array.isArray(data) ? data : []) })
-      .catch((err) => { if (mounted) setError(err.message || 'Unable to load hotels.') })
+      .catch((err) => { if (mounted) setError(err.message || t('hotels.loadError')) })
       .finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }
-  }, [])
+  }, [t])
 
   const toggleStar = (s) => {
     setFilters(f => ({
@@ -63,44 +65,44 @@ export default function Hotels() {
       {/* Top bar */}
       <div className="sr-topbar">
         <div className="sr-topbar-center">
-          <h1 className="sr-title">Hotels in Syria</h1>
+          <h1 className="sr-title">{t('hotels.title')}</h1>
         </div>
         <input
           className="sr-filter-input"
           style={{ width: 220 }}
-          placeholder="Search hotel name…"
+          placeholder={t('hotels.searchPlaceholder')}
           value={filters.hotel}
           onChange={e => setFilters(f => ({ ...f, hotel: e.target.value }))}
         />
         {activeFilterCount > 0 && (
           <button className="sr-clear-btn" onClick={clearFilters}>
-            Clear all <span className="sr-filter-badge">{activeFilterCount}</span>
+            {t('common.clearAll')} <span className="sr-filter-badge">{activeFilterCount}</span>
           </button>
         )}
       </div>
 
-      {loading && <p className="sr-status">Loading hotels…</p>}
+      {loading && <p className="sr-status">{t('hotels.loading')}</p>}
       {error && <p className="sr-status sr-error">{error}</p>}
 
       <div className="sr-body">
         {/* Sidebar filters */}
         <aside className="sr-sidebar">
           <div className="sr-sidebar-header">
-            <span className="sr-sidebar-title">Filters</span>
+            <span className="sr-sidebar-title">{t('common.filters')}</span>
             {activeFilterCount > 0 && (
-              <button className="sr-clear-btn" onClick={clearFilters}>Clear all</button>
+              <button className="sr-clear-btn" onClick={clearFilters}>{t('common.clearAll')}</button>
             )}
           </div>
 
           {/* City */}
           <div className="sr-filter-section">
-            <span className="sr-filter-label">City</span>
+            <span className="sr-filter-label">{t('common.city')}</span>
             <select
               className="sr-filter-input"
               value={filters.city}
               onChange={e => setFilters(f => ({ ...f, city: e.target.value }))}
             >
-              <option value="">All cities</option>
+              <option value="">{t('common.allCities')}</option>
               {SYRIA_CITIES.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -109,7 +111,7 @@ export default function Hotels() {
 
           {/* Stars */}
           <div className="sr-filter-section">
-            <span className="sr-filter-label">Stars</span>
+            <span className="sr-filter-label">{t('common.stars')}</span>
             <div className="sr-star-row">
               {STAR_OPTIONS.map(s => (
                 <button
@@ -128,14 +130,14 @@ export default function Hotels() {
         <main className="sr-results">
           {!loading && (
             <p className="sr-count">
-              {results.length} {results.length === 1 ? 'hotel' : 'hotels'} found
+              {results.length} {results.length === 1 ? t('hotels.hotel') : t('hotels.hotelsPlural')} {t('hotels.found')}
             </p>
           )}
 
           {!loading && results.length === 0 && (
             <div className="sr-empty">
-              <p style={{ fontSize: 16, color: '#6b7280', marginBottom: 8 }}>No hotels match your filters.</p>
-              <button className="sr-clear-btn-lg" onClick={clearFilters}>Clear filters</button>
+              <p style={{ fontSize: 16, color: '#6b7280', marginBottom: 8 }}>{t('hotels.noMatch')}</p>
+              <button className="sr-clear-btn-lg" onClick={clearFilters}>{t('hotels.clearFilters')}</button>
             </div>
           )}
 
@@ -152,8 +154,8 @@ export default function Hotels() {
                   : <div className="sr-card-img-placeholder" />
                 }
                 <div className="sr-card-body">
-                  <h3 className="sr-card-name">{h.hotelName || 'Hotel'}</h3>
-                  <p className="sr-card-hotel">📍 {h.city || 'City not set'}</p>
+                  <h3 className="sr-card-name">{h.hotelName || t('hotels.defaultHotelName')}</h3>
+                  <p className="sr-card-hotel">📍 {h.city || t('hotels.cityNotSet')}</p>
                   {h.stars ? (
                     <p className="sr-card-stars">
                       {'★'.repeat(Number(h.stars))}{'☆'.repeat(5 - Number(h.stars))}
@@ -164,17 +166,17 @@ export default function Hotels() {
                       {typeof h.minPrice === 'number' && typeof h.maxPrice === 'number' ? (
                         <>
                           <span className="sr-price-amount">${h.minPrice}–${h.maxPrice}</span>
-                          <span className="sr-price-night"> / night</span>
+                          <span className="sr-price-night">{t('hotels.perNight')}</span>
                         </>
                       ) : (
-                        <span className="sr-price-night">Pricing not set</span>
+                        <span className="sr-price-night">{t('hotels.pricingNotSet')}</span>
                       )}
                     </p>
                     <button
                       className="sr-book-btn"
                       onClick={e => { e.stopPropagation(); handleSelect(h) }}
                     >
-                      View Rooms
+                      {t('hotels.viewRooms')}
                     </button>
                   </div>
                 </div>

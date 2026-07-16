@@ -1,32 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import './room.css'
 import { getRoomTypesForHotel, getHotelById } from './services/hotels'
 import { getRoomReviews } from './services/guest'
 import { getCurrentRole } from './services/auth'
 import PriceRangeSlider from './PriceRangeSlider'
 
-const CAT_LABELS = {
-  staff: 'Staff', location: 'Location', facilities: 'Facilities',
-  cleanliness: 'Cleanliness', comfort: 'Comfort', value: 'Value',
-}
-
-const SCORE_OPTIONS = [
-  { label: 'Any', value: 0 },
-  { label: '6+', value: 6 },
-  { label: '7+', value: 7 },
-  { label: '8+', value: 8 },
-  { label: '9+', value: 9 },
-]
-
-const SORT_OPTIONS = [
-  { value: 'recommended', label: 'Recommended' },
-  { value: 'price_asc',   label: 'Price: Low → High' },
-  { value: 'price_desc',  label: 'Price: High → Low' },
-  { value: 'score_desc',  label: 'Review Score' },
-]
+const CATEGORY_KEYS = ['staff', 'location', 'facilities', 'cleanliness', 'comfort', 'value']
 
 function ReviewsModal({ room, onClose }) {
+  const { t } = useTranslation()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -51,16 +35,16 @@ function ReviewsModal({ room, onClose }) {
               </p>
             )}
           </div>
-          <button className="rv-close" onClick={onClose} aria-label="Close">×</button>
+          <button className="rv-close" onClick={onClose} aria-label={t('searchResults.reviews.closeAria')}>×</button>
         </div>
 
-        {loading && <p style={{ color: '#6b7280' }}>Loading reviews…</p>}
+        {loading && <p style={{ color: '#6b7280' }}>{t('searchResults.reviews.loading')}</p>}
 
         {!loading && data?.categoryAverages && (
           <div className="rvv-cats">
-            {Object.entries(CAT_LABELS).map(([key, label]) => (
+            {CATEGORY_KEYS.map((key) => (
               <div key={key} className="rvv-cat-pill">
-                <span>{label}</span>
+                <span>{t(`myBookings.review.categories.${key}.label`)}</span>
                 <span>{data.categoryAverages[key]}</span>
               </div>
             ))}
@@ -69,7 +53,7 @@ function ReviewsModal({ room, onClose }) {
 
         {!loading && data && (
           <div className="rvv-list">
-            {data.reviews.length === 0 && <p style={{ color: '#9ca3af' }}>No reviews yet.</p>}
+            {data.reviews.length === 0 && <p style={{ color: '#9ca3af' }}>{t('searchResults.reviews.noReviewsYet')}</p>}
             {data.reviews.map(r => (
               <div key={r.id} className="rvv-item">
                 <div className="rvv-item-header">
@@ -88,9 +72,25 @@ function ReviewsModal({ room, onClose }) {
 }
 
 export default function Rooms() {
+  const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
   const isOwner = getCurrentRole() === 'hotel_owner'
+
+  const SCORE_OPTIONS = [
+    { label: t('rooms.scoreAny'), value: 0 },
+    { label: '6+', value: 6 },
+    { label: '7+', value: 7 },
+    { label: '8+', value: 8 },
+    { label: '9+', value: 9 },
+  ]
+
+  const SORT_OPTIONS = [
+    { value: 'recommended', label: t('rooms.sortOptions.recommended') },
+    { value: 'price_asc',   label: t('rooms.sortOptions.priceAsc') },
+    { value: 'price_desc',  label: t('rooms.sortOptions.priceDesc') },
+    { value: 'score_desc',  label: t('rooms.sortOptions.scoreDesc') },
+  ]
 
   const incoming = location.state || {}
   const selectedHotel = incoming.selectedHotel || ''
@@ -133,13 +133,13 @@ export default function Rooms() {
     setError('')
     getRoomTypesForHotel(hid, { checkIn, checkOut })
       .then(data  => { if (mounted) setAllRooms(Array.isArray(data) ? data : []) })
-      .catch(err  => { if (mounted) setError(err.message || 'Unable to load rooms.') })
+      .catch(err  => { if (mounted) setError(err.message || t('rooms.loadError')) })
       .finally(() => { if (mounted) setLoading(false) })
     getHotelById(hid)
       .then(data => { if (mounted) setHotelAmenities(Array.isArray(data?.amenities) ? data.amenities : []) })
       .catch(() => { if (mounted) setHotelAmenities([]) })
     return () => { mounted = false }
-  }, [hotel?.hotelId, checkIn, checkOut])
+  }, [hotel?.hotelId, checkIn, checkOut, t])
 
   // Rooms that belong to this hotel
   const hotelKey = String(
@@ -219,10 +219,10 @@ export default function Rooms() {
     <div className="sr-page">
       {/* Top bar */}
       <div className="sr-topbar">
-        <button type="button" className="back-btn" onClick={handleBack}>← Back</button>
+        <button type="button" className="back-btn" onClick={handleBack}>{t('rooms.back')}</button>
         <div className="sr-topbar-center">
           <h1 className="sr-title">
-            {selectedHotel ? `Rooms at ${selectedHotel}` : 'Available Rooms'}
+            {selectedHotel ? t('rooms.roomsAt', { hotel: selectedHotel }) : t('rooms.availableRooms')}
           </h1>
           {hotelCity && (
             <span className="sr-dates">
@@ -244,33 +244,33 @@ export default function Rooms() {
         <input
           className="sr-filter-input"
           style={{ width: 200 }}
-          placeholder="Search room name…"
+          placeholder={t('rooms.searchRoomName')}
           value={roomName}
           onChange={e => setRoomName(e.target.value)}
         />
         {activeFilterCount > 0 && (
           <button className="sr-clear-btn" onClick={clearFilters}>
-            Clear all <span className="sr-filter-badge">{activeFilterCount}</span>
+            {t('rooms.clearAll')} <span className="sr-filter-badge">{activeFilterCount}</span>
           </button>
         )}
       </div>
 
-      {loading && <p className="sr-status">Loading rooms…</p>}
+      {loading && <p className="sr-status">{t('rooms.loading')}</p>}
       {error   && <p className="sr-status sr-error">{error}</p>}
 
       <div className="sr-body">
         {/* Sidebar */}
         <aside className="sr-sidebar">
           <div className="sr-sidebar-header">
-            <span className="sr-sidebar-title">Filters</span>
+            <span className="sr-sidebar-title">{t('rooms.filters')}</span>
             {activeFilterCount > 0 && (
-              <button className="sr-clear-btn" onClick={clearFilters}>Clear all</button>
+              <button className="sr-clear-btn" onClick={clearFilters}>{t('rooms.clearAll')}</button>
             )}
           </div>
 
           {/* Guests */}
           <div className="sr-filter-section">
-            <label className="sr-filter-label">Guests</label>
+            <label className="sr-filter-label">{t('rooms.guests')}</label>
             <input
               className="sr-filter-input"
               type="number"
@@ -282,7 +282,7 @@ export default function Rooms() {
 
           {/* Sort */}
           <div className="sr-filter-section">
-            <label className="sr-filter-label">Sort by</label>
+            <label className="sr-filter-label">{t('rooms.sortBy')}</label>
             <div className="sr-sort-list">
               {SORT_OPTIONS.map(opt => (
                 <button
@@ -298,7 +298,7 @@ export default function Rooms() {
 
           {/* Price */}
           <div className="sr-filter-section">
-            <label className="sr-filter-label">Price per night</label>
+            <label className="sr-filter-label">{t('rooms.pricePerNight')}</label>
             <PriceRangeSlider
               min={0}
               max={maxPrice}
@@ -314,7 +314,7 @@ export default function Rooms() {
 
           {/* Review Score */}
           <div className="sr-filter-section">
-            <label className="sr-filter-label">Guest Review Score</label>
+            <label className="sr-filter-label">{t('rooms.guestReviewScore')}</label>
             <div className="sr-score-row">
               {SCORE_OPTIONS.map(opt => (
                 <button
@@ -333,8 +333,8 @@ export default function Rooms() {
         <main className="sr-results">
           {!loading && (
             <p className="sr-count">
-              {results.length} {results.length === 1 ? 'room' : 'rooms'} found
-              {guests > 1 && <> · {guests} guests</>}
+              {t('rooms.roomsFoundCount', { count: results.length })}
+              {guests > 1 && <> · {t('rooms.guestsCount', { count: guests })}</>}
             </p>
           )}
 
@@ -356,11 +356,11 @@ export default function Rooms() {
                       ★ {room.avgScore}/10 · {room.reviewCount} review{room.reviewCount !== 1 ? 's' : ''}
                     </button>
                   ) : (
-                    <p className="sr-card-no-reviews">No reviews yet</p>
+                    <p className="sr-card-no-reviews">{t('rooms.noReviewsYet')}</p>
                   )}
 
                   {room.availableCount > 0 && room.availableCount < 3 && (
-                    <p className="sr-low-stock">Only {room.availableCount} left</p>
+                    <p className="sr-low-stock">{t('rooms.onlyLeft', { count: room.availableCount })}</p>
                   )}
 
                   {/* CHANGED BY AI (2026-07-15): please review. New room description (truncated)
@@ -384,15 +384,16 @@ export default function Rooms() {
                   <div className="sr-card-footer">
                     <p className="sr-card-price">
                       <span className="sr-price-amount">${room.price}</span>
-                      <span className="sr-price-night"> / night</span>
+                      <span className="sr-price-night">{t('rooms.perNight')}</span>
                       {/* CHANGED BY AI (2026-07-15): please review — clarifies that a room's
                           listed capacity can be extended with an (automatic) extra bed, since the
                           guest filter above now matches on that effective capacity too. */}
                       <span className="sr-capacity">
-                        {' '}· Sleeps {room.capacity}{room.allowExtraBed && room.maxExtraBeds > 0 ? ` (up to ${room.capacity + room.maxExtraBeds} with extra bed)` : ''}
+                        {t('rooms.sleeps', { count: room.capacity })}
+                        {room.allowExtraBed && room.maxExtraBeds > 0 ? t('rooms.withExtraBed', { count: room.capacity + room.maxExtraBeds }) : ''}
                       </span>
                     </p>
-                    <button className="sr-book-btn" onClick={(e) => { e.stopPropagation(); handleViewRoom(room); }}>View Details</button>
+                    <button className="sr-book-btn" onClick={(e) => { e.stopPropagation(); handleViewRoom(room); }}>{t('rooms.viewDetails')}</button>
                   </div>
                 </div>
               </div>
@@ -404,20 +405,20 @@ export default function Rooms() {
               {hotelRooms.length === 0 ? (
                 <>
                   <p style={{ fontSize: 40, marginBottom: 8 }}>🏨</p>
-                  <p style={{ fontWeight: 700, fontSize: 18, color: '#1a2340' }}>No rooms listed yet</p>
-                  <p style={{ color: '#6b7280', marginTop: 4 }}>This hotel hasn't added any rooms.</p>
+                  <p style={{ fontWeight: 700, fontSize: 18, color: '#1a2340' }}>{t('rooms.noRoomsListedYet')}</p>
+                  <p style={{ color: '#6b7280', marginTop: 4 }}>{t('rooms.hotelHasNoRooms')}</p>
                   <button className="sr-clear-btn-lg" onClick={() => navigate('/hotels')} style={{ marginTop: 16 }}>
-                    Browse other hotels
+                    {t('rooms.browseOtherHotels')}
                   </button>
                 </>
               ) : (
                 <>
                   <p style={{ fontSize: 40, marginBottom: 8 }}>🔍</p>
-                  <p style={{ fontWeight: 700, fontSize: 18, color: '#1a2340' }}>No rooms match your filters</p>
-                  <p style={{ color: '#6b7280', marginTop: 4 }}>Try adjusting or clearing your filters.</p>
+                  <p style={{ fontWeight: 700, fontSize: 18, color: '#1a2340' }}>{t('rooms.noRoomsMatch')}</p>
+                  <p style={{ color: '#6b7280', marginTop: 4 }}>{t('rooms.tryAdjusting')}</p>
                   {activeFilterCount > 0 && (
                     <button className="sr-clear-btn-lg" onClick={clearFilters} style={{ marginTop: 16 }}>
-                      Clear all filters
+                      {t('rooms.clearAllFilters')}
                     </button>
                   )}
                 </>

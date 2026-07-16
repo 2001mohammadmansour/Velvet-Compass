@@ -3,10 +3,9 @@
 /* Root variables scoped to admin */
 .admin-root {
   --adm-bg: #F0F4FA;
-  --adm-sidebar: #1A2535;
-  --adm-sidebar-hover: #243349;
-  --adm-sidebar-active: #2A3D66;
-  --adm-header: #1A2535;
+  --adm-sidebar: #2A3D66;
+  --adm-sidebar-hover: #34497A;
+  --adm-sidebar-active: #3F548C;
   --adm-accent: #E8B86D;
   --adm-accent-hover: #d4a45a;
   --adm-surface: #ffffff;
@@ -70,7 +69,7 @@
 
 .admin-login-label {
   display: block;
-  text-align: left;
+  text-align: start;
   font-size: 12px;
   font-weight: 600;
   color: rgba(200,212,232,0.8);
@@ -108,7 +107,7 @@
   padding: 10px 14px;
   color: #ff8888;
   font-size: 13px;
-  text-align: left;
+  text-align: start;
 }
 
 .admin-login-btn {
@@ -142,107 +141,18 @@
   background: var(--adm-bg);
 }
 
-/* ===== HEADER ===== */
-.admin-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: var(--adm-header);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  z-index: 100;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-}
-
-.admin-header-brand {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--adm-accent);
-  letter-spacing: -0.3px;
-}
-
-.admin-header-brand span {
-  color: rgba(200,212,232,0.6);
-  font-weight: 400;
-  font-size: 13px;
-  margin-left: 8px;
-  letter-spacing: 0;
-}
-
-.admin-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.admin-header-btn {
-  margin: 0;
-  padding: 7px 16px;
-  border-radius: 8px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  box-sizing: border-box;
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.admin-header-btn-outline {
-  background: transparent;
-  border: 1px solid rgba(200,212,232,0.3);
-  color: rgba(200,212,232,0.8);
-}
-.admin-header-btn-outline:hover {
-  border-color: var(--adm-accent);
-  color: var(--adm-accent);
-}
-
-.admin-header-btn-accent {
-  background: var(--adm-accent);
-  border: none;
-  color: #1A2535;
-}
-.admin-header-btn-accent:hover { background: var(--adm-accent-hover); }
-
-.admin-header-btn-danger {
-  background: transparent;
-  border: 1px solid rgba(224,85,85,0.4);
-  color: #ff8888;
-}
-.admin-header-btn-danger:hover {
-  background: rgba(224,85,85,0.15);
-  border-color: #e05555;
-}
-
 /* ===== BODY WRAPPER ===== */
 .admin-body {
   display: flex;
-  margin-top: 60px;
-  min-height: calc(100vh - 60px);
+  flex: 1;
 }
 
 /* ===== SIDEBAR ===== */
 .admin-sidebar {
-  position: fixed;
-  top: 60px;
-  left: 0;
-  bottom: 0;
   width: 230px;
+  flex-shrink: 0;
   background: var(--adm-sidebar);
-  overflow-y: auto;
   padding: 20px 0;
-  z-index: 90;
 }
 
 .admin-sidebar-label {
@@ -265,7 +175,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
-  border-left: 3px solid transparent;
+  border-inline-start: 3px solid transparent;
   user-select: none;
 }
 
@@ -276,7 +186,7 @@
 
 .admin-nav-item.active {
   background: var(--adm-sidebar-active);
-  border-left-color: var(--adm-accent);
+  border-inline-start-color: var(--adm-accent);
   color: #fff;
 }
 
@@ -289,10 +199,9 @@
 
 /* ===== MAIN CONTENT ===== */
 .admin-main {
-  margin-left: 230px;
   flex: 1;
+  min-width: 0;
   padding: 32px;
-  min-height: calc(100vh - 60px);
 }
 
 /* ===== SECTION HEADER ===== */
@@ -586,7 +495,7 @@
 .admin-toast-container {
   position: fixed;
   bottom: 28px;
-  right: 28px;
+  inset-inline-end: 28px;
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -614,13 +523,13 @@
 
 .admin-toast-success {
   background: #1A2535;
-  border-left: 4px solid var(--adm-success);
+  border-inline-start: 4px solid var(--adm-success);
   color: #fff;
 }
 
 .admin-toast-error {
   background: #1A2535;
-  border-left: 4px solid var(--adm-danger);
+  border-inline-start: 4px solid var(--adm-danger);
   color: #fff;
 }
 
@@ -666,33 +575,6 @@
   margin-top: 4px;
 }
 
-/* ===== PREVIEW BADGE ===== */
-.admin-preview-live {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(60, 184, 122, 0.12);
-  border: 1px solid rgba(60, 184, 122, 0.3);
-  color: #2a9d6a;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 20px;
-}
-
-.admin-pulse {
-  width: 7px;
-  height: 7px;
-  background: #3cb87a;
-  border-radius: 50%;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
 /* ===== MISC ===== */
 .admin-divider {
   border: none;
@@ -711,14 +593,14 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
   .admin-sidebar { width: 200px; }
-  .admin-main { margin-left: 200px; padding: 20px; }
+  .admin-main { padding: 20px; }
   .admin-stats-row { grid-template-columns: repeat(2, 1fr); }
   .admin-form-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
   .admin-sidebar { display: none; }
-  .admin-main { margin-left: 0; padding: 16px; }
+  .admin-main { padding: 16px; }
   .admin-stats-row { grid-template-columns: 1fr 1fr; }
 }
 
@@ -739,7 +621,7 @@
 .ha-bar-fill {
   height: 100%; border-radius: 7px; min-width: 28px;
   display: flex; align-items: center; justify-content: flex-end;
-  padding-right: 8px; transition: width 0.4s ease;
+  padding-inline-end: 8px; transition: width 0.4s ease;
 }
 .ha-bar-value { color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; }
 
@@ -763,7 +645,7 @@
   display: flex; justify-content: space-between; align-items: center;
   flex-wrap: wrap; gap: 12px; margin-bottom: 14px;
 }
-.ha-controls-label { font-size: 12px; font-weight: 700; color: var(--adm-text-light); margin-right: 6px; }
+.ha-controls-label { font-size: 12px; font-weight: 700; color: var(--adm-text-light); margin-inline-end: 6px; }
 .ha-sort-group, .ha-month-select { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .ha-sort-btn {
   background: var(--adm-surface2); border: 1px solid var(--adm-border);
@@ -782,7 +664,7 @@
 .ha-table-wrap { overflow-x: auto; }
 .ha-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .ha-table th {
-  text-align: left; padding: 10px 12px; color: var(--adm-text-light);
+  text-align: start; padding: 10px 12px; color: var(--adm-text-light);
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
   border-bottom: 2px solid var(--adm-border); white-space: nowrap;
 }
@@ -790,10 +672,10 @@
 .ha-table tbody tr { cursor: pointer; transition: background 0.12s; }
 .ha-table tbody tr:hover { background: var(--adm-surface2); }
 .ha-table tbody tr.ha-row-active { background: #EEF3FB; }
-.ha-num { text-align: right; white-space: nowrap; }
+.ha-num { text-align: end; white-space: nowrap; }
 .ha-profit { color: #2E9E6B; font-weight: 700; }
 .ha-platform { color: #B8762F; font-weight: 700; }
-.ha-stars { color: #E0A800; margin-left: 6px; font-size: 12px; }
+.ha-stars { color: #E0A800; margin-inline-start: 6px; font-size: 12px; }
 
 /* CHANGED BY AI (2026-07-13): please review — star-rating column in the admin analytics ranking
    tables. Fixed width + always rendering 5 characters (filled + empty) keeps stars aligned across

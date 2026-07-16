@@ -196,7 +196,7 @@
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  border-left: 4px solid #2a3d66;
+  border-inline-start: 4px solid #2a3d66;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 

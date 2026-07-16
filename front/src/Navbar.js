@@ -1,25 +1,28 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getCurrentRole, getCurrentUser, getOwnerProfileSummary, clearAuth } from './services/auth';
 import NotificationBell from './NotificationBell';
 import ProfileMenu from './ProfileMenu';
+import LanguageToggle from './LanguageToggle';
 
-const NAV_LINKS = [
-  { label: 'Home',                     href: '/' },
-  { label: 'Services',                 href: '/services' },
-  { label: 'Hotels',                   href: '/hotels' },
-  { label: 'Our Partners',             href: '/partners' },
-  // Temporarily hidden — not deleted, just parked for later. Route still exists at /about.
-  // { label: 'About Us',              href: '/about' },
-];
-
-// CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page, so
-// they use the same Home/nav as everyone else, with Dashboard added as a direct top-level link.
-const OWNER_NAV_LINK = { label: 'Dashboard', href: '/owner/dashboard' };
-
-export default function Navbar({ transparent = false }) {
+export default function Navbar({ transparent = false, flush = false }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const NAV_LINKS = [
+    { label: t('nav.home'),     href: '/' },
+    { label: t('nav.services'), href: '/services' },
+    { label: t('nav.hotels'),   href: '/hotels' },
+    { label: t('nav.partners'), href: '/partners' },
+    // Temporarily hidden — not deleted, just parked for later. Route still exists at /about.
+    // { label: 'About Us',     href: '/about' },
+  ];
+
+  // CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page, so
+  // they use the same Home/nav as everyone else, with Dashboard added as a direct top-level link.
+  const OWNER_NAV_LINK = { label: t('nav.dashboard'), href: '/owner/dashboard' };
   const role = getCurrentRole();
   const isAdmin = role === 'admin';
   const isGuest = role === 'guest';
@@ -58,7 +61,7 @@ export default function Navbar({ transparent = false }) {
   const navLinks = isOwner ? [...NAV_LINKS, OWNER_NAV_LINK] : NAV_LINKS;
 
   return (
-    <nav className={`navbar${solid ? ' navbar-solid' : ''}`}>
+    <nav className={`navbar${solid ? ' navbar-solid' : ''}${flush ? ' navbar-flush' : ''}`}>
       <Link className="brand" to="/">Velvet Compass</Link>
       <ul className="nav-links">
         {navLinks.map(link => (
@@ -73,21 +76,22 @@ export default function Navbar({ transparent = false }) {
         ))}
       </ul>
       <div className="auth-buttons">
+        <LanguageToggle />
         {isAdmin ? (
           <>
             {/* CHANGED BY AI (2026-07-13): please review — moved from a fixed floating widget to
                 sit inline, left of the account controls. */}
             <NotificationBell inline />
-            <Link className="btn login" to="/admin">Admin Dashboard</Link>
-            <button type="button" className="btn signup" onClick={handleSignOut}>Sign Out</button>
+            <Link className="btn login" to="/admin">{t('nav.adminDashboard')}</Link>
+            <button type="button" className="btn signup" onClick={handleSignOut}>{t('nav.signOut')}</button>
           </>
         ) : isGuest ? (
           <ProfileMenu
-            name={currentUser?.username || 'Guest'}
+            name={currentUser?.username || t('nav.guest')}
             subtitle={currentUser?.email || ''}
             links={[
-              { to: '/profile', label: 'Edit Profile' },
-              { to: '/my-bookings', label: '📖 My Bookings' },
+              { to: '/profile', label: t('nav.editProfile') },
+              { to: '/my-bookings', label: `📖 ${t('nav.myBookings')}` },
             ]}
             onSignOut={handleSignOut}
           />
@@ -99,18 +103,18 @@ export default function Navbar({ transparent = false }) {
             name={ownerProfile.username}
             subtitle={ownerProfile.hotelName}
             links={[
-              { to: '/profile', label: 'Edit Profile' },
-              { to: '/owner/dashboard', label: 'Dashboard' },
-              { to: '/owner/hotel-info', label: 'Edit Hotel Info' },
-              { to: '/owner/requests', label: 'Hotel Requests' },
+              { to: '/profile', label: t('nav.editProfile') },
+              { to: '/owner/dashboard', label: t('nav.dashboard') },
+              { to: '/owner/hotel-info', label: t('nav.hotelInfo') },
+              { to: '/owner/requests', label: t('nav.hotelRequests') },
             ]}
             onSignOut={handleSignOut}
-            triggerLabel="Owner profile"
+            triggerLabel={t('nav.ownerProfile')}
           />
         ) : (
           <>
-            <Link className="btn login" to="/login">Login</Link>
-            <Link className="btn signup" to="/signup">Sign Up</Link>
+            <Link className="btn login" to="/login">{t('nav.login')}</Link>
+            <Link className="btn signup" to="/signup">{t('nav.signup')}</Link>
           </>
         )}
       </div>

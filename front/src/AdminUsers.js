@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAdminUsers, getAdminUserBookings, suspendUser, unsuspendUser, getReviewDetail, deleteReview } from './services/hotels';
 
 function formatMoney(value) {
   return `$${Math.round(Number(value) || 0).toLocaleString()}`;
 }
 
-const CAT_LABELS = { staff: 'Staff', location: 'Location', facilities: 'Facilities', cleanliness: 'Cleanliness', comfort: 'Comfort', value: 'Value' };
+const CATEGORY_KEYS = ['staff', 'location', 'facilities', 'cleanliness', 'comfort', 'value'];
 
 // CHANGED BY AI (2026-07-13): please review — full review detail modal for admin moderation.
 function ReviewDetailModal({ reviewId, onClose, onDeleted }) {
+  const { t } = useTranslation();
   const [review, setReview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,19 +22,19 @@ function ReviewDetailModal({ reviewId, onClose, onDeleted }) {
     setError('');
     getReviewDetail(reviewId)
       .then((data) => { if (mounted) setReview(data); })
-      .catch((err) => { if (mounted) setError(err.message || 'Unable to load review.'); })
+      .catch((err) => { if (mounted) setError(err.message || t('adminUsers.review.loadError')); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
-  }, [reviewId]);
+  }, [reviewId, t]);
 
   async function handleDelete() {
-    if (!window.confirm('Permanently delete this review? This cannot be undone.')) return;
+    if (!window.confirm(t('adminUsers.review.deleteConfirm'))) return;
     setDeleting(true);
     try {
       await deleteReview(reviewId);
       onDeleted();
     } catch (err) {
-      alert('Unable to delete review: ' + (err.message || err));
+      alert(t('adminUsers.review.deleteError') + (err.message || err));
       setDeleting(false);
     }
   }
@@ -42,42 +44,42 @@ function ReviewDetailModal({ reviewId, onClose, onDeleted }) {
       <div className="rv-modal" onClick={(e) => e.stopPropagation()}>
         <div className="rv-modal-header">
           <div>
-            <h3>Review</h3>
+            <h3>{t('adminUsers.review.title')}</h3>
             {review && <p>{review.roomName} · {review.hotelName}</p>}
           </div>
-          <button className="rv-close" onClick={onClose} aria-label="Close">×</button>
+          <button className="rv-close" onClick={onClose} aria-label={t('common.close')}>×</button>
         </div>
 
-        {loading && <p className="muted small">Loading review...</p>}
+        {loading && <p className="muted small">{t('adminUsers.review.loading')}</p>}
         {error && <p className="muted small" style={{ color: '#e05555' }}>{error}</p>}
 
         {review && (
           <>
             <div className="rv-score-preview">
-              Overall score
+              {t('adminUsers.review.overallScore')}
               <strong>{review.overallScore} / 10</strong>
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '14px 0' }}>
-              {Object.entries(CAT_LABELS).map(([key, label]) => (
+              {CATEGORY_KEYS.map((key) => (
                 <div key={key} style={{ background: '#f3f4f6', borderRadius: 8, padding: '6px 12px', textAlign: 'center', minWidth: 90 }}>
-                  <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 2 }}>{label}</div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 2 }}>{t(`myBookings.review.categories.${key}.label`)}</div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2340' }}>{review[key]}</div>
                 </div>
               ))}
             </div>
 
             <div className="rv-comment">
-              <label>Guest</label>
+              <label>{t('adminUsers.review.guest')}</label>
               <p style={{ margin: '4px 0 12px' }}>{review.guestName} · {new Date(review.createdAt).toLocaleDateString()}</p>
-              <label>Comment</label>
+              <label>{t('adminUsers.review.comment')}</label>
               <p style={{ margin: '4px 0' }}>{review.comment}</p>
             </div>
 
             <div className="rv-actions">
-              <button type="button" className="back-btn" onClick={onClose} disabled={deleting}>Close</button>
+              <button type="button" className="back-btn" onClick={onClose} disabled={deleting}>{t('adminUsers.review.close')}</button>
               <button type="button" className="cta" style={{ background: '#c0392b' }} onClick={handleDelete} disabled={deleting}>
-                {deleting ? 'Deleting...' : '🗑 Delete Review'}
+                {deleting ? t('adminUsers.review.deleting') : t('adminUsers.review.delete')}
               </button>
             </div>
           </>
@@ -87,28 +89,29 @@ function ReviewDetailModal({ reviewId, onClose, onDeleted }) {
   );
 }
 
-function formatSuspendedUntil(value) {
-  if (!value) return 'indefinitely';
-  const date = new Date(value);
-  if (date.getFullYear() > 9000) return 'indefinitely'; // DateTimeOffset.MaxValue sentinel
-  return `until ${date.toLocaleDateString()}`;
-}
-
-const ROLE_FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'guest', label: 'Guests' },
-  { key: 'owner', label: 'Owners' },
-  { key: 'admin', label: 'Admins' },
-];
-
-const SUSPEND_DURATIONS = [
-  { key: '1', label: '1 day' },
-  { key: '7', label: '7 days' },
-  { key: '30', label: '30 days' },
-  { key: 'indefinite', label: 'Indefinitely' },
-];
-
 export default function AdminUsers() {
+  const { t } = useTranslation();
+
+  function formatSuspendedUntil(value) {
+    if (!value) return t('adminUsers.indefinitely');
+    const date = new Date(value);
+    if (date.getFullYear() > 9000) return t('adminUsers.indefinitely'); // DateTimeOffset.MaxValue sentinel
+    return t('adminUsers.until', { date: date.toLocaleDateString() });
+  }
+
+  const ROLE_FILTERS = [
+    { key: 'all', label: t('adminUsers.roleFilters.all') },
+    { key: 'guest', label: t('adminUsers.roleFilters.guest') },
+    { key: 'owner', label: t('adminUsers.roleFilters.owner') },
+    { key: 'admin', label: t('adminUsers.roleFilters.admin') },
+  ];
+
+  const SUSPEND_DURATIONS = [
+    { key: '1', label: t('adminUsers.suspendDurations.1') },
+    { key: '7', label: t('adminUsers.suspendDurations.7') },
+    { key: '30', label: t('adminUsers.suspendDurations.30') },
+    { key: 'indefinite', label: t('adminUsers.suspendDurations.indefinite') },
+  ];
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -128,11 +131,11 @@ export default function AdminUsers() {
     setError('');
     return getAdminUsers()
       .then(setUsers)
-      .catch((err) => setError(err.message || 'Unable to load users.'))
+      .catch((err) => setError(err.message || t('adminUsers.loadError')))
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const counts = useMemo(() => {
     const c = { guest: 0, owner: 0, admin: 0 };
@@ -167,7 +170,7 @@ export default function AdminUsers() {
       setSuspendFormId(null);
       await load();
     } catch (err) {
-      alert('Unable to suspend user: ' + (err.message || err));
+      alert(t('adminUsers.suspendError') + (err.message || err));
     } finally {
       setActionSavingId(null);
     }
@@ -179,7 +182,7 @@ export default function AdminUsers() {
       await unsuspendUser(userId);
       await load();
     } catch (err) {
-      alert('Unable to unsuspend user: ' + (err.message || err));
+      alert(t('adminUsers.unsuspendError') + (err.message || err));
     } finally {
       setActionSavingId(null);
     }
@@ -193,7 +196,7 @@ export default function AdminUsers() {
       const data = await getAdminUserBookings(userId);
       setExpandedBookings(data);
     } catch (err) {
-      setBookingsError(err.message || 'Unable to load bookings.');
+      setBookingsError(err.message || t('adminUsers.loadBookingsError'));
     } finally {
       setBookingsLoading(false);
     }
@@ -215,32 +218,32 @@ export default function AdminUsers() {
     if (expandedUserId != null) loadBookingsFor(expandedUserId);
   }
 
-  if (loading) return <p className="admin-stat-sub">Loading users...</p>;
+  if (loading) return <p className="admin-stat-sub">{t('adminUsers.loading')}</p>;
   if (error) return <p className="admin-stat-sub" style={{ color: '#e05555' }}>{error}</p>;
 
   return (
     <div className="ha-root">
       <div className="admin-stats-row">
         <div className="admin-stat-card">
-          <div className="admin-stat-label">Total Users</div>
+          <div className="admin-stat-label">{t('adminUsers.totalUsers')}</div>
           <div className="admin-stat-value">{users.length}</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-label">Guests</div>
+          <div className="admin-stat-label">{t('adminUsers.guests')}</div>
           <div className="admin-stat-value">{counts.guest}</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-label">Owners</div>
+          <div className="admin-stat-label">{t('adminUsers.owners')}</div>
           <div className="admin-stat-value">{counts.owner}</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-label">Admins</div>
+          <div className="admin-stat-label">{t('adminUsers.admins')}</div>
           <div className="admin-stat-value">{counts.admin}</div>
         </div>
       </div>
 
       <div className="admin-card">
-        <div className="admin-card-title">👥 All Users</div>
+        <div className="admin-card-title">{t('adminUsers.allUsers')}</div>
         <div className="ha-controls">
           <div className="ha-sort-group">
             {ROLE_FILTERS.map((f) => (
@@ -256,7 +259,7 @@ export default function AdminUsers() {
           <input
             className="sr-filter-input"
             style={{ maxWidth: 240 }}
-            placeholder="Search name or email..."
+            placeholder={t('adminUsers.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -266,16 +269,16 @@ export default function AdminUsers() {
           <table className="ha-table">
             <thead>
               <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Joined</th>
-                <th className="ha-num">Bookings</th>
-                <th className="ha-num">Paid to Platform</th>
-                <th>Hotels Owned</th>
-                <th>Actions</th>
+                <th>{t('adminUsers.username')}</th>
+                <th>{t('adminUsers.email')}</th>
+                <th>{t('adminUsers.phone')}</th>
+                <th>{t('adminUsers.role')}</th>
+                <th>{t('adminUsers.status')}</th>
+                <th>{t('adminUsers.joined')}</th>
+                <th className="ha-num">{t('adminUsers.bookings')}</th>
+                <th className="ha-num">{t('adminUsers.paidToPlatform')}</th>
+                <th>{t('adminUsers.hotelsOwned')}</th>
+                <th>{t('adminUsers.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -292,10 +295,10 @@ export default function AdminUsers() {
                     <td><strong>{u.username}</strong></td>
                     <td>{u.email}</td>
                     <td>{u.phoneNumber || '—'}</td>
-                    <td>{u.role}</td>
+                    <td>{t(`adminUsers.roles.${String(u.role || '').toLowerCase()}`, u.role)}</td>
                     <td>
                       <span className={`booking-status booking-status-${u.isSuspended ? 'cancelled' : 'confirmed'}`}>
-                        {u.isSuspended ? `Suspended (${formatSuspendedUntil(u.suspendedUntil)})` : 'Active'}
+                        {u.isSuspended ? t('adminUsers.suspendedUntil', { until: formatSuspendedUntil(u.suspendedUntil) }) : t('adminUsers.active')}
                       </span>
                     </td>
                     <td>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
@@ -309,7 +312,7 @@ export default function AdminUsers() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {u.isSuspended ? (
                             <button className="ha-sort-btn" disabled={saving} onClick={() => handleUnsuspend(u.id)}>
-                              {saving ? '...' : 'Unsuspend'}
+                              {saving ? '...' : t('adminUsers.unsuspend')}
                             </button>
                           ) : suspendFormId === u.id ? (
                             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -319,12 +322,12 @@ export default function AdminUsers() {
                                 ))}
                               </select>
                               <button className="ha-sort-btn active" disabled={saving} onClick={() => handleConfirmSuspend(u.id)}>
-                                {saving ? '...' : 'Confirm'}
+                                {saving ? '...' : t('adminUsers.confirm')}
                               </button>
-                              <button className="ha-sort-btn" onClick={() => setSuspendFormId(null)}>Cancel</button>
+                              <button className="ha-sort-btn" onClick={() => setSuspendFormId(null)}>{t('adminUsers.cancel')}</button>
                             </div>
                           ) : (
-                            <button className="ha-sort-btn" onClick={() => setSuspendFormId(u.id)}>Suspend</button>
+                            <button className="ha-sort-btn" onClick={() => setSuspendFormId(u.id)}>{t('adminUsers.suspend')}</button>
                           )}
                         </div>
                       )}
@@ -333,18 +336,18 @@ export default function AdminUsers() {
                   {expandedUserId === u.id && (
                     <tr>
                       <td colSpan={10} style={{ background: '#f8fafc', padding: 16 }}>
-                        {bookingsLoading && <p className="muted small">Loading bookings...</p>}
+                        {bookingsLoading && <p className="muted small">{t('adminUsers.loadingBookings')}</p>}
                         {bookingsError && <p className="muted small" style={{ color: '#e05555' }}>{bookingsError}</p>}
                         {!bookingsLoading && !bookingsError && (
                           expandedBookings.length === 0 ? (
-                            <p className="muted small">No bookings for this user.</p>
+                            <p className="muted small">{t('adminUsers.noBookingsForUser')}</p>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                               {expandedBookings.map((b) => (
                                 <div key={b.id} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 14px', background: '#fff' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                                     <strong>{b.hotelName}</strong>
-                                    <span className={`booking-status booking-status-${b.status}`}>{b.status}</span>
+                                    <span className={`booking-status booking-status-${b.status}`}>{t(`myBookings.statuses.${b.status}`, b.status)}</span>
                                   </div>
                                   <div className="muted small" style={{ marginTop: 4 }}>
                                     {b.checkIn} → {b.checkOut} · {formatMoney(b.totalAmount)}
@@ -357,14 +360,14 @@ export default function AdminUsers() {
                                       className="muted small"
                                       style={{ marginTop: 6, cursor: 'pointer' }}
                                       onClick={() => setOpenReviewId(b.reviewId)}
-                                      title="Click to view full review"
+                                      title={t('adminUsers.clickToViewReview')}
                                     >
                                       <strong style={{ color: '#2a3d66' }}>★ {b.reviewScore}/10</strong>
                                       {b.reviewComment && <span> — {b.reviewComment}</span>}
                                     </div>
                                   ) : (
                                     <div className="muted small" style={{ marginTop: 6, fontStyle: 'italic' }}>
-                                      No review yet
+                                      {t('adminUsers.noReviewYet')}
                                     </div>
                                   )}
                                 </div>
@@ -379,7 +382,7 @@ export default function AdminUsers() {
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={10} className="ha-hint">No users match this filter.</td></tr>
+                <tr><td colSpan={10} className="ha-hint">{t('adminUsers.noUsersMatch')}</td></tr>
               )}
             </tbody>
           </table>
