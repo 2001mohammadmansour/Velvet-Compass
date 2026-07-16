@@ -7,9 +7,12 @@ namespace HotelBooking.API.Middleware
     public class ExceptionMiddleware
     {
         private readonly RequestDelegate _next;
-        public ExceptionMiddleware(RequestDelegate next)
+        private readonly ILogger<ExceptionMiddleware> _logger;
+
+        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -21,11 +24,11 @@ namespace HotelBooking.API.Middleware
             catch (Exception ex)
             {
 
-                await HandleExceptionAsync(context, ex);
+                await HandleExceptionAsync(context, ex, _logger);
             }
         }
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception ex)
+        private static Task HandleExceptionAsync(HttpContext context, Exception ex, ILogger logger)
         {
             var (statusCode, message) = ex switch
             {
@@ -68,6 +71,13 @@ namespace HotelBooking.API.Middleware
                 InvalidPricingRuleException => (HttpStatusCode.BadRequest, ex.Message),
                 _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
             };
+
+            // Only the generic 500 branch is a real bug/misconfiguration worth surfacing — the
+            // named domain exceptions above are expected control flow (404s, validation, etc.).
+            if (statusCode == HttpStatusCode.InternalServerError)
+            {
+                logger.LogError(ex, "Unhandled exception on {Method} {Path}", context.Request.Method, context.Request.Path);
+            }
 
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)statusCode;
