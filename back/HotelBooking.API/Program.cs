@@ -5,6 +5,7 @@ using HotelBooking.Application.Interfaces;
 using HotelBooking.Domain.Entities;
 using HotelBooking.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,6 +64,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
+        await context.Database.MigrateAsync();
         await DataSeeder.SeedAsync(context, userManager);
     }
     catch (Exception ex)

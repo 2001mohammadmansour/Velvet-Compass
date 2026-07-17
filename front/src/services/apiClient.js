@@ -4,7 +4,7 @@
 // don't duplicate it again.
 import { getAuthToken, getRefreshToken, updateStoredTokens, clearAuth } from './auth';
 
-const BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
+const BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
 // De-duplicates concurrent refresh attempts: if several requests 401 around the same moment
 // (e.g. right as the access token expires), only the first one actually calls /auth/refresh —

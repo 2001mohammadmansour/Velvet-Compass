@@ -20,3 +20,11 @@ back/**/obj/
 *.user
 .DS_Store
 Thumbs.db
+
+postgres-data/
+mysql-data/
+mssql-data/
+data/
+
+# Uploaded files via API (المجلد الذي يتم حفظ الصور المرفوعة فيه)
+back/**/wwwroot/uploads/
