@@ -1,4 +1,4 @@
-namespace HotelBooking.Application.DTOs.Auth._2FA
+namespace HotelBooking.Application.DTOs.Auth
 {
     public record Setup2FAResponse
     (

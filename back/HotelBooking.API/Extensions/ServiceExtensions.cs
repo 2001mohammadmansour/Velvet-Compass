@@ -5,6 +5,7 @@ using HotelBooking.Infrastructure.Persistence;
 using HotelBooking.Infrastructure.Services;
 using HotelBooking.Infrastructure.Services.Auth;
 using HotelBooking.Infrastructure.Services.Dashboard;
+using HotelBooking.Infrastructure.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -84,6 +85,11 @@ namespace HotelBooking.API.Extensions
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             services.AddScoped<IAuthService, AuthService>();
+            return services;
+        }
+        public static IServiceCollection AddUserServices(this IServiceCollection services)
+        {
+            services.AddScoped<IUserService, UserService>();
             return services;
         }
         public static IServiceCollection AddHotelServices(this IServiceCollection services)

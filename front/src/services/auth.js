@@ -47,6 +47,23 @@ export async function signUpUser(payload) {
 
 export async function signInUser(payload) {
   const res = await _req('/api/v1/auth/login', { method: 'POST', body: JSON.stringify(payload) });
+  // When the account has 2FA enabled the backend returns a challenge instead of tokens; the
+  // caller (Login.js) then collects a code and calls verifyTwoFactor().
+  if (res && res.requiresTwoFactor) {
+    return { requiresTwoFactor: true, challengeToken: res.challengeToken };
+  }
+  return normalizeAuthResponse(res);
+}
+
+export async function verifyTwoFactor({ challengeToken, code, recoveryCode }) {
+  const res = await _req('/api/v1/auth/2fa/verify', {
+    method: 'POST',
+    body: JSON.stringify({
+      challengeToken,
+      code: code || null,
+      recoveryCode: recoveryCode || null,
+    }),
+  });
   return normalizeAuthResponse(res);
 }
 

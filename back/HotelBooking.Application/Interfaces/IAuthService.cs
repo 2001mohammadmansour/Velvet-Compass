@@ -1,8 +1,9 @@
 using HotelBooking.Application.DTOs.Auth;
-using HotelBooking.Application.DTOs.Auth._2FA;
 
 namespace HotelBooking.Application.Interfaces
 {
+    // Credential / token / session concerns only. Everything about the user record itself
+    // (profile, change password, admin management) lives in IUserService.
     public interface IAuthService
     {
         Task<AuthResponse> RegisterAsync(RegisterRequest request);
@@ -16,11 +17,5 @@ namespace HotelBooking.Application.Interfaces
         Task DisableTwoFactorAsync(long userId, string password);
         Task<AuthResponse> VerifyTwoFactorAsync(Verify2FARequest request);
         Task<List<string>> RegenerateRecoveryCodesAsync(long userId);
-
-        // CHANGED BY AI (2026-07-13): please review. New self-service profile methods backing the
-        // Edit Profile feature.
-        Task<UserProfileDto> GetMyProfileAsync(long userId);
-        Task<UserProfileDto> UpdateProfileAsync(long userId, UpdateProfileRequest request);
-        Task ChangePasswordAsync(long userId, ChangePasswordRequest request);
     }
 }

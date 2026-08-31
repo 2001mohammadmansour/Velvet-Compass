@@ -984,7 +984,13 @@
       "rememberMe": "Remember me",
       "loggingIn": "Logging in...",
       "logIn": "Log In",
-      "createAccount": "Create an account"
+      "createAccount": "Create an account",
+      "twoFactorTitle": "Two-step verification",
+      "twoFactorSubtitle": "Enter the 6-digit code from your authenticator app",
+      "twoFactorCode": "Authentication code",
+      "twoFactorCodePlaceholder": "123456 or a recovery code",
+      "verifying": "Verifying...",
+      "verify": "Verify"
     },
     "signup": {
       "createOwnerAccount": "Create hotel owner account",

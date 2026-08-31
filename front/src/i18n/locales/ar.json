@@ -1015,7 +1015,13 @@
       "rememberMe": "تذكرني",
       "loggingIn": "جارٍ تسجيل الدخول...",
       "logIn": "تسجيل الدخول",
-      "createAccount": "إنشاء حساب جديد"
+      "createAccount": "إنشاء حساب جديد",
+      "twoFactorTitle": "التحقق بخطوتين",
+      "twoFactorSubtitle": "أدخل الرمز المكوّن من 6 أرقام من تطبيق المصادقة",
+      "twoFactorCode": "رمز التحقق",
+      "twoFactorCodePlaceholder": "123456 أو رمز استرداد",
+      "verifying": "جارٍ التحقق...",
+      "verify": "تحقّق"
     },
     "signup": {
       "createOwnerAccount": "إنشاء حساب مالك فندق",

@@ -5,7 +5,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using HotelBooking.Application.DTOs.Auth;
-using HotelBooking.Application.DTOs.Auth._2FA;
 using HotelBooking.Application.Interfaces;
 using HotelBooking.Domain.Entities;
 using HotelBooking.Domain.Enum;
@@ -34,19 +33,17 @@ namespace HotelBooking.Infrastructure.Services.Auth
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
-            var existingUser = _userManager.FindByEmailAsync(request.Email).Result;
+            var existingUser = await _userManager.FindByEmailAsync(request.Email);
             if (existingUser is not null)
-                throw new ArgumentException("User with this email already exists.");
+                throw new InvalidRequestException("User with this email already exists.");
 
-            // CHANGED BY AI (2026-07-13): please review. UserName used to always be forced to the
-            // email address (request.Username was collected by the sign-up form and silently
-            // discarded) — now a real, independently-editable username, backing the new Edit
-            // Profile feature. Falls back to the email if left blank so registration can't fail
-            // on this alone.
+            // UserName is a real, independently-editable username (backs the Edit Profile
+            // feature). Falls back to the email if left blank so registration can't fail on
+            // this alone.
             var desiredUsername = string.IsNullOrWhiteSpace(request.Username) ? request.Email : request.Username.Trim();
             var existingUsername = await _userManager.FindByNameAsync(desiredUsername);
             if (existingUsername is not null)
-                throw new ArgumentException("That username is already taken.");
+                throw new InvalidRequestException("That username is already taken.");
 
             var role = request.Role.ToLower() switch
             {
@@ -63,9 +60,9 @@ namespace HotelBooking.Infrastructure.Services.Auth
                 Role = role
             };
 
-            var result = _userManager.CreateAsync(user, request.Password).Result;
+            var result = await _userManager.CreateAsync(user, request.Password);
             if (!result.Succeeded)
-                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+                throw new InvalidRequestException(string.Join(", ", result.Errors.Select(e => e.Description)));
             return await GenerateAuthResponseAsync(user);
 
         }
@@ -74,12 +71,10 @@ namespace HotelBooking.Infrastructure.Services.Auth
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
-                throw new Exception("Invalid email or password.");
+                throw new InvalidCredentialsException("Invalid email or password.");
 
-            // CHANGED BY AI (2026-07-13): please review. This previously never checked Identity's
-            // built-in lockout fields (LockoutEnd/LockoutEnabled), so suspending an account via
-            // those fields had no actual effect on login. Now enforced, backing the admin
-            // suspend/unsuspend feature (see UsersController).
+            // Enforces Identity's built-in lockout fields (LockoutEnd/LockoutEnabled), which
+            // back the admin suspend/unsuspend feature (see UserService).
             if (await _userManager.IsLockedOutAsync(user))
                 throw new UserSuspendedException(user.LockoutEnd);
 
@@ -111,7 +106,7 @@ namespace HotelBooking.Infrastructure.Services.Auth
                 .FirstOrDefaultAsync(x => x.Token == refreshToken);
 
             if (token is null || !token.IsActive)
-                throw new Exception("Invalid refresh token.");
+                throw new InvalidRequestException("Invalid refresh token.");
 
             token.IsRevoked = true;
             token.RevokedAt = DateTime.UtcNow;
@@ -126,59 +121,11 @@ namespace HotelBooking.Infrastructure.Services.Auth
                 FirstOrDefaultAsync(x => x.Token == refreshToken);
 
             if (token is null || !token.IsActive)
-                throw new Exception("Invalid refresh token.");
+                throw new InvalidRequestException("Invalid refresh token.");
 
             token.IsRevoked = true;
             token.RevokedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-        }
-
-        // CHANGED BY AI (2026-07-13): please review. New self-service profile methods backing the
-        // Edit Profile feature. Email is intentionally never accepted/changed here.
-        public async Task<UserProfileDto> GetMyProfileAsync(long userId)
-        {
-            var user = await _userManager.FindByIdAsync(userId.ToString())
-                ?? throw new UserNotFoundException(userId);
-
-            return MapToProfileDto(user);
-        }
-
-        public async Task<UserProfileDto> UpdateProfileAsync(long userId, UpdateProfileRequest request)
-        {
-            var user = await _userManager.FindByIdAsync(userId.ToString())
-                ?? throw new UserNotFoundException(userId);
-
-            var desiredUsername = (request.Username ?? "").Trim();
-            if (string.IsNullOrWhiteSpace(desiredUsername))
-                throw new Exception("Username can't be empty.");
-
-            if (!string.Equals(user.UserName, desiredUsername, StringComparison.Ordinal))
-            {
-                var existing = await _userManager.FindByNameAsync(desiredUsername);
-                if (existing is not null && existing.Id != user.Id)
-                    throw new Exception("That username is already taken.");
-
-                var setNameResult = await _userManager.SetUserNameAsync(user, desiredUsername);
-                if (!setNameResult.Succeeded)
-                    throw new Exception(string.Join(", ", setNameResult.Errors.Select(e => e.Description)));
-            }
-
-            user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
-            var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded)
-                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
-
-            return MapToProfileDto(user);
-        }
-
-        public async Task ChangePasswordAsync(long userId, ChangePasswordRequest request)
-        {
-            var user = await _userManager.FindByIdAsync(userId.ToString())
-                ?? throw new UserNotFoundException(userId);
-
-            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
-            if (!result.Succeeded)
-                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
         }
 
         // 2FA
@@ -207,7 +154,7 @@ namespace HotelBooking.Infrastructure.Services.Auth
                 user, TokenOptions.DefaultAuthenticatorProvider, code);
 
             if (!isValid)
-                throw new Exception("Invalid verification code.");
+                throw new InvalidRequestException("Invalid verification code.");
 
             await _userManager.SetTwoFactorEnabledAsync(user, true);
             var recoveryCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
@@ -221,7 +168,7 @@ namespace HotelBooking.Infrastructure.Services.Auth
                 ?? throw new UserNotFoundException(userId);
 
             if (!await _userManager.CheckPasswordAsync(user, password))
-                throw new Exception("Incorrect password.");
+                throw new InvalidCredentialsException("Incorrect password.");
 
             await _userManager.SetTwoFactorEnabledAsync(user, false);
             await _userManager.ResetAuthenticatorKeyAsync(user);
@@ -232,10 +179,10 @@ namespace HotelBooking.Infrastructure.Services.Auth
             var challenge = await _context.TwoFactorChallenges
                 .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.ChallengeToken == request.ChallengeToken)
-                ?? throw new Exception("Invalid verification session.");
+                ?? throw new InvalidRequestException("Invalid verification session.");
 
             if (!challenge.IsValid)
-                throw new Exception("Verification session expired or invalid, please log in again.");
+                throw new InvalidRequestException("Verification session expired or invalid, please log in again.");
 
             if (await _userManager.IsLockedOutAsync(challenge.User))
                 throw new UserSuspendedException(challenge.User.LockoutEnd);
@@ -254,14 +201,14 @@ namespace HotelBooking.Infrastructure.Services.Auth
             }
             else
             {
-                throw new Exception("You must send either a code or a recoveryCode.");
+                throw new InvalidRequestException("You must send either a code or a recoveryCode.");
             }
 
             if (!isValid)
             {
                 challenge.FailedAttempts++;
                 await _context.SaveChangesAsync();
-                throw new Exception("Invalid code.");
+                throw new InvalidRequestException("Invalid code.");
             }
 
             challenge.IsUsed = true;
@@ -276,7 +223,7 @@ namespace HotelBooking.Infrastructure.Services.Auth
                 ?? throw new UserNotFoundException(userId);
 
             if (!user.TwoFactorEnabled)
-                throw new Exception("Two-factor authentication is not enabled on this account.");
+                throw new InvalidRequestException("Two-factor authentication is not enabled on this account.");
 
             var codes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
             return codes!.ToList();
@@ -340,9 +287,6 @@ namespace HotelBooking.Infrastructure.Services.Auth
 
             return (new JwtSecurityTokenHandler().WriteToken(token), expiry);
         }
-        private static UserProfileDto MapToProfileDto(User user) => new(
-            user.Id, user.UserName!, user.Email!, user.PhoneNumber, user.Role.ToString(), user.CreatedAt
-        );
         private static string GenerateQrCodeBase64(string email, string unformattedKey)
         {
             var issuer = Uri.EscapeDataString("HotelBooking");

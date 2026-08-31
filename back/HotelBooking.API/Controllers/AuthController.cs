@@ -11,9 +11,11 @@ namespace HotelBooking.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        public AuthController(IAuthService authService)
+        private readonly IUserService _userService;
+        public AuthController(IAuthService authService, IUserService userService)
         {
             _authService = authService;
+            _userService = userService;
         }
 
         [HttpPost("register")]
@@ -27,7 +29,10 @@ namespace HotelBooking.API.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
-            return Ok(result);
+            // Flat AuthResponse on the normal path; a 2FA challenge when the account has 2FA on.
+            return result.RequiresTwoFactor
+                ? Ok(new TwoFactorRequiredResponse(true, result.ChallengeToken!))
+                : Ok(result.Auth);
         }
 
         [HttpPost("refresh")]
@@ -45,23 +50,23 @@ namespace HotelBooking.API.Controllers
             return NoContent();
         }
 
-        // CHANGED BY AI (2026-07-13): please review. New self-service profile endpoints backing
-        // the Edit Profile feature.
+        // Self-service profile endpoints (kept on this route for the frontend). The logic lives
+        // in IUserService alongside the admin user-management operations.
         [HttpGet("me")]
         [Authorize]
         public async Task<IActionResult> GetMyProfile()
-            => Ok(await _authService.GetMyProfileAsync(User.GetUserId()));
+            => Ok(await _userService.GetMyProfileAsync(User.GetUserId()));
 
         [HttpPut("me")]
         [Authorize]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
-            => Ok(await _authService.UpdateProfileAsync(User.GetUserId(), request));
+            => Ok(await _userService.UpdateProfileAsync(User.GetUserId(), request));
 
         [HttpPost("change-password")]
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            await _authService.ChangePasswordAsync(User.GetUserId(), request);
+            await _userService.ChangePasswordAsync(User.GetUserId(), request);
             return Ok(new { message = "Password changed successfully." });
         }
 

@@ -10,5 +10,14 @@ namespace HotelBooking.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+        // Suspension is modelled on Identity's built-in lockout fields. A null "until" from the
+        // admin screen means "indefinite" and is stored as this sentinel.
+        public static readonly DateTimeOffset IndefiniteSuspensionUtc = DateTimeOffset.MaxValue;
+
+        // Single source of truth for "is this account currently suspended" (used by the admin
+        // user list). Login uses UserManager.IsLockedOutAsync, which checks the same fields.
+        public bool IsSuspended =>
+            LockoutEnabled && LockoutEnd.HasValue && LockoutEnd.Value > DateTimeOffset.UtcNow;
     }
 }

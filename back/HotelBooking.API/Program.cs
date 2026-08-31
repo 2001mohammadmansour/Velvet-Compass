@@ -15,6 +15,7 @@ builder.Services.AddIdentityService();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddSwaggerWithAuth();
 builder.Services.AddApplicationServices();
+builder.Services.AddUserServices();
 builder.Services.AddHotelServices();
 builder.Services.AddRoomTypeServices();
 builder.Services.AddRoomServices();

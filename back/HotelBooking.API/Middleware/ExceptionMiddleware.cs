@@ -46,6 +46,9 @@ namespace HotelBooking.API.Middleware
                 UserSuspendedException => (HttpStatusCode.Forbidden, ex.Message),
                 UserNotFoundException => (HttpStatusCode.NotFound, ex.Message),
                 InvalidAdminActionException => (HttpStatusCode.BadRequest, ex.Message),
+                // Auth: bad credentials -> 401, other bad input -> 400 (previously fell through to 500).
+                InvalidCredentialsException => (HttpStatusCode.Unauthorized, ex.Message),
+                InvalidRequestException => (HttpStatusCode.BadRequest, ex.Message),
                 HotelRequestNotFoundException => (HttpStatusCode.NotFound, ex.Message),
                 // CHANGED BY AI (2026-07-13): please review. New mapping for the photo upload
                 // endpoints (bad extension, oversized file, missing file).
