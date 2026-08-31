@@ -7,15 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="16.1.1" />
-    <PackageReference Include="FluentValidation" Version="12.1.1" />
-    <PackageReference Include="MediatR" Version="14.1.0" />
+    <Compile Remove="Common\**" />
+    <Compile Remove="Features\**" />
+    <EmbeddedResource Remove="Common\**" />
+    <EmbeddedResource Remove="Features\**" />
+    <None Remove="Common\**" />
+    <None Remove="Features\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Common\Exceptions\" />
-    <Folder Include="Features\Auth\Commands\" />
-    <Folder Include="Features\Auth\Queries\" />
+    <PackageReference Include="AutoMapper" Version="16.1.1" />
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="MediatR" Version="14.1.0" />
   </ItemGroup>
 
 </Project>

@@ -7,6 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Persistence\Migrations\**" />
+    <Compile Remove="Repositories\**" />
+    <EmbeddedResource Remove="Persistence\Migrations\**" />
+    <EmbeddedResource Remove="Repositories\**" />
+    <None Remove="Persistence\Migrations\**" />
+    <None Remove="Repositories\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.5">
       <PrivateAssets>all</PrivateAssets>
@@ -17,16 +26,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="QRCoder" Version="1.8.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\HotelBooking.Application\HotelBooking.Application.csproj" />
     <ProjectReference Include="..\HotelBooking.Domain\HotelBooking.Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Persistence\Migrations\" />
-    <Folder Include="Repositories\" />
   </ItemGroup>
 
 </Project>

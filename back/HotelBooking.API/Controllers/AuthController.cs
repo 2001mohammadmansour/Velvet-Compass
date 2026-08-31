@@ -65,5 +65,33 @@ namespace HotelBooking.API.Controllers
             return Ok(new { message = "Password changed successfully." });
         }
 
+        // ─── 2FA ──────
+
+        [HttpPost("2fa/setup")]
+        [Authorize]
+        public async Task<IActionResult> SetupTwoFactor()
+            => Ok(await _authService.SetupTwoFactorAsync(User.GetUserId()));
+
+        [HttpPost("2fa/enable")]
+        [Authorize]
+        public async Task<IActionResult> EnableTwoFactor([FromBody] Enable2FARequest request)
+            => Ok(await _authService.EnableTwoFactorAsync(User.GetUserId(), request.Code));
+
+        [HttpPost("2fa/disable")]
+        [Authorize]
+        public async Task<IActionResult> DisableTwoFactor([FromBody] Disable2FARequest request)
+        {
+            await _authService.DisableTwoFactorAsync(User.GetUserId(), request.Password);
+            return Ok(new { message = "Two-factor authentication disabled." });
+        }
+
+        [HttpPost("2fa/verify")]
+        public async Task<IActionResult> VerifyTwoFactor([FromBody] Verify2FARequest request)
+            => Ok(await _authService.VerifyTwoFactorAsync(request));
+
+        [HttpPost("2fa/recovery-codes/regenerate")]
+        [Authorize]
+        public async Task<IActionResult> RegenerateRecoveryCodes()
+            => Ok(await _authService.RegenerateRecoveryCodesAsync(User.GetUserId()));
     }
 }
