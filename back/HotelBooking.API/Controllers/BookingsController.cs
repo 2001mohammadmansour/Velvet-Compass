@@ -73,14 +73,6 @@ public class BookingsController : ControllerBase
         return Ok(await _bookingService.RejectAsync(User.GetUserId(), isAdmin, bookingId));
     }
 
-    [HttpPost("{bookingId:long}/no-show")]
-    [Authorize(Roles = "Owner,Admin")]
-    public async Task<IActionResult> MarkNoShow(long bookingId)
-    {
-        var isAdmin = User.IsInRole("Admin");
-        return Ok(await _bookingService.MarkNoShowAsync(User.GetUserId(), isAdmin, bookingId));
-    }
-
     // CHANGED BY AI (2026-07-13): please review. New endpoint for the Reviews feature. Not
     // role-restricted, matching Create/Cancel/GetById above (whoever the booking belongs to can
     // act on it — SubmitAsync already scopes the lookup to booking.UserId == caller).

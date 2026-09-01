@@ -21,7 +21,6 @@ builder.Services.AddRoomTypeServices();
 builder.Services.AddRoomServices();
 builder.Services.AddBookingServices();
 builder.Services.AddPaymentServices();
-builder.Services.AddSettlementServices();
 builder.Services.AddOwnerDashBoardServices();
 builder.Services.AddAdminDashBoardServices();
 builder.Services.AddHotelRequestServices();

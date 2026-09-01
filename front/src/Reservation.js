@@ -58,7 +58,6 @@ export default function Reservation() {
         guestCount: guests,
         includeBreakfast: breakfast,
         extraBedCount: extraBeds,
-        paymentMethod: payment.method,
       });
 
       // "Pay on arrival" leaves the booking Pending; card confirms it immediately. The

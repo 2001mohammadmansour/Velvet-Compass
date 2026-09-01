@@ -76,9 +76,6 @@ namespace HotelBooking.Infrastructure.Services
                 if (payment.Status != PaymentStatus.Paid)
                     throw new Exception("Only paid payments can be refunded.");
 
-                if (payment.Booking.SettledAt != null)
-                    throw new Exception("This booking has already been settled — a refund now needs a manual settlement adjustment.");
-
                 payment.Status = PaymentStatus.Refunded;
                 payment.Booking.Status = BookingStatus.Cancelled;
 

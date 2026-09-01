@@ -143,8 +143,7 @@ namespace HotelBooking.Infrastructure.Services
                 Items = bookingItems,
                 Guests = guests,
                 IncludeBreakfast = includeBreakfast,
-                BreakfastFee = breakfastFee,
-                PaymentMethod = ParsePaymentMethod(request.PaymentMethod)
+                BreakfastFee = breakfastFee
             };
 
             _context.Bookings.Add(booking);
@@ -260,18 +259,10 @@ namespace HotelBooking.Infrastructure.Services
             if (booking.Status == BookingStatus.Cancelled)
                 throw new Exception("Booking is already cancelled.");
 
-            if (booking.Status == BookingStatus.Completed || booking.Status == BookingStatus.NoShow)
-                throw new Exception("This booking can no longer be cancelled.");
+            if (booking.Status == BookingStatus.Completed)
+                throw new Exception("Cannot cancel a completed booking.");
 
-            if (booking.SettledAt != null || booking.CheckoutDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                throw new InvalidRequestException("This stay has already taken place and can't be cancelled — contact support for a refund.");
-
-            // A cancellation penalty is only enforceable when the platform is holding the money —
-            // i.e. online bookings. For pay-on-arrival the guest never paid, so there's nothing
-            // to deduct a penalty from.
-            var penalty = booking.PaymentMethod == PaymentMethod.Online
-                ? ComputeCancellationPenalty(booking.Hotel, booking.CheckinDate, booking.TotalAmount)
-                : 0m;
+            var penalty = ComputeCancellationPenalty(booking.Hotel, booking.CheckinDate, booking.TotalAmount);
             var refund = Math.Round(booking.TotalAmount - penalty, 2);
 
             booking.Status = BookingStatus.Cancelled;
@@ -399,61 +390,6 @@ namespace HotelBooking.Infrastructure.Services
             return await GetByIdAsync(callerId, isAdmin, bookingId);
         }
 
-        // The guest never checked in. Owner/admin only. Takes the booking out of settlement and,
-        // for online bookings (where the platform is holding the money), applies the hotel's
-        // cancellation penalty — there's nothing to charge on a cash no-show.
-        public async Task<BookingDto> MarkNoShowAsync(long callerId, bool isAdmin, long bookingId)
-        {
-            var booking = await _context.Bookings
-                .Include(b => b.Hotel)
-                .Include(b => b.Items)
-                .FirstOrDefaultAsync(b => b.Id == bookingId)
-                ?? throw new BookingNotFoundException(bookingId);
-
-            if (booking.Hotel.OwnerId != callerId && !isAdmin)
-                throw new UnAuthoraizedOwnerException();
-
-            if (booking.Status != BookingStatus.Confirmed)
-                throw new InvalidRequestException("Only confirmed bookings can be marked as a no-show.");
-
-            if (booking.SettledAt != null)
-                throw new InvalidRequestException("This booking has already been settled and can't be changed.");
-
-            if (booking.CheckinDate > DateOnly.FromDateTime(DateTime.UtcNow))
-                throw new InvalidRequestException("This booking's check-in date hasn't arrived yet.");
-
-            var penalty = booking.PaymentMethod == PaymentMethod.Online
-                ? ComputeCancellationPenalty(booking.Hotel, booking.CheckinDate, booking.TotalAmount)
-                : 0m;
-
-            booking.Status = BookingStatus.NoShow;
-            booking.CancelledAt = DateTime.UtcNow;
-            booking.CancellationPenalty = penalty > 0 ? penalty : null;
-            booking.RefundAmount = booking.PaymentMethod == PaymentMethod.Online
-                ? Math.Round(booking.TotalAmount - penalty, 2)
-                : null;
-
-            foreach (var item in booking.Items.Where(i => i.RoomId.HasValue))
-            {
-                var availability = await _context.RoomAvailabilities
-                    .Where(a => a.RoomId == item.RoomId &&
-                                a.Date >= booking.CheckinDate &&
-                                a.Date < booking.CheckoutDate)
-                    .ToListAsync();
-                availability.ForEach(a => a.Status = RoomAvailabilityStatus.Free);
-            }
-
-            await _context.SaveChangesAsync();
-
-            await _notificationService.CreateAsync(
-                booking.UserId, NotificationType.BookingCancelled.ToString(),
-                "Booking marked as no-show",
-                $"Your booking at {booking.Hotel.Name} ({booking.CheckinDate:yyyy-MM-dd} → {booking.CheckoutDate:yyyy-MM-dd}) was marked as a no-show by the hotel.",
-                relatedBookingId: booking.Id);
-
-            return await GetByIdAsync(callerId, isAdmin, bookingId);
-        }
-
         // CHANGED BY AI (2026-07-13): please review. New guest-facing "modify booking dates"
         // action. Reassigns each item to an available room of the same room type for the new
         // dates (not necessarily the same physical room — same reasoning as CreateAsync), frees
@@ -469,12 +405,8 @@ namespace HotelBooking.Infrastructure.Services
                 .FirstOrDefaultAsync(b => b.Id == bookingId && b.UserId == userId)
                 ?? throw new BookingNotFoundException(bookingId);
 
-            if (booking.Status == BookingStatus.Cancelled || booking.Status == BookingStatus.Completed
-                || booking.Status == BookingStatus.NoShow)
-                throw new BookingNotModifiableException("Cancelled, completed, or no-show bookings can't be modified.");
-
-            if (booking.SettledAt != null)
-                throw new BookingNotModifiableException("This booking has already been settled and can't be modified.");
+            if (booking.Status == BookingStatus.Cancelled || booking.Status == BookingStatus.Completed)
+                throw new BookingNotModifiableException("Cancelled or completed bookings can't be modified.");
 
             if (booking.CheckinDate <= DateOnly.FromDateTime(DateTime.UtcNow))
                 throw new BookingNotModifiableException("This booking's check-in date has already passed.");
@@ -613,18 +545,6 @@ namespace HotelBooking.Infrastructure.Services
         }
 
         // Helper
-
-        // "online"/"card" → Online; everything else (incl. null / "cash" / "CashOnArrival") →
-        // CashOnArrival, matching the old rule that a booking without a payment record is
-        // pay-on-arrival.
-        private static PaymentMethod ParsePaymentMethod(string? raw)
-        {
-            var v = (raw ?? "").Trim().ToLowerInvariant();
-            return v is "online" or "card" or "credit" or "creditcard" or "credit_card"
-                ? PaymentMethod.Online
-                : PaymentMethod.CashOnArrival;
-        }
-
         private async Task<List<Room>> GetAvailableRoomsAsync(long roomTypeId, DateOnly checkin, DateOnly checkout, int qty)
         {
             var allRooms = await _context.Rooms

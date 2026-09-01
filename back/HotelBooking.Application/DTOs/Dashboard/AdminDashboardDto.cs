@@ -8,17 +8,9 @@ public record AdminDashboardDto(
 );
 
 public record AdminRevenueDto(
-    decimal TotalPlatformRevenue,      // kept: 15% commission across all in-play bookings
-    decimal TotalCancellationRevenue,  // kept: platform's 15% share of cancellation penalties
-    decimal TotalRevenue,              // kept: the two combined
-
-    // ── Realisation split ────────────────────────────────────────────────
-    decimal EarnedPlatformRevenue,     // commission on bookings whose stay has finished
-    decimal PendingPlatformRevenue,    // commission on bookings whose stay hasn't finished yet
-
-    // ── Settlement position with owners ─────────────────────────────────
-    decimal OwedToOwners,              // online, matured, unsettled — platform must pay owners
-    decimal OwedByOwners               // cash, matured, unsettled — owners owe the platform
+    decimal TotalPlatformRevenue,      // مجموع 15% من كل الحجوزات
+    decimal TotalCancellationRevenue,  // الـ 20% من الإلغاءات تذهب للمنصة
+    decimal TotalRevenue               // الإجمالي
 );
 
 public record AdminBookingStatsDto(

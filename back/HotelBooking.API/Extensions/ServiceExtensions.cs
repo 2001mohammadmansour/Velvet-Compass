@@ -118,15 +118,7 @@ namespace HotelBooking.API.Extensions
 
         public static IServiceCollection AddPaymentServices(this IServiceCollection services)
         {
-            // Was mistakenly re-registering IBookingService (copy-paste), which left
-            // IPaymentService unresolved and every /payments endpoint returning 500.
-            services.AddScoped<IPaymentService, PaymentService>();
-            return services;
-        }
-
-        public static IServiceCollection AddSettlementServices(this IServiceCollection services)
-        {
-            services.AddScoped<ISettlementService, SettlementService>();
+            services.AddScoped<IBookingService, BookingService>();
             return services;
         }
         public static IServiceCollection AddOwnerDashBoardServices(this IServiceCollection services)

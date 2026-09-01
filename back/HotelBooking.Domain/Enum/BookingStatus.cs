@@ -5,10 +5,6 @@ namespace HotelBooking.Domain.Enum
         Pending,
         Confirmed,
         Cancelled,
-        Completed,
-
-        // Guest never checked in. Set by the owner/admin; excluded from settlement the same way
-        // a cancellation is, but keeps the booking on record.
-        NoShow
+        Completed
     }
 }

@@ -19,7 +19,6 @@ namespace HotelBooking.Infrastructure.Persistence
         public DbSet<BookingItem> BookingItems => Set<BookingItem>();
         public DbSet<GuestDetail> GuestDetails => Set<GuestDetail>();
         public DbSet<Payment> Payments => Set<Payment>();
-        public DbSet<Settlement> Settlements => Set<Settlement>();
         public DbSet<HotelView> HotelViews => Set<HotelView>();
         public DbSet<HotelRequest> HotelRequests => Set<HotelRequest>();
         public DbSet<Review> Reviews => Set<Review>();

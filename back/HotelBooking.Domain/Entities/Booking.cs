@@ -17,17 +17,6 @@ public class Booking : BaseEntity
     public decimal PlatformFee { get; set; }       // 15% للمنصة
     public decimal OwnerAmount { get; set; }        // 85% للمالك
 
-    // ─── Settlement Fields ─────────────────────────────────────
-    // Who collected the money (see PaymentMethod). Drives the settlement direction:
-    // Online → platform owes owner 85%; CashOnArrival → owner owes platform 15%.
-    public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.CashOnArrival;
-
-    // Set when this booking's money has been included in a settlement run. Until then, a
-    // Confirmed booking is "Pending" (checkout in the future) or "Due" (checkout passed).
-    public DateTime? SettledAt { get; set; }
-    public long? SettlementId { get; set; }
-    public Settlement? Settlement { get; set; }
-
     // ─── Cancellation Fields ───────────────────────────────────
     public decimal? CancellationPenalty { get; set; }  // 20% من الإجمالي
     public decimal? RefundAmount { get; set; }          // 80% للزبون

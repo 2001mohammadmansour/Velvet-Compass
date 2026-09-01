@@ -85,7 +85,7 @@ export async function getRoomReviews(hotelId, roomTypeId) {
 // server-side per guest per night — one Guest entry is sent per person in the party so that
 // pricing (and the guest headcount) is accurate; only the primary guest's name is known, so
 // the rest are recorded as "Guest 2", "Guest 3", etc.
-export async function createBooking({ hotelId, roomTypeId, checkIn, checkOut, specialRequests, guestName, guestCount, includeBreakfast, extraBedCount, paymentMethod }) {
+export async function createBooking({ hotelId, roomTypeId, checkIn, checkOut, specialRequests, guestName, guestCount, includeBreakfast, extraBedCount }) {
   const count = Math.max(1, Number(guestCount) || 1);
   const guests = Array.from({ length: count }, (_, i) => ({
     fullName: i === 0 ? guestName : `Guest ${i + 1}`,
@@ -104,8 +104,6 @@ export async function createBooking({ hotelId, roomTypeId, checkIn, checkOut, sp
     items: [{ roomTypeId, qty: 1, extraBedCount: Math.max(0, Number(extraBedCount) || 0) }],
     guests,
     includeBreakfast: Boolean(includeBreakfast),
-    // "cash" → pay the hotel on arrival; anything else → paid online to the platform.
-    paymentMethod: paymentMethod === 'cash' ? 'CashOnArrival' : 'Online',
   };
   return request('/api/v1/bookings', { method: 'POST', body: JSON.stringify(payload) });
 }
