@@ -74,6 +74,7 @@ export default function Settlements() {
                 <th style={th}>{t('settlements.col.bookings')}</th>
                 <th style={th}>{t('settlements.col.ownerCredit')}</th>
                 <th style={th}>{t('settlements.col.commission')}</th>
+                <th style={th}>{t('settlements.col.clawback')}</th>
                 <th style={th}>{t('settlements.col.transfer')}</th>
                 <th style={th}></th>
               </tr>
@@ -85,6 +86,7 @@ export default function Settlements() {
                   <td style={td}>{r.bookingCount}</td>
                   <td style={td}>{money(r.ownerCredit)}</td>
                   <td style={td}>{money(r.platformCommission)}</td>
+                  <td style={td}>{r.clawbackAmount ? `− ${money(r.clawbackAmount)}` : '—'}</td>
                   <td style={td}>
                     <strong>{money(r.netAmount)}</strong>
                     <div className="muted small">{dirLabel(r.direction)}</div>

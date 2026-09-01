@@ -9,7 +9,8 @@ namespace HotelBooking.Application.DTOs.Settlements
         int BookingCount,
         decimal OwnerCredit,          // owed to the owner — 85% of matured online bookings
         decimal PlatformCommission,   // owed to the platform — 15% of matured cash bookings
-        decimal NetAmount,            // |OwnerCredit - PlatformCommission| — the single transfer
+        decimal ClawbackAmount,       // deducted from OwnerCredit — refunds of already-settled bookings
+        decimal NetAmount,            // net of the three — the single transfer
         string Direction              // "PlatformToOwner" | "OwnerToPlatform"
     );
 

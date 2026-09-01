@@ -1125,6 +1125,7 @@
       "bookings": "Bookings",
       "ownerCredit": "Owed to owner",
       "commission": "Commission",
+      "clawback": "Clawback",
       "transfer": "Transfer",
       "period": "Period"
     }
