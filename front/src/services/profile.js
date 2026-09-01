@@ -10,7 +10,36 @@ export async function getMyProfile() {
     phoneNumber: p.phoneNumber || '',
     role: p.role,
     createdAt: p.createdAt,
+    twoFactorEnabled: !!p.twoFactorEnabled,
   };
+}
+
+// ─── Two-factor authentication (self-service, from the Edit Profile page) ──────
+
+// Step 1 of enabling: returns { manualEntryKey, qrCodeImageBase64 }. The QR string already
+// carries the "data:image/png;base64," prefix, so it can go straight into an <img src>.
+export async function setupTwoFactor() {
+  return request('/api/v1/auth/2fa/setup', { method: 'POST' });
+}
+
+// Step 2: confirm the 6-digit code from the authenticator app. Returns { recoveryCodes: [...] }
+// which must be shown to the user once.
+export async function enableTwoFactor(code) {
+  return request('/api/v1/auth/2fa/enable', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function disableTwoFactor(password) {
+  return request('/api/v1/auth/2fa/disable', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  });
+}
+
+export async function regenerateRecoveryCodes() {
+  return request('/api/v1/auth/2fa/recovery-codes/regenerate', { method: 'POST' });
 }
 
 export async function updateMyProfile({ username, phoneNumber }) {

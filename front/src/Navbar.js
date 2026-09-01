@@ -2,7 +2,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentRole, getCurrentUser, getOwnerProfileSummary, clearAuth } from './services/auth';
-import NotificationBell from './NotificationBell';
 import ProfileMenu from './ProfileMenu';
 import LanguageToggle from './LanguageToggle';
 
@@ -13,7 +12,6 @@ export default function Navbar({ transparent = false, flush = false }) {
 
   const NAV_LINKS = [
     { label: t('nav.home'),     href: '/' },
-    { label: t('nav.services'), href: '/services' },
     { label: t('nav.hotels'),   href: '/hotels' },
     { label: t('nav.partners'), href: '/partners' },
     // Temporarily hidden — not deleted, just parked for later. Route still exists at /about.
@@ -31,7 +29,7 @@ export default function Navbar({ transparent = false, flush = false }) {
   // to the final else branch and saw Login/Sign Up buttons on every public page (Hotels, About
   // Us, etc.) as if they'd been signed out, even though their session was completely untouched.
   const isOwner = role === 'hotel_owner';
-  const currentUser = isGuest ? getCurrentUser() : null;
+  const currentUser = (isGuest || isAdmin) ? getCurrentUser() : null;
   const ownerProfile = isOwner ? getOwnerProfileSummary() : null;
   const [solid, setSolid] = useState(!transparent);
 
@@ -78,13 +76,17 @@ export default function Navbar({ transparent = false, flush = false }) {
       <div className="auth-buttons">
         <LanguageToggle />
         {isAdmin ? (
-          <>
-            {/* CHANGED BY AI (2026-07-13): please review — moved from a fixed floating widget to
-                sit inline, left of the account controls. */}
-            <NotificationBell inline />
-            <Link className="btn login" to="/admin">{t('nav.adminDashboard')}</Link>
-            <button type="button" className="btn signup" onClick={handleSignOut}>{t('nav.signOut')}</button>
-          </>
+          // Admin gets the same profile dropdown as everyone else so account settings
+          // (including 2FA on the /profile page) are reachable, not just the dashboard.
+          <ProfileMenu
+            name={currentUser?.username || t('nav.adminDashboard')}
+            subtitle={currentUser?.email || ''}
+            links={[
+              { to: '/profile', label: t('nav.editProfile') },
+              { to: '/admin', label: t('nav.adminDashboard') },
+            ]}
+            onSignOut={handleSignOut}
+          />
         ) : isGuest ? (
           <ProfileMenu
             name={currentUser?.username || t('nav.guest')}

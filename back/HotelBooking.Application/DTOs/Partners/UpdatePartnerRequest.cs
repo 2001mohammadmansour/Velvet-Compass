@@ -2,7 +2,9 @@ namespace HotelBooking.Application.DTOs.Partners
 {
     public record UpdatePartnerRequest(
         string Name,
-        string City,
-        string Description
+        List<string> Cities,
+        string Description,
+        string Category,
+        string? WebsiteUrl
     );
 }

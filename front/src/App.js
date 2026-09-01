@@ -11,7 +11,6 @@ import MyBookings from "./MyBookings";
 import Reservation from "./Reservation"
 import OurPartners from "./OurPartners";
 import SignUp from "./SignUp";
-import ServicesSection from "./ServicesSection"
 import Login from "./Login"
 import OwnerDashboard from "./OwnerDashboard";
 import OwnerStats from "./OwnerStats";
@@ -28,7 +27,7 @@ import EditProfile from "./EditProfile";
 
 const NAVBAR_ROUTES = new Set([
   '/', '/home', '/hotels', '/rooms', '/room-detail', '/search', '/my-bookings',
-  '/reservation', '/services', '/about', '/contact', '/cities',
+  '/reservation', '/about', '/contact', '/cities',
   '/partners', '/profile',
   '/owner/dashboard', '/owner/stats', '/owner/hotel-info', '/owner/requests',
   '/admin',
@@ -78,7 +77,6 @@ export default function App() {
           <Route path="/partners" element={<OurPartners />} />
           <Route path="/reservation" element={<Reservation />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route path="/services" element={<ServicesSection />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/cities" element={<AllCities />} />

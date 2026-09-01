@@ -7,15 +7,6 @@ export const DEFAULT_CONTENT = {
     cta1: "Explore Hotels",
     cta2: "Learn More"
   },
-  services: {
-    sectionTitle: "Our Premium Services",
-    cards: [
-      { id: 1, icon: "🧭", title: "Smart Booking", description: "Direct prices, real‑time availability, and a seamless booking experience." },
-      { id: 2, icon: "🏨", title: "Hotel Owner Tools", description: "Manage rooms, bookings, and pricing with a powerful dashboard." },
-      { id: 3, icon: "⚡", title: "Instant Confirmation", description: "Immediate confirmation for guests and instant notifications for owners." },
-      { id: 4, icon: "🔒", title: "Secure Payments", description: "Encrypted transactions with industry‑grade security." }
-    ]
-  },
   testimonials: {
     sectionTitle: "What Our Users Say",
     reviews: [

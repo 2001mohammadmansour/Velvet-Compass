@@ -126,21 +126,6 @@ export default function Home() {
         <div className="hero-image"><img src={heroImage} alt="Hero" /></div>
       </header>
 
-      <section id="services" className="services-section">
-        <h2 className="section-title" data-reveal>{content.services.sectionTitle}</h2>
-        <div className="services-grid">
-          {content.services.cards.map((card, i) => (
-            <div key={card.id} className="service-card snow-card" data-reveal style={{ transitionDelay: `${i * 0.1}s` }}>
-              <div className="snow-icon">{card.icon}</div>
-              <h3>{card.title}</h3>
-              <p>{card.description}</p>
-            </div>
-          ))}
-        </div>
-        <div className="services-more-wrapper" data-reveal>
-          <a href="/services" className="services-more-btn">{t('home.exploreMoreServices')}</a>
-        </div>
-      </section>
 
       {/* ── Explore by City ── */}
       <section className="ec-section">

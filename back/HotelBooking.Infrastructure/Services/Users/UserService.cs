@@ -156,7 +156,7 @@ namespace HotelBooking.Infrastructure.Services.Users
             => string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
 
         private static UserProfileDto MapToProfileDto(User user) => new(
-            user.Id, user.UserName!, user.Email!, user.PhoneNumber, user.Role.ToString(), user.CreatedAt
+            user.Id, user.UserName!, user.Email!, user.PhoneNumber, user.Role.ToString(), user.CreatedAt, user.TwoFactorEnabled
         );
     }
 }

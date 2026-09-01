@@ -9,5 +9,6 @@ namespace HotelBooking.Application.Interfaces
         Task<PartnerDto> UpdateAsync(long partnerId, UpdatePartnerRequest request);
         Task DeleteAsync(long partnerId);
         Task<PartnerDto> SetImageAsync(long partnerId, string imageUrl);
+        Task RegisterClickAsync(long partnerId);
     }
 }

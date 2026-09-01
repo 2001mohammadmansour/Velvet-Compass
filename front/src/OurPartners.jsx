@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getCurrentRole } from "./services/auth";
-import { getPartners, createPartner, updatePartner, deletePartner, uploadPartnerPhoto } from "./services/partners";
+import {
+  getPartners, createPartner, updatePartner, deletePartner, uploadPartnerPhoto,
+  registerPartnerClick, PARTNER_CATEGORIES,
+} from "./services/partners";
 import "./OurPartners.css";
 import "./room.css";
 
@@ -26,13 +29,17 @@ const cityOptions = [
 
 const emptyPartner = {
   name: "",
-  city: cityOptions[0],
+  cities: [],
   description: "",
+  category: PARTNER_CATEGORIES[0],
+  websiteUrl: "",
 };
+
+const formatCities = (cities) => (Array.isArray(cities) ? cities.join(" · ") : "");
 
 function PartnerFormModal({ initialPartner, onSave, onCancel, saving }) {
   const { t } = useTranslation();
-  const [form, setForm] = useState(initialPartner || emptyPartner);
+  const [form, setForm] = useState({ ...emptyPartner, ...(initialPartner || {}) });
   const [file, setFile] = useState(null);
   const isEditing = Boolean(initialPartner);
 
@@ -41,10 +48,22 @@ function PartnerFormModal({ initialPartner, onSave, onCancel, saving }) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const toggleCity = (city) => {
+    setForm((prev) => ({
+      ...prev,
+      cities: prev.cities.includes(city)
+        ? prev.cities.filter((c) => c !== city)
+        : [...prev.cities, city],
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.description.trim()) return;
-    onSave({ ...form, name: form.name.trim(), description: form.description.trim() }, file);
+    if (!form.name.trim() || !form.description.trim() || form.cities.length === 0) return;
+    onSave(
+      { ...form, name: form.name.trim(), description: form.description.trim(), websiteUrl: form.websiteUrl.trim() },
+      file,
+    );
   };
 
   return (
@@ -58,12 +77,39 @@ function PartnerFormModal({ initialPartner, onSave, onCancel, saving }) {
           </label>
 
           <label>
-            {t('partners.form.city')}
-            <select name="city" value={form.city} onChange={handleChange}>
-              {cityOptions.map((city) => (
-                <option key={city} value={city}>{city}</option>
+            {t('partners.form.category')}
+            <select name="category" value={form.category} onChange={handleChange}>
+              {PARTNER_CATEGORIES.map((c) => (
+                <option key={c} value={c}>{t(`partners.categories.${c}`)}</option>
               ))}
             </select>
+          </label>
+
+          <div className="partner-cities-field">
+            <span className="partner-cities-label">{t('partners.form.cities')}</span>
+            <div className="partner-cities-grid">
+              {cityOptions.map((city) => (
+                <label key={city} className="partner-city-check">
+                  <input
+                    type="checkbox"
+                    checked={form.cities.includes(city)}
+                    onChange={() => toggleCity(city)}
+                  />
+                  <span>{city}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <label>
+            {t('partners.form.website')}
+            <input
+              name="websiteUrl"
+              type="text"
+              placeholder="https://example.com"
+              value={form.websiteUrl}
+              onChange={handleChange}
+            />
           </label>
 
           <label>
@@ -108,6 +154,9 @@ export default function OurPartners() {
   const [editingPartner, setEditingPartner] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
+  const [activeCategory, setActiveCategory] = useState(PARTNER_CATEGORIES[0]);
+  const [selectedCity, setSelectedCity] = useState('');
+
   useEffect(() => {
     let mounted = true;
     getPartners()
@@ -117,13 +166,23 @@ export default function OurPartners() {
     return () => { mounted = false; };
   }, [t]);
 
-  const [selectedCity, setSelectedCity] = useState('');
+  const countByCategory = useMemo(() => {
+    const counts = {};
+    for (const p of partners) counts[p.category] = (counts[p.category] || 0) + 1;
+    return counts;
+  }, [partners]);
 
   const visiblePartners = useMemo(() => {
-    return partners.filter((partner) => !selectedCity || partner.city === selectedCity);
-  }, [partners, selectedCity]);
+    return partners.filter((p) =>
+      p.category === activeCategory &&
+      (!selectedCity || (p.cities || []).includes(selectedCity)));
+  }, [partners, activeCategory, selectedCity]);
 
-  const clearFilters = () => setSelectedCity('');
+  const openWebsite = (partner) => {
+    if (!partner.websiteUrl) return;
+    registerPartnerClick(partner.id);
+    window.open(partner.websiteUrl, "_blank", "noopener,noreferrer");
+  };
 
   const handleAddPartner = async (newPartner, file) => {
     setSaving(true);
@@ -131,6 +190,7 @@ export default function OurPartners() {
       let created = await createPartner(newPartner);
       if (file) created = await uploadPartnerPhoto(created.id, file);
       setPartners((prev) => [...prev, created]);
+      setActiveCategory(created.category);
       setShowAddForm(false);
     } catch (err) {
       alert(t('partners.addError') + (err.message || err));
@@ -181,38 +241,37 @@ export default function OurPartners() {
 
   return (
     <div className="facilities-page">
-      <header className="facilities-hero">
-        <div className="facilities-hero-copy">
-          <p className="eyebrow">{t('partners.eyebrow')}</p>
-          <h1>{t('partners.title')}</h1>
-          <p className="hero-description">
-            {t('partners.heroDescription')}
-          </p>
-        </div>
+      <div className="partners-topbar">
+        <h1>{t('partners.title')}</h1>
+        {isAdmin && (
+          <button
+            type="button"
+            className={`admin-manage-toggle inline${manageMode ? " active" : ""}`}
+            onClick={() => setManageMode((v) => !v)}
+          >
+            {manageMode ? t('partners.doneEditing') : t('partners.managePartners')}
+          </button>
+        )}
+      </div>
 
-        <div className="facilities-hero-card">
-          <span>{t('partners.partnersLabel')}</span>
-          <strong>{t('partners.partnersCount', { count: partners.length })}</strong>
-          <p>{t('partners.browseByCity')}</p>
-          {isAdmin && (
-            <button
-              type="button"
-              className={`admin-manage-toggle${manageMode ? " active" : ""}`}
-              onClick={() => setManageMode((v) => !v)}
-            >
-              {manageMode ? t('partners.doneEditing') : t('partners.managePartners')}
-            </button>
-          )}
-        </div>
-      </header>
+      <nav className="partner-tabs" role="tablist">
+        {PARTNER_CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            role="tab"
+            aria-selected={activeCategory === cat}
+            className={`partner-tab${activeCategory === cat ? " active" : ""}`}
+            onClick={() => setActiveCategory(cat)}
+          >
+            {t(`partners.categories.${cat}`)}
+            {countByCategory[cat] ? <span className="partner-tab-count">{countByCategory[cat]}</span> : null}
+          </button>
+        ))}
+      </nav>
 
       <main className="facilities-layout">
         <section className="trips-section">
-          <div className="section-head">
-            <h2>{t('partners.allPartners')}</h2>
-            <p>{t('partners.partnersAvailable', { count: visiblePartners.length })}</p>
-          </div>
-
           {manageMode && (
             <button type="button" className="add-trip-btn" onClick={() => setShowAddForm(true)}>
               {t('partners.addPartner')}
@@ -221,7 +280,12 @@ export default function OurPartners() {
 
           <div className="trips-grid">
             {visiblePartners.map((partner, i) => (
-              <article className="trip-card partner-card" key={partner.id} style={{ animationDelay: `${i * 0.06}s` }}>
+              <article
+                className={`trip-card partner-card${!manageMode && partner.websiteUrl ? ' partner-card-clickable' : ''}`}
+                key={partner.id}
+                style={{ animationDelay: `${i * 0.06}s` }}
+                onClick={!manageMode && partner.websiteUrl ? () => openWebsite(partner) : undefined}
+              >
                 <div className="partner-card-photo">
                   {partner.imageUrl
                     ? <img src={partner.imageUrl} alt={partner.name} />
@@ -229,8 +293,11 @@ export default function OurPartners() {
                   }
                 </div>
                 <h3>{partner.name}</h3>
-                <p className="trip-city">{partner.city}</p>
+                <p className="trip-city">📍 {formatCities(partner.cities)}</p>
                 <p className="trip-description">{partner.description}</p>
+                {partner.websiteUrl && !manageMode && (
+                  <span className="partner-card-link-hint">{t('partners.detail.visitWebsite')} ↗</span>
+                )}
                 {manageMode && (
                   <div className="trip-card-admin-actions">
                     <button type="button" onClick={() => setEditingPartner(partner)}>
@@ -254,7 +321,7 @@ export default function OurPartners() {
           <div className="sr-sidebar-header">
             <span className="sr-sidebar-title">{t('common.filters')}</span>
             {selectedCity && (
-              <button className="sr-clear-btn" onClick={clearFilters}>{t('common.clearAll')}</button>
+              <button className="sr-clear-btn" onClick={() => setSelectedCity('')}>{t('common.clearAll')}</button>
             )}
           </div>
 

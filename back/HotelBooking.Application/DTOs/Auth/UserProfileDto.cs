@@ -8,7 +8,8 @@ namespace HotelBooking.Application.DTOs.Auth
         string Email,
         string? PhoneNumber,
         string Role,
-        DateTime CreatedAt
+        DateTime CreatedAt,
+        bool TwoFactorEnabled
     );
 
     public record UpdateProfileRequest(

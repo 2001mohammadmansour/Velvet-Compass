@@ -41,6 +41,14 @@ namespace HotelBooking.API.Controllers
             return NoContent();
         }
 
+        // Public: a visitor opened the partner's detail / followed its website link.
+        [HttpPost("{partnerId:long}/click")]
+        public async Task<IActionResult> RegisterClick(long partnerId)
+        {
+            await _partnerService.RegisterClickAsync(partnerId);
+            return NoContent();
+        }
+
         [HttpPost("{partnerId:long}/image/upload")]
         [Authorize(Roles = "Admin")]
         [RequestSizeLimit(5 * 1024 * 1024)]

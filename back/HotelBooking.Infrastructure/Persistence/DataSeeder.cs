@@ -266,12 +266,20 @@ public static class DataSeeder
         await context.SaveChangesAsync();
 
         context.Partners.AddRange(
-            new Partner { Name = "Old City Walk", City = "Damascus", Description = "Explore historic alleys, traditional markets, and guided heritage stops through the heart of Damascus." },
-            new Partner { Name = "Aleppo Citadel Route", City = "Aleppo", Description = "A guided trip through landmarks, local food corners, and the iconic citadel experience." },
-            new Partner { Name = "Desert Sunset Trek", City = "Palmyra", Description = "A guided desert journey with sunset views, campsite stories, and a calm night under the stars." },
-            new Partner { Name = "Coastal Sea Activities", City = "Latakia", Description = "Enjoy boat time, beach relaxation, and water activities led by local guides on the coast." },
-            new Partner { Name = "Tartus Family Escape", City = "Tartus", Description = "A relaxed seaside outing for families with guided stops, snacks, and easy coastal fun." },
-            new Partner { Name = "Homs Heritage Trail", City = "Homs", Description = "Discover city culture, historic sites, and local stories with a knowledgeable guide." }
+            // Tours & Experiences
+            new Partner { Category = "Tours", Name = "Old City Walk", Cities = new() { "Damascus" }, Description = "Explore historic alleys, traditional markets, and guided heritage stops through the heart of Damascus." },
+            new Partner { Category = "Tours", Name = "Aleppo Citadel Route", Cities = new() { "Aleppo" }, Description = "A guided trip through landmarks, local food corners, and the iconic citadel experience." },
+            new Partner { Category = "Tours", Name = "Desert Sunset Trek", Cities = new() { "Palmyra" }, Description = "A guided desert journey with sunset views, campsite stories, and a calm night under the stars." },
+            new Partner { Category = "Tours", Name = "Coastal Sea Activities", Cities = new() { "Latakia", "Tartous" }, Description = "Enjoy boat time, beach relaxation, and water activities led by local guides on the coast." },
+            // Car Rentals
+            new Partner { Category = "CarRental", Name = "Cham Car Hire", Cities = new() { "Damascus", "Aleppo" }, Description = "Economy and family cars for daily or weekly hire, with branches in Damascus and Aleppo and delivery to your hotel." },
+            new Partner { Category = "CarRental", Name = "Coast Auto Rental", Cities = new() { "Latakia" }, Description = "Self-drive rentals along the coast, airport pickup available." },
+            // Transport & Transfers
+            new Partner { Category = "Transport", Name = "Airport Express Transfers", Cities = new() { "Damascus", "Aleppo", "Latakia" }, Description = "Fixed-price private transfers between the main airports and city hotels." },
+            new Partner { Category = "Transport", Name = "Intercity Shuttle", Cities = new() { "Aleppo", "Homs", "Hama" }, Description = "Scheduled shared rides between Aleppo, Homs, and Hama." },
+            // Dining
+            new Partner { Category = "Dining", Name = "Beit Sitti Restaurant", Cities = new() { "Damascus" }, Description = "Traditional Damascene cuisine in a restored courtyard house, guest discount with your booking receipt." },
+            new Partner { Category = "Dining", Name = "Seafront Grill", Cities = new() { "Tartous" }, Description = "Fresh seafood and mezze with a terrace over the marina." }
         );
         await context.SaveChangesAsync();
 

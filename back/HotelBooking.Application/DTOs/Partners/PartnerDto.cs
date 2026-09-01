@@ -3,8 +3,11 @@ namespace HotelBooking.Application.DTOs.Partners
     public record PartnerDto(
         long Id,
         string Name,
-        string City,
+        List<string> Cities,
         string Description,
-        string? ImageUrl
+        string? ImageUrl,
+        string Category,
+        string? WebsiteUrl,
+        int ClickCount
     );
 }

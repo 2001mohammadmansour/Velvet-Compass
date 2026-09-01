@@ -19,7 +19,6 @@
   },
   "nav": {
     "home": "Home",
-    "services": "Services",
     "hotels": "Hotels",
     "partners": "Our Partners",
     "dashboard": "Dashboard",
@@ -44,7 +43,6 @@
     "guests": "Guests",
     "search": "Search",
     "servicesTitle": "Our Premium Services",
-    "exploreMoreServices": "Explore More Services →",
     "exploreByCity": "Explore by City",
     "allCities": "All Cities →",
     "exploreHotels": "Explore Hotels →",
@@ -57,25 +55,6 @@
     "totalBookings": "Total Bookings",
     "roomsAvailable": "Rooms Available",
     "goToContact": "Go to Contact Page →"
-  },
-  "services": {
-    "badge": "Signature Services",
-    "title": "Everything your stay deserves in one place",
-    "subtitle": "Built to be effortless, elegant, and dependable — from discovery to checkout.",
-    "startBooking": "Start booking now",
-    "statHotels": "Verified hotels",
-    "statBookings": "Successful bookings",
-    "statCities": "Cities covered",
-    "statSupport": "Support coverage",
-    "cards": {
-      "booking": { "title": "Frictionless Booking", "tag": "Fastest flow", "desc": "Choose your room in seconds with a clear, modern interface and instant confirmation." },
-      "quality": { "title": "Trusted Hotel Quality", "tag": "Verified stays", "desc": "Every property is validated with care so guests enjoy a reliable stay every time." },
-      "reviews": { "title": "Real Guest Reviews", "tag": "Authentic voices", "desc": "Genuine feedback from real travelers helps you choose the ideal hotel with confidence." },
-      "support": { "title": "24/7 Support", "tag": "Always available", "desc": "Our team is ready around the clock to assist with bookings, changes, and questions." },
-      "deals": { "title": "Exclusive Deals", "tag": "Premium value", "desc": "Enjoy competitive rates, special promotions, and curated offers for loyal travelers." },
-      "payments": { "title": "Secure Payments", "tag": "Safe checkout", "desc": "Payments are protected with advanced encryption and privacy-first handling." },
-      "cancellation": { "title": "Free Cancellation", "tag": "Peace of mind", "desc": "Change your mind? Most rooms offer a free cancellation window before check-in." }
-    }
   },
   "hotels": {
     "title": "Hotels in Syria",
@@ -105,18 +84,32 @@
     "allPartners": "All Partners",
     "partnersAvailable": "{{count}} partners available",
     "addPartner": "+ Add partner",
-    "noMatch": "No partners match the selected city.",
+    "noMatch": "No partners match the selected filters.",
+    "allCategories": "All categories",
     "loading": "Loading partners...",
     "loadError": "Unable to load partners.",
     "confirmDelete": "Delete this partner? This cannot be undone.",
     "addError": "Unable to add partner: ",
     "saveError": "Unable to save partner: ",
     "deleteError": "Unable to delete partner: ",
+    "categories": {
+      "CarRental": "Car Rentals",
+      "Dining": "Dining",
+      "Tours": "Tours & Experiences",
+      "Transport": "Transport & Transfers",
+      "Other": "Other Services"
+    },
+    "detail": {
+      "visitWebsite": "Visit website"
+    },
     "form": {
       "editTitle": "Edit partner",
       "addTitle": "Add partner",
       "name": "Name",
       "city": "City",
+      "cities": "Cities (choose one or more)",
+      "category": "Category",
+      "website": "Website (optional)",
       "description": "Description",
       "photo": "Photo",
       "saving": "Saving...",
@@ -935,6 +928,28 @@
     "success": {
       "profileUpdated": "Profile updated.",
       "passwordChanged": "Password changed."
+    },
+    "twoFactor": {
+      "title": "Two-Factor Authentication",
+      "statusOn": "Two-factor authentication is ON. You will be asked for a code from your authenticator app when you log in.",
+      "statusOff": "Add an extra layer of security by requiring a code from an authenticator app at login.",
+      "enableBtn": "Enable 2FA",
+      "disableBtn": "Disable 2FA",
+      "regenerateBtn": "Regenerate recovery codes",
+      "scanInstruction": "Scan this QR code with Google Authenticator, Authy, or a similar app.",
+      "manualKey": "Or enter this key manually:",
+      "codeLabel": "Enter the 6-digit code from the app",
+      "confirmBtn": "Confirm & enable",
+      "cancelBtn": "Cancel",
+      "passwordLabel": "Confirm your password to disable 2FA",
+      "confirmDisableBtn": "Disable 2FA",
+      "recoveryIntro": "Save these recovery codes somewhere safe. Each can be used once if you lose access to your authenticator app.",
+      "dismissCodes": "I have saved them",
+      "errors": {
+        "generic": "Something went wrong. Please try again.",
+        "invalidCode": "That code is not valid. Try the current code from your app.",
+        "wrongPassword": "Incorrect password."
+      }
     }
   },
   "rooms": {
