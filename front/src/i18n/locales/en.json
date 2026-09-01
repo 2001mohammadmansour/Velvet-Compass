@@ -156,7 +156,7 @@
       "weightedScore": "Weighted overall score",
       "higherWeight": "Higher weight",
       "yourComment": "Your comment",
-      "commentPlaceholder": "Share your experience… (minimum 10 characters)",
+      "commentPlaceholder": "Share your experience… (optional)",
       "charactersCount": "{{count}} characters",
       "cancel": "Cancel",
       "submitting": "Submitting…",

@@ -30,10 +30,6 @@ function ReviewModal({ booking, userId, onClose, onSubmitted }) {
   const overallScore = useMemo(() => computePreview(ratings), [ratings]);
 
   const handleSubmit = async () => {
-    if (comment.trim().length < 10) {
-      setSubmitError(t('myBookings.review.commentTooShort'));
-      return;
-    }
     setSubmitting(true);
     setSubmitError('');
     try {
@@ -100,7 +96,7 @@ function ReviewModal({ booking, userId, onClose, onSubmitted }) {
             type="button"
             className="cta"
             onClick={handleSubmit}
-            disabled={submitting || comment.trim().length < 10}
+            disabled={submitting}
           >
             {submitting ? t('myBookings.review.submitting') : t('myBookings.review.submitReview')}
           </button>
