@@ -18,7 +18,6 @@ namespace HotelBooking.Infrastructure.Persistence.Configurations
             builder.Property(x => x.PlatformFee).HasPrecision(10, 2);
             builder.Property(x => x.OwnerAmount).HasPrecision(10, 2);
             builder.Property(x => x.CancellationPenalty).HasPrecision(10, 2);
-            builder.Property(x => x.ClawbackAmount).HasPrecision(10, 2);
             builder.Property(x => x.RefundAmount).HasPrecision(10, 2);
             builder.Property(x => x.BreakfastFee).HasPrecision(10, 2);
             builder.Property(x => x.ModificationFee).HasPrecision(10, 2);

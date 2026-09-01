@@ -83,18 +83,13 @@ namespace HotelBooking.Infrastructure.Services.Users
         // translation issues with nested collections mixed with scalar aggregates.
         public async Task<List<AdminUserSummaryDto>> GetAllAsync()
         {
-            // Only count bookings whose stay has actually happened — matches how revenue is
-            // recognised everywhere else (a booking made for a future stay isn't earned yet).
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var bookingStats = await _context.Bookings
                 .GroupBy(b => b.UserId)
                 .Select(g => new
                 {
                     UserId = g.Key,
                     Count = g.Count(),
-                    AmountPaid = g.Where(b =>
-                            (b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Completed)
-                            && b.CheckoutDate < today)
+                    AmountPaid = g.Where(b => b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Completed)
                         .Sum(b => (decimal?)b.PlatformFee) ?? 0
                 })
                 .ToListAsync();

@@ -76,14 +76,11 @@ namespace HotelBooking.Infrastructure.Services
                 if (payment.Status != PaymentStatus.Paid)
                     throw new Exception("Only paid payments can be refunded.");
 
+                if (payment.Booking.SettledAt != null)
+                    throw new Exception("This booking has already been settled — a refund now needs a manual settlement adjustment.");
+
                 payment.Status = PaymentStatus.Refunded;
                 payment.Booking.Status = BookingStatus.Cancelled;
-
-                // If the booking was already settled, the owner was paid their 85% for a stay
-                // that's now reversed — flag that amount to be clawed back from the hotel's next
-                // settlement. (An unsettled booking just drops out of the next preview on its own.)
-                if (payment.Booking.SettledAt != null && payment.Booking.ClawbackAmount == null)
-                    payment.Booking.ClawbackAmount = payment.Booking.OwnerAmount;
 
                 await _context.SaveChangesAsync();
                 return MapToDto(payment);

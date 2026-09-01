@@ -81,13 +81,6 @@ namespace HotelBooking.Infrastructure.Migrations
                     b.Property<DateOnly>("CheckoutDate")
                         .HasColumnType("date");
 
-                    b.Property<decimal?>("ClawbackAmount")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<DateTime?>("ClawbackSettledAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 

@@ -28,12 +28,6 @@ public class Booking : BaseEntity
     public long? SettlementId { get; set; }
     public Settlement? Settlement { get; set; }
 
-    // Set when a booking is refunded AFTER it was already settled — the owner was paid their 85%
-    // for a stay that's now reversed, so this amount is clawed back from the hotel's next
-    // settlement. ClawbackSettledAt is stamped once that clawback has been applied.
-    public decimal? ClawbackAmount { get; set; }
-    public DateTime? ClawbackSettledAt { get; set; }
-
     // ─── Cancellation Fields ───────────────────────────────────
     public decimal? CancellationPenalty { get; set; }  // 20% من الإجمالي
     public decimal? RefundAmount { get; set; }          // 80% للزبون

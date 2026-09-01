@@ -23,30 +23,15 @@ namespace HotelBooking.Infrastructure.Services
                 b.CheckoutDate < today);
         }
 
-        // Bookings refunded after they were already settled — the owner's 85% must be clawed
-        // back from the next settlement.
-        private IQueryable<Booking> PendingClawbacks()
-            => _context.Bookings.Where(b => b.ClawbackAmount != null && b.ClawbackSettledAt == null);
-
         public async Task<List<SettlementPreviewDto>> GetPreviewAsync()
         {
             var due = await DueBookings()
                 .Include(b => b.Hotel).ThenInclude(h => h.Owner)
                 .ToListAsync();
-            var clawbacks = await PendingClawbacks()
-                .Include(b => b.Hotel).ThenInclude(h => h.Owner)
-                .ToListAsync();
 
-            var hotelIds = due.Select(b => b.HotelId).Concat(clawbacks.Select(b => b.HotelId)).Distinct();
-
-            return hotelIds
-                .Select(id =>
-                {
-                    var hotelDue = due.Where(b => b.HotelId == id).ToList();
-                    var hotelClaw = clawbacks.Where(b => b.HotelId == id).ToList();
-                    var hotel = (hotelDue.FirstOrDefault() ?? hotelClaw.First()).Hotel;
-                    return BuildPreview(hotel, hotelDue, hotelClaw);
-                })
+            return due
+                .GroupBy(b => b.Hotel)
+                .Select(g => BuildPreview(g.Key, g.ToList()))
                 .OrderByDescending(x => x.NetAmount)
                 .ToList();
         }
@@ -57,15 +42,11 @@ namespace HotelBooking.Infrastructure.Services
                 ?? throw new HotelNotFoundException(request.HotelId);
 
             var due = await DueBookings().Where(b => b.HotelId == request.HotelId).ToListAsync();
-            var clawbacks = await PendingClawbacks().Where(b => b.HotelId == request.HotelId).ToListAsync();
-            if (due.Count == 0 && clawbacks.Count == 0)
+            if (due.Count == 0)
                 throw new InvalidRequestException("There is nothing to settle for this hotel yet.");
 
-            var ownerCreditGross = due.Where(b => b.PaymentMethod == PaymentMethod.Online).Sum(b => b.OwnerAmount);
+            var ownerCredit = due.Where(b => b.PaymentMethod == PaymentMethod.Online).Sum(b => b.OwnerAmount);
             var platformCommission = due.Where(b => b.PaymentMethod == PaymentMethod.CashOnArrival).Sum(b => b.PlatformFee);
-            var clawbackTotal = clawbacks.Sum(b => b.ClawbackAmount ?? 0);
-            var ownerCredit = ownerCreditGross - clawbackTotal;
-
             var direction = ownerCredit >= platformCommission
                 ? SettlementDirection.PlatformToOwner
                 : SettlementDirection.OwnerToPlatform;
@@ -80,7 +61,7 @@ namespace HotelBooking.Infrastructure.Services
                 OwnerCredit = ownerCredit,
                 PlatformCommission = platformCommission,
                 NetAmount = Math.Abs(ownerCredit - platformCommission),
-                BookingCount = due.Count + clawbacks.Count,
+                BookingCount = due.Count,
                 CreatedByUserId = adminUserId
             };
 
@@ -92,10 +73,6 @@ namespace HotelBooking.Infrastructure.Services
             {
                 b.SettledAt = now;
                 b.SettlementId = settlement.Id;
-            }
-            foreach (var b in clawbacks)
-            {
-                b.ClawbackSettledAt = now;
             }
             await _context.SaveChangesAsync();
 
@@ -128,13 +105,10 @@ namespace HotelBooking.Infrastructure.Services
             return rows.Select(s => Map(s, hotel.Name)).ToList();
         }
 
-        private static SettlementPreviewDto BuildPreview(Hotel hotel, List<Booking> due, List<Booking> clawbacks)
+        private static SettlementPreviewDto BuildPreview(Hotel hotel, List<Booking> due)
         {
-            var ownerCreditGross = due.Where(b => b.PaymentMethod == PaymentMethod.Online).Sum(b => b.OwnerAmount);
+            var ownerCredit = due.Where(b => b.PaymentMethod == PaymentMethod.Online).Sum(b => b.OwnerAmount);
             var platformCommission = due.Where(b => b.PaymentMethod == PaymentMethod.CashOnArrival).Sum(b => b.PlatformFee);
-            var clawbackTotal = clawbacks.Sum(b => b.ClawbackAmount ?? 0);
-            var ownerCredit = ownerCreditGross - clawbackTotal;
-
             var direction = ownerCredit >= platformCommission
                 ? SettlementDirection.PlatformToOwner
                 : SettlementDirection.OwnerToPlatform;
@@ -143,10 +117,9 @@ namespace HotelBooking.Infrastructure.Services
                 hotel.Id,
                 hotel.Name,
                 hotel.Owner?.UserName ?? "",
-                due.Count + clawbacks.Count,
-                ownerCreditGross,
+                due.Count,
+                ownerCredit,
                 platformCommission,
-                clawbackTotal,
                 Math.Abs(ownerCredit - platformCommission),
                 direction.ToString());
         }
