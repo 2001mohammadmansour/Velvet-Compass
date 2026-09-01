@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getCommissionOverview, confirmCommission, rejectCommission, waiveCommission } from './services/commission';
+import { getCommissionOverview, confirmCommission, rejectCommission } from './services/commission';
 import { getPlatformSettings, updatePlatformShamCash, uploadPlatformShamCashQr } from './services/platformSettings';
 
 const money = (n) => `$${Math.round(Number(n) || 0).toLocaleString()}`;
@@ -79,18 +79,6 @@ export default function CommissionAdmin() {
     }
   };
 
-  const waive = async (hotelId) => {
-    if (!window.confirm(t('commission.waiveConfirm'))) return;
-    setActingId(hotelId);
-    try {
-      await waiveCommission(hotelId);
-      await load();
-    } catch (err) {
-      alert(err.message || t('commission.waiveError'));
-    } finally {
-      setActingId(null);
-    }
-  };
 
   if (loading) return <p className="admin-stat-sub">{t('commission.loading')}</p>;
   if (error) return <p className="admin-stat-sub" style={{ color: '#e05555' }}>{error}</p>;
@@ -173,11 +161,8 @@ export default function CommissionAdmin() {
                         <button type="button" className="cta" disabled={confirmingId === h.hotelId} onClick={() => confirm(h.hotelId)}>
                           {confirmingId === h.hotelId ? t('commission.confirming') : t('commission.confirmReceived')}
                         </button>
-                        <button type="button" disabled={actingId === h.hotelId} onClick={() => reject(h.hotelId)}>
-                          {t('commission.notReceived')}
-                        </button>
-                        <button type="button" disabled={actingId === h.hotelId} onClick={() => waive(h.hotelId)}>
-                          {t('commission.waive')}
+                        <button type="button" className="cta" disabled={actingId === h.hotelId} onClick={() => reject(h.hotelId)}>
+                          {actingId === h.hotelId ? t('commission.confirming') : t('commission.notReceived')}
                         </button>
                       </div>
                     )}
