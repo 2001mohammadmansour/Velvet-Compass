@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./ownerDashboard.css";
 import * as ownerSvc from "./services/owner";
+import { getPlatformSettings } from "./services/platformSettings";
 import { getAmenities, createAmenity } from "./services/amenities";
 import HotelPricingManager from "./HotelPricingManager";
 import { getCurrentUser } from "./services/auth";
@@ -108,6 +109,8 @@ export default function OwnerDashboard() {
   const [bills, setBills] = useState(null);
   const [commission, setCommission] = useState(null);
   const [payingCommission, setPayingCommission] = useState(false);
+  const [platformSettings, setPlatformSettings] = useState(null);
+  const [payModalOpen, setPayModalOpen] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [campaignActive, setCampaignActive] = useState(false);
   const [rooms, setRooms] = useState([]);
@@ -631,7 +634,7 @@ export default function OwnerDashboard() {
       setLoading(true);
       setError(null);
       try {
-        const [b, m, r, res, settings, rv, profile, hotelCatalog, roomCatalog, comm] = await Promise.all([
+        const [b, m, r, res, settings, rv, profile, hotelCatalog, roomCatalog, comm, plat] = await Promise.all([
           ownerSvc.getBilling(hotelId).catch(() => null),
           ownerSvc.getMetrics(hotelId).catch(() => null),
           ownerSvc.getRooms(hotelId).catch(() => null),
@@ -645,9 +648,11 @@ export default function OwnerDashboard() {
           getAmenities('Hotel').catch(() => []),
           getAmenities('RoomType').catch(() => []),
           ownerSvc.getCommission(hotelId).catch(() => null),
+          getPlatformSettings().catch(() => null),
         ]);
         if (!mounted) return;
         if (b) setBills(b); else setBills({ gross: 0, platformCutPercent: 0 });
+        setPlatformSettings(plat);
         setCommission(comm);
         if (m) setMetrics(m); else setMetrics({ impressions: 0, clicks: 0, bookings: 0, cancellations: 0, avgPrice: 0, stars: 0 });
         if (r) setRooms(r); else setRooms([]);
@@ -691,13 +696,13 @@ export default function OwnerDashboard() {
     }
   }
 
-  async function handlePayCommission() {
-    if (!window.confirm(t('ownerDashboard.commission.payConfirm', { amount: Math.round(commission?.owed || 0).toLocaleString() }))) return;
+  async function confirmSentPayment() {
     setPayingCommission(true);
     try {
       await ownerSvc.payCommission(hotelId);
       const fresh = await ownerSvc.getCommission(hotelId).catch(() => null);
       setCommission(fresh);
+      setPayModalOpen(false);
     } catch (err) {
       alert(t('ownerDashboard.commission.payError') + (err.message || err));
     } finally {
@@ -788,8 +793,8 @@ export default function OwnerDashboard() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <div className="value">${Math.round(commission?.owed || 0).toLocaleString()}</div>
                 {commission?.owed > 0 && (
-                  <button type="button" className="cta" disabled={payingCommission} onClick={handlePayCommission}>
-                    {payingCommission ? t('ownerDashboard.commission.paying') : t('ownerDashboard.commission.pay')}
+                  <button type="button" className="cta" onClick={() => setPayModalOpen(true)}>
+                    {t('ownerDashboard.commission.pay')}
                   </button>
                 )}
               </div>
@@ -1538,6 +1543,48 @@ export default function OwnerDashboard() {
             <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
               <button className="campaign-back room-form-actions-btn" onClick={closeAvailability}>{t('ownerDashboard.availabilityModal.close')}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {payModalOpen && (
+        <div className="campaign-modal-overlay" onClick={() => setPayModalOpen(false)}>
+          <div className="campaign-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="campaign-modal-header">
+              <h3>{t('ownerDashboard.commission.payModalTitle')}</h3>
+              <button className="close-modal" onClick={() => setPayModalOpen(false)} aria-label={t('ownerDashboard.calendar.close')}>×</button>
+            </div>
+            <p style={{ fontSize: 15 }}>
+              {t('ownerDashboard.commission.payModalAmount', { amount: Math.round(commission?.owed || 0).toLocaleString() })}
+            </p>
+            {(platformSettings?.shamCashQrUrl || platformSettings?.shamCashWallet) ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                {platformSettings.shamCashQrUrl && (
+                  <img
+                    src={platformSettings.shamCashQrUrl}
+                    alt="Platform Sham Cash QR"
+                    style={{ width: 200, height: 200, objectFit: 'contain', border: '1px solid #e2e8f0', borderRadius: 8 }}
+                  />
+                )}
+                {platformSettings.shamCashWallet && (
+                  <p style={{ fontSize: 15 }}>
+                    {t('ownerDashboard.commission.payModalWallet')} <strong style={{ fontFamily: 'monospace' }}>{platformSettings.shamCashWallet}</strong>
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p style={{ color: '#9b1c1c', fontSize: 14 }}>{t('ownerDashboard.commission.payModalNoWallet')}</p>
+            )}
+            <p style={{ fontSize: 13, color: '#64748b', marginTop: 10 }}>{t('ownerDashboard.commission.payModalHint')}</p>
+            <button
+              type="button"
+              className="cta"
+              disabled={payingCommission || !(platformSettings?.shamCashQrUrl || platformSettings?.shamCashWallet)}
+              onClick={confirmSentPayment}
+              style={{ marginTop: 8 }}
+            >
+              {payingCommission ? t('ownerDashboard.commission.paying') : t('ownerDashboard.commission.payModalConfirm')}
+            </button>
           </div>
         </div>
       )}

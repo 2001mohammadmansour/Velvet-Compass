@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCommissionOverview, confirmCommission } from './services/commission';
+import { getPlatformSettings, updatePlatformShamCash, uploadPlatformShamCashQr } from './services/platformSettings';
 
 const money = (n) => `$${Math.round(Number(n) || 0).toLocaleString()}`;
 
@@ -11,17 +12,44 @@ export default function CommissionAdmin() {
   const [error, setError] = useState('');
   const [confirmingId, setConfirmingId] = useState(null);
 
+  const [wallet, setWallet] = useState('');
+  const [qrUrl, setQrUrl] = useState('');
+  const [newQr, setNewQr] = useState(null);
+  const [savingWallet, setSavingWallet] = useState(false);
+  const [walletSaved, setWalletSaved] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      setData(await getCommissionOverview());
+      const [overview, settings] = await Promise.all([getCommissionOverview(), getPlatformSettings()]);
+      setData(overview);
+      setWallet(settings.shamCashWallet);
+      setQrUrl(settings.shamCashQrUrl);
     } catch (err) {
       setError(err.message || t('commission.loadError'));
     } finally {
       setLoading(false);
     }
   }, [t]);
+
+  const saveWallet = async () => {
+    setSavingWallet(true);
+    setWalletSaved(false);
+    try {
+      if (newQr) {
+        const r = await uploadPlatformShamCashQr(newQr);
+        setQrUrl(r?.shamCashQrUrl || qrUrl);
+        setNewQr(null);
+      }
+      await updatePlatformShamCash(wallet.trim());
+      setWalletSaved(true);
+    } catch (err) {
+      alert(err.message || t('commission.walletSaveError'));
+    } finally {
+      setSavingWallet(false);
+    }
+  };
 
   useEffect(() => { load(); }, [load]);
 
@@ -42,6 +70,35 @@ export default function CommissionAdmin() {
 
   return (
     <div>
+      <div className="section-card" style={{ marginBottom: 16 }}>
+        <h3 style={{ margin: '0 0 10px' }}>{t('commission.walletTitle')}</h3>
+        <p className="admin-stat-sub" style={{ marginTop: 0 }}>{t('commission.walletHint')}</p>
+        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, flex: 1, minWidth: 220 }}>
+            {t('commission.walletNumber')}
+            <input
+              value={wallet}
+              onChange={(e) => setWallet(e.target.value)}
+              placeholder="0912345678"
+              style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: 8 }}
+            />
+            <span style={{ fontSize: 13 }}>{t('commission.walletQr')}</span>
+            <input type="file" accept="image/*" onChange={(e) => setNewQr(e.target.files?.[0] || null)} />
+          </label>
+          {(newQr || qrUrl) && (
+            <img
+              src={newQr ? URL.createObjectURL(newQr) : qrUrl}
+              alt="Platform Sham Cash QR"
+              style={{ width: 140, height: 140, objectFit: 'contain', border: '1px solid #e2e8f0', borderRadius: 8 }}
+            />
+          )}
+        </div>
+        <button type="button" className="cta" disabled={savingWallet} onClick={saveWallet} style={{ marginTop: 10 }}>
+          {savingWallet ? t('commission.saving') : t('commission.saveWallet')}
+        </button>
+        {walletSaved && <span style={{ color: '#166534', fontSize: 13, marginInlineStart: 10 }}>{t('commission.walletSaved')}</span>}
+      </div>
+
       <div className="admin-stats-row" style={{ marginBottom: 16 }}>
         <div className="admin-stat-card">
           <div className="admin-stat-label">{t('commission.pending')}</div>

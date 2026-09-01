@@ -276,8 +276,13 @@
       "paying": "Paying...",
       "awaiting": "Sent — awaiting platform confirmation",
       "paidToDate": "Paid to date: ${{amount}}",
-      "payConfirm": "Confirm you have sent ${{amount}} to the platform's Sham Cash wallet? The admin will verify it arrived.",
-      "payError": "Unable to record payment: "
+      "payError": "Unable to record payment: ",
+      "payModalTitle": "Pay platform commission",
+      "payModalAmount": "Send ${{amount}} to the platform's Sham Cash wallet:",
+      "payModalWallet": "Wallet number:",
+      "payModalNoWallet": "The platform hasn't set up its Sham Cash wallet yet. Contact the admin.",
+      "payModalHint": "After you've sent the payment, press the button below. The admin will verify it arrived and mark it received.",
+      "payModalConfirm": "I have sent the payment"
     },
     "metrics": {
       "title": "Views & Actions",
@@ -1108,6 +1113,14 @@
     "nothingOwed": "No hotel owes commission right now.",
     "confirmReceived": "Confirm received",
     "confirming": "Confirming...",
+    "walletTitle": "Platform Sham Cash wallet",
+    "walletHint": "Owners send their commission payments to this wallet.",
+    "walletNumber": "Wallet number",
+    "walletQr": "QR code (upload from your Sham Cash app)",
+    "saveWallet": "Save",
+    "saving": "Saving...",
+    "walletSaved": "Saved.",
+    "walletSaveError": "Unable to save wallet: ",
     "col": {
       "hotel": "Hotel",
       "owed": "Owed",
