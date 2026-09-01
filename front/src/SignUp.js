@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./signUp.css";
-import { signUpUser, signInUser, verifySignUpCode } from "./services/auth";
+import { signUpUser } from "./services/auth";
 import { submitHotelRequest } from "./services/hotelRequests";
 import { fileToResizedDataUrl } from "./data/imageUtil";
 import LanguageToggle from "./LanguageToggle";
@@ -73,21 +73,10 @@ function SignUp() {
   const [form, setForm] = useState(initialForm);
   const [doc, setDoc] = useState(null); // { name, dataUrl } — hotel document image
   const [isOwnerSignUp, setIsOwnerSignUp] = useState(false);
-  const [currentPage, setCurrentPage] = useState("signup");
-  const [verificationEmail, setVerificationEmail] = useState("");
-  const [verificationPassword, setVerificationPassword] = useState("");
-  const [verificationNotice, setVerificationNotice] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
-  const [verificationError, setVerificationError] = useState("");
-  const [verificationSuccess, setVerificationSuccess] = useState("");
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
   const [loading, setLoading] = useState(false);
   const [legalModal, setLegalModal] = useState(null); // 'terms' | 'privacy' | null
-  const [verifying, setVerifying] = useState(false);
-  // Stashed here because submitting a hotel request needs a real auth token, which we only have
-  // after the owner is actually signed in (post-verification) — by then `form` has been reset.
-  const [pendingOwnerRequest, setPendingOwnerRequest] = useState(null);
 
   const passwordRules = useMemo(
     () => ({
@@ -100,8 +89,6 @@ function SignUp() {
   );
 
   const normalizePhone = (value) => value.trim().replace(/\s+/g, " ");
-  const isFetchConnectionError = (err) =>
-    err instanceof TypeError && /failed to fetch/i.test(err.message || "");
 
   const validate = (data) => {
     const nextErrors = {};
@@ -173,20 +160,6 @@ function SignUp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleBackToSignUp = () => {
-    setCurrentPage("signup");
-    setForm(initialForm);
-    setDoc(null);
-    setErrors({});
-    setSubmitError("");
-    setVerificationNotice("");
-    setVerificationCode("");
-    setVerificationError("");
-    setVerificationSuccess("");
-    setVerificationPassword("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const nextErrors = validate(form);
@@ -208,161 +181,53 @@ function SignUp() {
       password: form.password,
       acceptTerms: form.acceptTerms,
     };
+    let ownerRequest = null;
     if (isOwnerSignUp) {
       payload.hotelName = form.hotelName.trim();
       payload.city = form.city.trim();
       payload.stars = form.stars || null;
-
-      // Submitting the actual request happens later, once we have a real auth token (see
-      // handleVerifyCodeSubmit) — for now just remember what to submit.
-      setPendingOwnerRequest({
+      ownerRequest = {
         hotelName: payload.hotelName,
         city: payload.city,
         phoneNumber: payload.phoneNumber,
         stars: form.stars || null,
         document: doc,
-      });
+      };
     }
 
     try {
-      await signUpUser(payload);
-      setVerificationEmail(payload.email);
-      setVerificationPassword(payload.password);
-      setVerificationNotice("");
-      setVerificationCode("");
-      setVerificationError("");
-      setVerificationSuccess("");
-      setCurrentPage("verification");
-      setForm(initialForm);
-      setDoc(null);
-      setErrors({});
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (err) {
-      if (isFetchConnectionError(err)) {
-        setVerificationEmail(payload.email);
-        setVerificationPassword(payload.password);
-        setVerificationNotice(t('auth.signup.errors.connectionErrorNotice'));
-        setVerificationCode("");
-        setVerificationError("");
-        setVerificationSuccess("");
-        setCurrentPage("verification");
-        setForm(initialForm);
-        setErrors({});
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        setSubmitError(err.message || t('auth.signup.errors.signUpFailed'));
+      // The backend's register endpoint already returns an auth session — no email verification.
+      const res = await signUpUser(payload);
+
+      const existingRaw = localStorage.getItem("mock_auth_user");
+      const existing = existingRaw ? JSON.parse(existingRaw) : {};
+      localStorage.setItem("mock_auth_user", JSON.stringify({
+        ...res,
+        user: {
+          ...(existing?.user || {}),
+          ...(res?.user || {}),
+          hotelId: res?.user?.hotelId || existing?.user?.hotelId || null,
+          hotelName: res?.user?.hotelName || existing?.user?.hotelName || null,
+        },
+      }));
+
+      // Now that we have a real auth token, submit the hotel request. A failure here shouldn't
+      // block the account — the owner can resubmit from their requests page.
+      if (ownerRequest) {
+        try {
+          await submitHotelRequest({ type: "create", ...ownerRequest });
+        } catch (reqErr) {
+          alert(t('auth.signup.errors.hotelRequestSubmitFailedNotice'));
+        }
       }
+
+      navigate("/");
+    } catch (err) {
+      setSubmitError(err.message || t('auth.signup.errors.signUpFailed'));
     } finally {
       setLoading(false);
     }
   };
-
-  const handleVerificationCodeChange = (e) => {
-    setVerificationCode(e.target.value);
-    setVerificationError("");
-    setVerificationSuccess("");
-  };
-
-  const handleVerifyCodeSubmit = async (e) => {
-    e.preventDefault();
-    const normalizedCode = verificationCode.trim();
-    if (!normalizedCode) {
-      setVerificationError(t('auth.signup.errors.verificationCodeRequired'));
-      return;
-    }
-
-    setVerifying(true);
-    setVerificationError("");
-    setVerificationSuccess("");
-
-    try {
-      await verifySignUpCode({ email: verificationEmail, code: normalizedCode });
-      setVerificationSuccess(t('auth.signup.errors.codeVerifiedSuccess'));
-
-      try {
-        const res = await signInUser({
-          email: verificationEmail,
-          password: verificationPassword,
-        });
-        const existingRaw = localStorage.getItem("mock_auth_user");
-        const existing = existingRaw ? JSON.parse(existingRaw) : {};
-        const next = {
-          ...res,
-          user: {
-            ...(existing?.user || {}),
-            ...(res?.user || {}),
-            hotelId: res?.user?.hotelId || existing?.user?.hotelId || null,
-            hotelName: res?.user?.hotelName || existing?.user?.hotelName || null,
-          },
-        };
-        localStorage.setItem("mock_auth_user", JSON.stringify(next));
-        setVerificationPassword("");
-
-        // Now that we have a real auth token, actually submit the hotel request. A failure here
-        // shouldn't block the account itself — the owner can resubmit later from their own
-        // requests page.
-        if (pendingOwnerRequest) {
-          try {
-            await submitHotelRequest({ type: "create", ...pendingOwnerRequest });
-          } catch (reqErr) {
-            setVerificationNotice(t('auth.signup.errors.hotelRequestSubmitFailedNotice'));
-          }
-          setPendingOwnerRequest(null);
-        }
-
-        // CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page.
-        navigate("/");
-      } catch (signInErr) {
-        setVerificationNotice(t('auth.signup.errors.signInAfterVerifyFailedNotice'));
-      }
-    } catch (err) {
-      setVerificationError(err.message || t('auth.signup.errors.verifyCodeGenericError'));
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  if (currentPage === "verification") {
-    return (
-      <div className="page">
-        <div className="overlay" />
-        <Link to="/" className="auth-back-btn">{t('common.backButton')}</Link>
-        <LanguageToggle className="auth-lang-toggle" />
-        <main className="card">
-          <h1>{t('auth.signup.verification.title')}</h1>
-          <p className="subtitle">{t('auth.signup.verification.subtitle')}</p>
-          <p className="verification-copy">
-            {t('auth.signup.verification.sentTo')} <strong>{verificationEmail || t('auth.signup.verification.yourEmail')}</strong>.
-            {' '}{t('auth.signup.verification.enterBelow')}
-          </p>
-          {verificationNotice && <p className="verification-note">{verificationNotice}</p>}
-          <form onSubmit={handleVerifyCodeSubmit} noValidate>
-            <label>
-              {t('auth.signup.verification.codeLabel')}
-              <input
-                name="verificationCode"
-                type="text"
-                value={verificationCode}
-                onChange={handleVerificationCodeChange}
-                placeholder={t('auth.signup.verification.codePlaceholder')}
-                autoComplete="one-time-code"
-              />
-            </label>
-            <div className="verification-actions">
-              <button type="submit" disabled={verifying}>
-                {verifying ? t('auth.signup.verification.verifying') : t('auth.signup.verification.verifyCode')}
-              </button>
-              <button type="button" onClick={handleBackToSignUp}>
-                {t('auth.signup.verification.backToSignUp')}
-              </button>
-            </div>
-            {verificationSuccess && <p className="success">{verificationSuccess}</p>}
-            {verificationError && <p className="error submit-error">{verificationError}</p>}
-          </form>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="page">
