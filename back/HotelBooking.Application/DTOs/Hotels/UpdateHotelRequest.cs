@@ -13,6 +13,7 @@ namespace HotelBooking.Application.DTOs.Hotels
             string Country,
             short StarRating,
             string Phone,
-            string Email
+            string Email,
+            string? ShamCashWallet = null
         );
 }

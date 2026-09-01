@@ -106,6 +106,8 @@ export default function OwnerDashboard() {
   }, []);
 
   const [bills, setBills] = useState(null);
+  const [commission, setCommission] = useState(null);
+  const [payingCommission, setPayingCommission] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [campaignActive, setCampaignActive] = useState(false);
   const [rooms, setRooms] = useState([]);
@@ -629,7 +631,7 @@ export default function OwnerDashboard() {
       setLoading(true);
       setError(null);
       try {
-        const [b, m, r, res, settings, rv, profile, hotelCatalog, roomCatalog] = await Promise.all([
+        const [b, m, r, res, settings, rv, profile, hotelCatalog, roomCatalog, comm] = await Promise.all([
           ownerSvc.getBilling(hotelId).catch(() => null),
           ownerSvc.getMetrics(hotelId).catch(() => null),
           ownerSvc.getRooms(hotelId).catch(() => null),
@@ -642,9 +644,11 @@ export default function OwnerDashboard() {
           ownerSvc.getHotelProfile(hotelId).catch(() => null),
           getAmenities('Hotel').catch(() => []),
           getAmenities('RoomType').catch(() => []),
+          ownerSvc.getCommission(hotelId).catch(() => null),
         ]);
         if (!mounted) return;
         if (b) setBills(b); else setBills({ gross: 0, platformCutPercent: 0 });
+        setCommission(comm);
         if (m) setMetrics(m); else setMetrics({ impressions: 0, clicks: 0, bookings: 0, cancellations: 0, avgPrice: 0, stars: 0 });
         if (r) setRooms(r); else setRooms([]);
         setCampaignActive(Boolean(m?.campaignActive));
@@ -684,6 +688,20 @@ export default function OwnerDashboard() {
       setAutoAcceptBookings(next);
     } catch (err) {
       alert(t('ownerDashboard.errors.updateSettingFailed') + (err.message || err));
+    }
+  }
+
+  async function handlePayCommission() {
+    if (!window.confirm(t('ownerDashboard.commission.payConfirm', { amount: Math.round(commission?.owed || 0).toLocaleString() }))) return;
+    setPayingCommission(true);
+    try {
+      await ownerSvc.payCommission(hotelId);
+      const fresh = await ownerSvc.getCommission(hotelId).catch(() => null);
+      setCommission(fresh);
+    } catch (err) {
+      alert(t('ownerDashboard.commission.payError') + (err.message || err));
+    } finally {
+      setPayingCommission(false);
     }
   }
 
@@ -757,6 +775,27 @@ export default function OwnerDashboard() {
               <Link to="/owner/stats" className="cta" style={{ display: 'inline-block', textDecoration: 'none' }}>
                 {t('ownerDashboard.bills.viewStats')}
               </Link>
+            </div>
+          </div>
+          <div className="bill-card">
+            <div className="label">{t('ownerDashboard.commission.title')}</div>
+            {commission?.awaitingConfirmation > 0 ? (
+              <>
+                <div className="value">${Math.round(commission.awaitingConfirmation).toLocaleString()}</div>
+                <div className="muted small">{t('ownerDashboard.commission.awaiting')}</div>
+              </>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div className="value">${Math.round(commission?.owed || 0).toLocaleString()}</div>
+                {commission?.owed > 0 && (
+                  <button type="button" className="cta" disabled={payingCommission} onClick={handlePayCommission}>
+                    {payingCommission ? t('ownerDashboard.commission.paying') : t('ownerDashboard.commission.pay')}
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="muted small" style={{ marginTop: 4 }}>
+              {t('ownerDashboard.commission.paidToDate', { amount: Math.round(commission?.paid || 0).toLocaleString() })}
             </div>
           </div>
         </div>

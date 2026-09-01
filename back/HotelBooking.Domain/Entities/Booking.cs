@@ -17,6 +17,14 @@ public class Booking : BaseEntity
     public decimal PlatformFee { get; set; }       // 15% للمنصة
     public decimal OwnerAmount { get; set; }        // 85% للمالك
 
+    // ─── Commission (owner collects the money, owes the platform 15%) ──────
+    // The owner keeps everything the guest pays and owes the platform 15% of it once the booking
+    // is finalised (stay completed, or cancelled with a penalty). Amount is snapshotted when the
+    // owner marks it paid; ClaimedAt = owner said "I paid"; PaidAt = admin confirmed receipt.
+    public decimal? CommissionAmount { get; set; }
+    public DateTime? CommissionClaimedAt { get; set; }
+    public DateTime? CommissionPaidAt { get; set; }
+
     // ─── Cancellation Fields ───────────────────────────────────
     public decimal? CancellationPenalty { get; set; }  // 20% من الإجمالي
     public decimal? RefundAmount { get; set; }          // 80% للزبون

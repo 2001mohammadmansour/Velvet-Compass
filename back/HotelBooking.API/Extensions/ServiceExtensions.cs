@@ -160,6 +160,12 @@ namespace HotelBooking.API.Extensions
             return services;
         }
 
+        public static IServiceCollection AddCommissionServices(this IServiceCollection services)
+        {
+            services.AddScoped<ICommissionService, CommissionService>();
+            return services;
+        }
+
         // CHANGED BY AI (2026-07-15): please review. New DI registration for the amenities catalog.
         public static IServiceCollection AddAmenityServices(this IServiceCollection services)
         {

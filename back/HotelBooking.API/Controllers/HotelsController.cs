@@ -155,6 +155,22 @@ namespace HotelBooking.API.Controllers
             return Ok(new { url });
         }
 
+        // Sham Cash QR image upload — the owner uploads the QR from their Sham Cash app.
+        [HttpPost("{hotelId:long}/shamcash-qr/upload")]
+        [Authorize(Roles = "Owner,Admin")]
+        [RequestSizeLimit(5 * 1024 * 1024)]
+        public async Task<IActionResult> UploadShamCashQr(long hotelId, IFormFile? file)
+        {
+            if (file == null || file.Length == 0)
+                throw new InvalidFileUploadException("No file was uploaded.");
+
+            var isAdmin = User.IsInRole("Admin");
+            await using var stream = file.OpenReadStream();
+            var url = await _fileStorageService.SaveImageAsync(stream, file.FileName, file.ContentType, "shamcash");
+            await _hotelService.SetShamCashQrAsync(User.GetUserId(), isAdmin, hotelId, url);
+            return Ok(new { url });
+        }
+
         // CHANGED BY AI (2026-07-13): please review. New public endpoint for the Reviews feature
         // — used by the owner dashboard's "Guest Reviews" section.
         [HttpGet("{hotelId:long}/reviews")]

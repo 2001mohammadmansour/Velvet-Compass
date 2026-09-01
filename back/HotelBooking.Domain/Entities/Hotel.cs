@@ -31,6 +31,11 @@ namespace HotelBooking.Domain.Entities
         public CancellationFeeType CancellationFeeType { get; set; } = CancellationFeeType.Percentage;
         public decimal CancellationFeeValue { get; set; } = 20m;
 
+        // Sham Cash e-wallet the hotel receives guest payments to. Shown to guests at checkout;
+        // the QR is an image the owner uploads from the Sham Cash app.
+        public string? ShamCashWallet { get; set; }
+        public string? ShamCashQrUrl { get; set; }
+
         // navigation properties
         public User Owner { get; set; } = null!;
         public ICollection<RoomType> RoomTypes { get; set; } = new List<RoomType>();

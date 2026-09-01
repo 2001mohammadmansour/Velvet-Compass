@@ -14,6 +14,7 @@ namespace HotelBooking.Application.Interfaces
         Task<HotelDetailDto> UpdateHotelAsync(long callerId, bool isAdmin, long hotelId, UpdateHotelRequest request);
         Task DeleteHotelAsync(long callerId, bool isAdmin, long hotelId);
         Task AddImagesAsync(long callerId, bool isAdmin, long hotelId, string url, string? caption, bool isPrimary);
+        Task SetShamCashQrAsync(long callerId, bool isAdmin, long hotelId, string url);
         Task DeleteImageAsync(long callerId, bool isAdmin, long hotelId, long imageId);
         Task<List<HotelSummaryDto>> GetMyHotelsAsync(long ownerId);
         // CHANGED BY AI (2026-07-12): please review. New method backing the auto-accept toggle.

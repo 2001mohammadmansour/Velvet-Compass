@@ -20,6 +20,7 @@ namespace HotelBooking.Infrastructure.Persistence.Configurations
             builder.Property(x => x.RefundAmount).HasPrecision(10, 2);
             builder.Property(x => x.BreakfastFee).HasPrecision(10, 2);
             builder.Property(x => x.ModificationFee).HasPrecision(10, 2);
+            builder.Property(x => x.CommissionAmount).HasPrecision(10, 2);
 
             builder.HasOne(x => x.User)
                    .WithMany()

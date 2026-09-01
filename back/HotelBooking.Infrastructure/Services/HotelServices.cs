@@ -120,6 +120,7 @@ namespace HotelBooking.Infrastructure.Services
             hotel.StarRating = request.StarRating;
             hotel.Phone = request.Phone;
             hotel.Email = request.Email;
+            hotel.ShamCashWallet = string.IsNullOrWhiteSpace(request.ShamCashWallet) ? null : request.ShamCashWallet.Trim();
 
             await _context.SaveChangesAsync();
             return MapToHotelDetailDto(hotel);
@@ -130,6 +131,13 @@ namespace HotelBooking.Infrastructure.Services
             var hotel = await GetOwnedHotelAsync(callerId, isAdmin, hotelId);
             _context.Hotels.Remove(hotel);
             _context.SaveChanges();
+        }
+
+        public async Task SetShamCashQrAsync(long callerId, bool isAdmin, long hotelId, string url)
+        {
+            var hotel = await GetOwnedHotelAsync(callerId, isAdmin, hotelId);
+            hotel.ShamCashQrUrl = url;
+            await _context.SaveChangesAsync();
         }
         public async Task AddImagesAsync(long callerId, bool isAdmin, long hotelId, string url, string caption, bool IsPrimary)
         {
@@ -284,7 +292,9 @@ namespace HotelBooking.Infrastructure.Services
             hotel.CancellationFeeValue,
             hotel.HotelAmenities
                 .Select(ha => new AmenityDto(ha.Amenity.Id, ha.Amenity.Name, ha.Amenity.Icon, ha.Amenity.Scope.ToString(), ha.Amenity.IsActive))
-                .ToList()
+                .ToList(),
+            hotel.ShamCashWallet,
+            hotel.ShamCashQrUrl
             );
 
 

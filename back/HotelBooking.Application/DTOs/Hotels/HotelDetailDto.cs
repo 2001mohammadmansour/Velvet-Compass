@@ -30,7 +30,10 @@ namespace HotelBooking.Application.DTOs.Hotels
     string CancellationFeeType,
     decimal CancellationFeeValue,
     // CHANGED BY AI (2026-07-15): please review. Hotel-level amenities (wifi, parking, gym, etc.).
-    List<AmenityDto> Amenities
+    List<AmenityDto> Amenities,
+    // Sham Cash payment details shown to guests at checkout.
+    string? ShamCashWallet,
+    string? ShamCashQrUrl
 
         );
 

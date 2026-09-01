@@ -5,6 +5,7 @@ import HotelRequests from './HotelRequests';
 import AdminStats from './AdminStats';
 import AdminUsers from './AdminUsers';
 import AmenitiesAdmin from './AmenitiesAdmin';
+import CommissionAdmin from './CommissionAdmin';
 import { getAdminDashboard } from './services/hotels';
 import { getAllHotelRequests } from './services/hotelRequests';
 import './AdminDashboard.css';
@@ -88,6 +89,7 @@ export default function AdminDashboard() {
     { key: 'overview', icon: '📊', label: t('adminDashboard.nav.overview') },
     { key: 'hotels', icon: '🏨', label: t('adminDashboard.nav.hotels') },
     { key: 'stats', icon: '📈', label: t('adminDashboard.nav.stats') },
+    { key: 'commission', icon: '💸', label: t('adminDashboard.nav.commission') },
     { key: 'users', icon: '👥', label: t('adminDashboard.nav.users') },
     { key: 'requests', icon: '📥', label: t('adminDashboard.nav.requests') },
     { key: 'amenities', icon: '🛎️', label: t('adminDashboard.nav.amenities') },
@@ -97,6 +99,7 @@ export default function AdminDashboard() {
     overview: t('adminDashboard.sectionDescriptions.overview'),
     hotels: t('adminDashboard.sectionDescriptions.hotels'),
     stats: t('adminDashboard.sectionDescriptions.stats'),
+    commission: t('adminDashboard.sectionDescriptions.commission'),
     users: t('adminDashboard.sectionDescriptions.users'),
     requests: t('adminDashboard.sectionDescriptions.requests'),
     amenities: t('adminDashboard.sectionDescriptions.amenities'),
@@ -133,6 +136,7 @@ export default function AdminDashboard() {
           {activeTab === 'overview' && <OverviewTab onTabChange={setActiveTab} />}
           {activeTab === 'hotels' && <HotelsAnalytics />}
           {activeTab === 'stats' && <AdminStats />}
+          {activeTab === 'commission' && <CommissionAdmin />}
           {activeTab === 'users' && <AdminUsers />}
           {activeTab === 'requests' && <HotelRequests />}
           {activeTab === 'amenities' && <AmenitiesAdmin />}

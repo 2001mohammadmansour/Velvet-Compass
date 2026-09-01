@@ -27,6 +27,7 @@ builder.Services.AddHotelRequestServices();
 builder.Services.AddReviewServices();
 builder.Services.AddNotificationServices();
 builder.Services.AddPartnerServices();
+builder.Services.AddCommissionServices();
 builder.Services.AddAmenityServices();
 builder.Services.AddRoomPricingServices();
 // CHANGED BY AI (2026-07-13): please review. Backs the new hotel/room-type photo upload

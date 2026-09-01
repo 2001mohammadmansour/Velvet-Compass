@@ -192,6 +192,10 @@
     "phoneNumber": "Phone Number",
     "description": "Description",
     "descriptionPlaceholder": "Short description of your hotel",
+    "shamCashWallet": "Sham Cash wallet number",
+    "shamCashWalletPlaceholder": "e.g. 0912345678",
+    "shamCashHint": "Guests send their payment to this wallet. You keep the full amount and pay the platform its 15% commission at settlement.",
+    "shamCashQr": "Sham Cash QR code (upload the QR from your Sham Cash app)",
     "hotelPhotos": "Hotel Photos (first photo will be used as hotel card image)",
     "cardImage": "Card image",
     "removePhoto": "Remove hotel photo",
@@ -265,6 +269,15 @@
       "platformCut": "Platform Cut",
       "netToOwner": "Net to Owner",
       "viewStats": "View Stats"
+    },
+    "commission": {
+      "title": "Commission owed",
+      "pay": "Pay",
+      "paying": "Paying...",
+      "awaiting": "Sent — awaiting platform confirmation",
+      "paidToDate": "Paid to date: ${{amount}}",
+      "payConfirm": "Confirm you have sent ${{amount}} to the platform's Sham Cash wallet? The admin will verify it arrived.",
+      "payError": "Unable to record payment: "
     },
     "metrics": {
       "title": "Views & Actions",
@@ -507,6 +520,7 @@
       "overview": "Overview",
       "hotels": "Hotels Analytics",
       "stats": "Revenue Stats",
+      "commission": "Commission",
       "users": "Users",
       "requests": "Hotel Requests",
       "amenities": "Amenities"
@@ -515,6 +529,7 @@
       "overview": "Admin panel overview and quick navigation",
       "hotels": "Platform revenue, bookings, and top hotels",
       "stats": "Monthly, quarterly, and yearly revenue charts across all hotels",
+      "commission": "Track and confirm the 15% commission owners owe the platform",
       "users": "All users, their booking activity, and hotels owned",
       "requests": "Approve or reject hotel owner requests to create or edit a hotel",
       "amenities": "Manage the catalog of hotel and room benefits owners can pick from"
@@ -1075,6 +1090,23 @@
         "signInAfterVerifyFailedNotice": "Account verified, but we couldn't sign you in automatically. Please sign in manually.",
         "verifyCodeGenericError": "Unable to verify code."
       }
+    }
+  },
+  "commission": {
+    "loading": "Loading commission...",
+    "loadError": "Unable to load commission data.",
+    "confirmError": "Unable to confirm payment: ",
+    "pending": "Pending commission",
+    "pendingSub": "Owed + sent, not yet confirmed",
+    "collected": "Collected",
+    "collectedSub": "Confirmed — real platform revenue",
+    "nothingOwed": "No hotel owes commission right now.",
+    "confirmReceived": "Confirm received",
+    "confirming": "Confirming...",
+    "col": {
+      "hotel": "Hotel",
+      "owed": "Owed",
+      "claimed": "Owner says paid"
     }
   }
 }

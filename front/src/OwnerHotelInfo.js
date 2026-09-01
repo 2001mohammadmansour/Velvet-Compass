@@ -11,6 +11,7 @@ const initialForm = {
   address: "",
   phoneNumber: "",
   description: "",
+  shamCashWallet: "",
 };
 const MAX_HOTEL_PHOTOS = 8;
 
@@ -33,6 +34,8 @@ export default function OwnerHotelInfo() {
   const [existingPhotoUrls, setExistingPhotoUrls] = useState([]);
   const [newPhotos, setNewPhotos] = useState([]);
   const [newPhotoPreviews, setNewPhotoPreviews] = useState([]);
+  const [shamCashQrUrl, setShamCashQrUrl] = useState("");
+  const [newShamCashQr, setNewShamCashQr] = useState(null);
   const newPhotoPreviewsRef = useRef([]);
 
   useEffect(() => {
@@ -54,8 +57,10 @@ export default function OwnerHotelInfo() {
           address: String(profile?.address || ""),
           phoneNumber: String(profile?.phoneNumber || ""),
           description: String(profile?.description || ""),
+          shamCashWallet: String(profile?.shamCashWallet || ""),
         });
         setExistingPhotoUrls(Array.isArray(profile?.photos) ? profile.photos : []); // [{id, url, isPrimary}]
+        setShamCashQrUrl(String(profile?.shamCashQrUrl || ""));
         setStars(Number(profile?.starRating) || 0);
       } catch (err) {
         if (!mounted) return;
@@ -152,12 +157,17 @@ export default function OwnerHotelInfo() {
         }
       }
 
+      if (newShamCashQr) {
+        await ownerSvc.uploadShamCashQr(hotelId, newShamCashQr);
+      }
+
       const payload = {
         hotelName: form.hotelName.trim(),
         city: form.city.trim(),
         address: form.address.trim(),
         phoneNumber: form.phoneNumber.trim(),
         description: form.description.trim(),
+        shamCashWallet: form.shamCashWallet.trim(),
       };
       const updated = await ownerSvc.updateHotelProfile(hotelId, payload);
       setForm({
@@ -166,8 +176,11 @@ export default function OwnerHotelInfo() {
         address: String(updated?.address || ""),
         phoneNumber: String(updated?.phoneNumber || ""),
         description: String(updated?.description || ""),
+        shamCashWallet: String(updated?.shamCashWallet || ""),
       });
       setExistingPhotoUrls(Array.isArray(updated?.photos) ? updated.photos : []);
+      setShamCashQrUrl(String(updated?.shamCashQrUrl || ""));
+      setNewShamCashQr(null);
       setStars(Number(updated?.starRating) || 0);
       newPhotoPreviews.forEach((url) => {
         try {
@@ -294,6 +307,31 @@ export default function OwnerHotelInfo() {
                 rows={4}
                 style={{ width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8, resize: "vertical" }}
               />
+            </label>
+
+            <label style={{ gridColumn: "1 / -1" }}>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.shamCashWallet')}</div>
+              <input
+                value={form.shamCashWallet}
+                onChange={(e) => updateField("shamCashWallet", e.target.value)}
+                placeholder={t('ownerHotelInfo.shamCashWalletPlaceholder')}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8 }}
+              />
+              <div className="small muted" style={{ marginTop: 6 }}>{t('ownerHotelInfo.shamCashHint')}</div>
+            </label>
+
+            <label style={{ gridColumn: "1 / -1" }}>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.shamCashQr')}</div>
+              <input type="file" accept="image/*" onChange={(e) => setNewShamCashQr(e.target.files?.[0] || null)} />
+              {(newShamCashQr || shamCashQrUrl) && (
+                <div style={{ marginTop: 8 }}>
+                  <img
+                    src={newShamCashQr ? URL.createObjectURL(newShamCashQr) : shamCashQrUrl}
+                    alt="Sham Cash QR"
+                    style={{ width: 160, height: 160, objectFit: "contain", border: "1px solid #e2e8f0", borderRadius: 8 }}
+                  />
+                </div>
+              )}
             </label>
 
             <label style={{ gridColumn: "1 / -1" }}>

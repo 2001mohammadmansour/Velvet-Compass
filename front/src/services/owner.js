@@ -22,6 +22,8 @@ function mapHotelDetailToProfile(h) {
     starRating: h?.starRating || 0,
     // CHANGED BY AI (2026-07-15): please review. Hotel-level amenities (wifi, parking, gym, etc.).
     amenities: Array.isArray(h?.amenities) ? h.amenities : [],
+    shamCashWallet: h?.shamCashWallet || '',
+    shamCashQrUrl: h?.shamCashQrUrl || '',
     // Not shown in the edit form, but required to send back on update.
     _country: h?.country || '',
     _email: h?.email || '',
@@ -264,9 +266,33 @@ export async function updateHotelProfile(hotelId, updates) {
     starRating: current.starRating,
     phone: updates.phoneNumber ?? current.phoneNumber,
     email: current._email,
+    shamCashWallet: (updates.shamCashWallet ?? current.shamCashWallet) || null,
   };
   const h = await request(`/api/v1/hotels/${hotelId}`, { method: 'PUT', body: JSON.stringify(payload) });
   return mapHotelDetailToProfile(h);
+}
+
+// Uploads the hotel's Sham Cash QR image.
+export async function uploadShamCashQr(hotelId, file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiUpload(`/api/v1/hotels/${hotelId}/shamcash-qr/upload`, formData);
+}
+
+// ─── Platform commission (owner owes the platform 15%) ────────────────────────
+export async function getCommission(hotelId) {
+  const c = await request(`/api/v1/commission/hotel/${hotelId}`);
+  const num = (v) => Number(v) || 0;
+  return {
+    owed: num(c.owed),
+    awaitingConfirmation: num(c.awaitingConfirmation),
+    paid: num(c.paid),
+    owedBookingCount: num(c.owedBookingCount),
+  };
+}
+
+export async function payCommission(hotelId) {
+  return request(`/api/v1/commission/hotel/${hotelId}/claim`, { method: 'POST' });
 }
 
 // CHANGED BY AI (2026-07-15): please review. New: full-replace of the hotel's amenity set.
@@ -468,5 +494,5 @@ export async function getHotelReviews(hotelId) {
   return request(`/api/v1/hotels/${hotelId}/reviews`);
 }
 
-const ownerService = { getBilling, getRevenueStats, getMetrics, getRooms, getReservations, getSettings, getHotelProfile, updateHotelProfile, updateHotelAmenities, updateRoomTypeAmenities, updateSettings, acceptReservation, rejectReservation, createReservation, toggleCampaign, updateCancelPolicy, updateRoom, deleteRoom, uploadHotelPhoto, deleteHotelPhoto, uploadRoomTypePhoto, deleteRoomTypePhoto, getRoomTypeImages, createRoom, getHotelReviews };
+const ownerService = { getBilling, getRevenueStats, getMetrics, getRooms, getReservations, getSettings, getHotelProfile, updateHotelProfile, updateHotelAmenities, updateRoomTypeAmenities, updateSettings, acceptReservation, rejectReservation, createReservation, toggleCampaign, updateCancelPolicy, updateRoom, deleteRoom, uploadHotelPhoto, deleteHotelPhoto, uploadRoomTypePhoto, deleteRoomTypePhoto, getRoomTypeImages, createRoom, getHotelReviews, uploadShamCashQr, getCommission, payCommission };
 export default ownerService;

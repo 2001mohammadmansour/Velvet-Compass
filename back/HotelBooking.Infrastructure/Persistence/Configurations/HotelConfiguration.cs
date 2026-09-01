@@ -29,6 +29,9 @@ namespace HotelBooking.Infrastructure.Persistence.Configurations
             builder.Property(x => x.CancellationFeeType).HasConversion<string>().HasDefaultValue(HotelBooking.Domain.Enum.CancellationFeeType.Percentage);
             builder.Property(x => x.CancellationFeeValue).HasPrecision(10, 2).HasDefaultValue(20m);
 
+            builder.Property(x => x.ShamCashWallet).HasMaxLength(100);
+            builder.Property(x => x.ShamCashQrUrl).HasMaxLength(500);
+
 
             builder.HasOne(x => x.Owner)
                 .WithMany()
