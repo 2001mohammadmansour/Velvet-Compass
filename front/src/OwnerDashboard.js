@@ -112,6 +112,8 @@ export default function OwnerDashboard() {
   const [payingCommission, setPayingCommission] = useState(false);
   const [platformSettings, setPlatformSettings] = useState(null);
   const [payModalOpen, setPayModalOpen] = useState(false);
+  const [paySenderWallet, setPaySenderWallet] = useState('');
+  const [paySenderName, setPaySenderName] = useState('');
   const [metrics, setMetrics] = useState(null);
   const [campaignActive, setCampaignActive] = useState(false);
   const [rooms, setRooms] = useState([]);
@@ -698,12 +700,18 @@ export default function OwnerDashboard() {
   }
 
   async function confirmSentPayment() {
+    if (!paySenderWallet.trim() || !paySenderName.trim()) {
+      alert(t('ownerDashboard.commission.senderRequired'));
+      return;
+    }
     setPayingCommission(true);
     try {
-      await ownerSvc.payCommission(hotelId);
+      await ownerSvc.payCommission(hotelId, { senderWallet: paySenderWallet.trim(), senderName: paySenderName.trim() });
       const fresh = await ownerSvc.getCommission(hotelId).catch(() => null);
       setCommission(fresh);
       setPayModalOpen(false);
+      setPaySenderWallet('');
+      setPaySenderName('');
     } catch (err) {
       alert(t('ownerDashboard.commission.payError') + (err.message || err));
     } finally {
@@ -1577,6 +1585,30 @@ export default function OwnerDashboard() {
               <p style={{ color: '#9b1c1c', fontSize: 14 }}>{t('ownerDashboard.commission.payModalNoWallet')}</p>
             )}
             <p style={{ fontSize: 13, color: '#64748b', marginTop: 10 }}>{t('ownerDashboard.commission.payModalHint')}</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+                {t('ownerDashboard.commission.senderWallet')}
+                <input
+                  type="text"
+                  value={paySenderWallet}
+                  onChange={(e) => setPaySenderWallet(e.target.value)}
+                  placeholder={t('ownerDashboard.commission.senderWalletPlaceholder')}
+                  style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: 8 }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+                {t('ownerDashboard.commission.senderName')}
+                <input
+                  type="text"
+                  value={paySenderName}
+                  onChange={(e) => setPaySenderName(e.target.value)}
+                  placeholder={t('ownerDashboard.commission.senderNamePlaceholder')}
+                  style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: 8 }}
+                />
+              </label>
+            </div>
+
             <button
               type="button"
               className="cta"

@@ -143,7 +143,9 @@ namespace HotelBooking.Infrastructure.Services
                 Items = bookingItems,
                 Guests = guests,
                 IncludeBreakfast = includeBreakfast,
-                BreakfastFee = breakfastFee
+                BreakfastFee = breakfastFee,
+                PaymentSenderWallet = string.IsNullOrWhiteSpace(request.PaymentSenderWallet) ? null : request.PaymentSenderWallet.Trim(),
+                PaymentSenderName = string.IsNullOrWhiteSpace(request.PaymentSenderName) ? null : request.PaymentSenderName.Trim()
             };
 
             _context.Bookings.Add(booking);
@@ -643,7 +645,9 @@ namespace HotelBooking.Infrastructure.Services
     FreeCancellationDaysBefore: b.Hotel.FreeCancellationDaysBefore,
     CancellationFeeType: b.Hotel.CancellationFeeType.ToString(),
     CancellationFeeValue: b.Hotel.CancellationFeeValue,
-    ModificationFee: b.ModificationFee
+    ModificationFee: b.ModificationFee,
+    PaymentSenderWallet: b.PaymentSenderWallet,
+    PaymentSenderName: b.PaymentSenderName
 );
     }
 }

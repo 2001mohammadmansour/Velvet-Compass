@@ -31,7 +31,11 @@ public record BookingDto(
     decimal CancellationFeeValue = 0m,
     // Set when this booking's dates were modified within the late-fee window (see
     // BookingService.ModifyDatesAsync); null if never modified or modified for free.
-    decimal? ModificationFee = null
+    decimal? ModificationFee = null,
+    // For a Sham Cash booking: the guest's own wallet/name, so the owner can match the incoming
+    // payment against their Sham Cash app.
+    string? PaymentSenderWallet = null,
+    string? PaymentSenderName = null
 );
 
 public record BookingItemDto(

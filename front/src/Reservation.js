@@ -22,7 +22,7 @@ export default function Reservation() {
   const { checkIn, checkOut, guests, nights, roomTotal, breakfast, breakfastTotal, extraBeds, extraBedTotal, grandTotal } = incoming;
 
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "" });
-  const [payment, setPayment] = useState({ method: "", cardNumber: "", expiry: "", cvv: "" });
+  const [payment, setPayment] = useState({ method: "", cardNumber: "", expiry: "", cvv: "", senderWallet: "", senderName: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
@@ -56,9 +56,15 @@ export default function Reservation() {
       setError(t('reservation.errors.paymentMethodRequired'));
       return;
     }
-    if (payment.method === "shamcash" && !(shamCash?.wallet || shamCash?.qrUrl)) {
-      setError(t('reservation.shamCashUnavailable'));
-      return;
+    if (payment.method === "shamcash") {
+      if (!(shamCash?.wallet || shamCash?.qrUrl)) {
+        setError(t('reservation.shamCashUnavailable'));
+        return;
+      }
+      if (!payment.senderWallet.trim() || !payment.senderName.trim()) {
+        setError(t('reservation.shamCashSenderRequired'));
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -73,6 +79,8 @@ export default function Reservation() {
         guestCount: guests,
         includeBreakfast: breakfast,
         extraBedCount: extraBeds,
+        paymentSenderWallet: payment.method === "shamcash" ? payment.senderWallet.trim() : null,
+        paymentSenderName: payment.method === "shamcash" ? payment.senderName.trim() : null,
       });
 
       // Only "card" runs the mock payment flow (and confirms the booking immediately).
@@ -280,6 +288,27 @@ export default function Reservation() {
                     <p style={{ fontSize: 13, color: '#64748b', marginTop: 8 }}>
                       {t('reservation.shamCashThenConfirm')}
                     </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+                        {t('reservation.shamCashSenderWallet')}
+                        <input
+                          type="text"
+                          value={payment.senderWallet}
+                          onChange={(e) => handlePayment("senderWallet", e.target.value)}
+                          placeholder={t('reservation.shamCashSenderWalletPlaceholder')}
+                        />
+                      </label>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+                        {t('reservation.shamCashSenderName')}
+                        <input
+                          type="text"
+                          value={payment.senderName}
+                          onChange={(e) => handlePayment("senderName", e.target.value)}
+                          placeholder={t('reservation.shamCashSenderNamePlaceholder')}
+                        />
+                      </label>
+                    </div>
                   </>
                 ) : (
                   <p style={{ fontSize: 14, color: '#9b1c1c', margin: 0 }}>

@@ -291,8 +291,11 @@ export async function getCommission(hotelId) {
   };
 }
 
-export async function payCommission(hotelId) {
-  return request(`/api/v1/commission/hotel/${hotelId}/claim`, { method: 'POST' });
+export async function payCommission(hotelId, { senderWallet, senderName } = {}) {
+  return request(`/api/v1/commission/hotel/${hotelId}/claim`, {
+    method: 'POST',
+    body: JSON.stringify({ senderWallet: senderWallet || null, senderName: senderName || null }),
+  });
 }
 
 // CHANGED BY AI (2026-07-15): please review. New: full-replace of the hotel's amenity set.

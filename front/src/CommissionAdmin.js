@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getCommissionOverview, confirmCommission } from './services/commission';
+import { getCommissionOverview, confirmCommission, rejectCommission, waiveCommission } from './services/commission';
 import { getPlatformSettings, updatePlatformShamCash, uploadPlatformShamCashQr } from './services/platformSettings';
 
 const money = (n) => `$${Math.round(Number(n) || 0).toLocaleString()}`;
@@ -11,6 +11,7 @@ export default function CommissionAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [confirmingId, setConfirmingId] = useState(null);
+  const [actingId, setActingId] = useState(null); // { hotelId, action }
 
   const [wallet, setWallet] = useState('');
   const [qrUrl, setQrUrl] = useState('');
@@ -62,6 +63,32 @@ export default function CommissionAdmin() {
       alert(err.message || t('commission.confirmError'));
     } finally {
       setConfirmingId(null);
+    }
+  };
+
+  const reject = async (hotelId) => {
+    if (!window.confirm(t('commission.rejectConfirm'))) return;
+    setActingId(hotelId);
+    try {
+      await rejectCommission(hotelId);
+      await load();
+    } catch (err) {
+      alert(err.message || t('commission.rejectError'));
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  const waive = async (hotelId) => {
+    if (!window.confirm(t('commission.waiveConfirm'))) return;
+    setActingId(hotelId);
+    try {
+      await waiveCommission(hotelId);
+      await load();
+    } catch (err) {
+      alert(err.message || t('commission.waiveError'));
+    } finally {
+      setActingId(null);
     }
   };
 
@@ -122,6 +149,7 @@ export default function CommissionAdmin() {
                 <th style={th}>{t('commission.col.hotel')}</th>
                 <th style={th}>{t('commission.col.owed')}</th>
                 <th style={th}>{t('commission.col.claimed')}</th>
+                <th style={th}>{t('commission.col.sender')}</th>
                 <th style={th}></th>
               </tr>
             </thead>
@@ -132,10 +160,26 @@ export default function CommissionAdmin() {
                   <td style={td}>{money(h.owed)}</td>
                   <td style={td}>{h.awaitingConfirmation > 0 ? money(h.awaitingConfirmation) : '—'}</td>
                   <td style={td}>
+                    {h.awaitingConfirmation > 0 && (h.senderWallet || h.senderName) ? (
+                      <>
+                        {h.senderName && <div>{h.senderName}</div>}
+                        {h.senderWallet && <div className="muted small" style={{ fontFamily: 'monospace' }}>{h.senderWallet}</div>}
+                      </>
+                    ) : '—'}
+                  </td>
+                  <td style={td}>
                     {h.awaitingConfirmation > 0 && (
-                      <button type="button" className="cta" disabled={confirmingId === h.hotelId} onClick={() => confirm(h.hotelId)}>
-                        {confirmingId === h.hotelId ? t('commission.confirming') : t('commission.confirmReceived')}
-                      </button>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <button type="button" className="cta" disabled={confirmingId === h.hotelId} onClick={() => confirm(h.hotelId)}>
+                          {confirmingId === h.hotelId ? t('commission.confirming') : t('commission.confirmReceived')}
+                        </button>
+                        <button type="button" disabled={actingId === h.hotelId} onClick={() => reject(h.hotelId)}>
+                          {t('commission.notReceived')}
+                        </button>
+                        <button type="button" disabled={actingId === h.hotelId} onClick={() => waive(h.hotelId)}>
+                          {t('commission.waive')}
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

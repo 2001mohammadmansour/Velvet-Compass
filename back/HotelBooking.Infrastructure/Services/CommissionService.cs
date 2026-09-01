@@ -26,6 +26,13 @@ namespace HotelBooking.Infrastructure.Services
             return 0m; // not finalised yet
         }
 
+        private static bool IsOwed(Booking b, DateOnly today) =>
+            b.CommissionClaimedAt == null && b.CommissionPaidAt == null && b.CommissionWaivedAt == null
+            && KeptAmount(b, today) > 0m;
+
+        private static bool IsAwaitingConfirmation(Booking b) =>
+            b.CommissionClaimedAt != null && b.CommissionPaidAt == null && b.CommissionWaivedAt == null;
+
         public async Task<CommissionSummaryDto> GetForHotelAsync(long callerId, bool isAdmin, long hotelId)
         {
             var hotel = await _context.Hotels.FirstOrDefaultAsync(h => h.Id == hotelId)
@@ -37,7 +44,7 @@ namespace HotelBooking.Infrastructure.Services
             return Summarise(hotel, bookings);
         }
 
-        public async Task<CommissionSummaryDto> ClaimAsync(long callerId, bool isAdmin, long hotelId)
+        public async Task<CommissionSummaryDto> ClaimAsync(long callerId, bool isAdmin, long hotelId, ClaimCommissionRequest request)
         {
             var hotel = await _context.Hotels.FirstOrDefaultAsync(h => h.Id == hotelId)
                 ?? throw new HotelNotFoundException(hotelId);
@@ -47,17 +54,20 @@ namespace HotelBooking.Infrastructure.Services
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var bookings = await _context.Bookings.Where(b => b.HotelId == hotelId).ToListAsync();
 
-            var toClaim = bookings.Where(b =>
-                b.CommissionClaimedAt == null && b.CommissionPaidAt == null && KeptAmount(b, today) > 0m).ToList();
-
+            var toClaim = bookings.Where(b => IsOwed(b, today)).ToList();
             if (toClaim.Count == 0)
                 throw new InvalidRequestException("There is no commission to pay right now.");
+
+            var senderWallet = string.IsNullOrWhiteSpace(request.SenderWallet) ? null : request.SenderWallet.Trim();
+            var senderName = string.IsNullOrWhiteSpace(request.SenderName) ? null : request.SenderName.Trim();
 
             var now = DateTime.UtcNow;
             foreach (var b in toClaim)
             {
                 b.CommissionAmount = Math.Round(KeptAmount(b, today) * Rate, 2);
                 b.CommissionClaimedAt = now;
+                b.CommissionSenderWallet = senderWallet;
+                b.CommissionSenderName = senderName;
             }
             await _context.SaveChangesAsync();
 
@@ -70,14 +80,55 @@ namespace HotelBooking.Infrastructure.Services
                 ?? throw new HotelNotFoundException(hotelId);
 
             var bookings = await _context.Bookings.Where(b => b.HotelId == hotelId).ToListAsync();
-            var toConfirm = bookings.Where(b => b.CommissionClaimedAt != null && b.CommissionPaidAt == null).ToList();
-
+            var toConfirm = bookings.Where(IsAwaitingConfirmation).ToList();
             if (toConfirm.Count == 0)
                 throw new InvalidRequestException("This hotel has no commission payment awaiting confirmation.");
 
             var now = DateTime.UtcNow;
             foreach (var b in toConfirm)
                 b.CommissionPaidAt = now;
+            await _context.SaveChangesAsync();
+
+            return Summarise(hotel, bookings);
+        }
+
+        // Admin says the claimed payment never arrived — clears the claim, the amount goes back
+        // to "owed" so the owner sees it again and can retry.
+        public async Task<CommissionSummaryDto> RejectAsync(long adminId, long hotelId)
+        {
+            var hotel = await _context.Hotels.FirstOrDefaultAsync(h => h.Id == hotelId)
+                ?? throw new HotelNotFoundException(hotelId);
+
+            var bookings = await _context.Bookings.Where(b => b.HotelId == hotelId).ToListAsync();
+            var toReject = bookings.Where(IsAwaitingConfirmation).ToList();
+            if (toReject.Count == 0)
+                throw new InvalidRequestException("This hotel has no commission payment awaiting confirmation.");
+
+            foreach (var b in toReject)
+            {
+                b.CommissionClaimedAt = null;
+                b.CommissionAmount = null;
+            }
+            await _context.SaveChangesAsync();
+
+            return Summarise(hotel, bookings);
+        }
+
+        // Admin writes the claimed commission off — no money moves, and it's excluded from
+        // owed/claimed/paid from now on.
+        public async Task<CommissionSummaryDto> WaiveAsync(long adminId, long hotelId)
+        {
+            var hotel = await _context.Hotels.FirstOrDefaultAsync(h => h.Id == hotelId)
+                ?? throw new HotelNotFoundException(hotelId);
+
+            var bookings = await _context.Bookings.Where(b => b.HotelId == hotelId).ToListAsync();
+            var toWaive = bookings.Where(IsAwaitingConfirmation).ToList();
+            if (toWaive.Count == 0)
+                throw new InvalidRequestException("This hotel has no commission payment awaiting confirmation.");
+
+            var now = DateTime.UtcNow;
+            foreach (var b in toWaive)
+                b.CommissionWaivedAt = now;
             await _context.SaveChangesAsync();
 
             return Summarise(hotel, bookings);
@@ -96,18 +147,19 @@ namespace HotelBooking.Infrastructure.Services
             foreach (var hotel in hotels)
             {
                 var hb = byHotel.TryGetValue(hotel.Id, out var list) ? list : new List<Booking>();
-                var owed = Math.Round(hb
-                    .Where(b => b.CommissionClaimedAt == null && b.CommissionPaidAt == null)
-                    .Sum(b => KeptAmount(b, today)) * Rate, 2);
-                var awaiting = hb.Where(b => b.CommissionClaimedAt != null && b.CommissionPaidAt == null)
-                    .Sum(b => b.CommissionAmount ?? 0m);
+                var owed = Math.Round(hb.Where(b => IsOwed(b, today)).Sum(b => KeptAmount(b, today)) * Rate, 2);
+                var awaiting = hb.Where(IsAwaitingConfirmation).Sum(b => b.CommissionAmount ?? 0m);
                 var paid = hb.Where(b => b.CommissionPaidAt != null).Sum(b => b.CommissionAmount ?? 0m);
 
                 pending += owed + awaiting;
                 collected += paid;
 
                 if (owed > 0m || awaiting > 0m)
-                    rows.Add(new HotelCommissionRowDto(hotel.Id, hotel.Name, hotel.Owner?.UserName ?? "", owed, awaiting));
+                {
+                    var awaitingBooking = hb.FirstOrDefault(IsAwaitingConfirmation);
+                    rows.Add(new HotelCommissionRowDto(hotel.Id, hotel.Name, hotel.Owner?.UserName ?? "", owed, awaiting,
+                        awaitingBooking?.CommissionSenderWallet, awaitingBooking?.CommissionSenderName));
+                }
             }
 
             return new PlatformCommissionDto(pending, collected,
@@ -118,16 +170,17 @@ namespace HotelBooking.Infrastructure.Services
         {
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-            var owedList = bookings.Where(b =>
-                b.CommissionClaimedAt == null && b.CommissionPaidAt == null && KeptAmount(b, today) > 0m).ToList();
-            var awaitingList = bookings.Where(b => b.CommissionClaimedAt != null && b.CommissionPaidAt == null).ToList();
+            var owedList = bookings.Where(b => IsOwed(b, today)).ToList();
+            var awaitingList = bookings.Where(IsAwaitingConfirmation).ToList();
 
             var owed = Math.Round(owedList.Sum(b => KeptAmount(b, today)) * Rate, 2);
             var awaiting = awaitingList.Sum(b => b.CommissionAmount ?? 0m);
             var paid = bookings.Where(b => b.CommissionPaidAt != null).Sum(b => b.CommissionAmount ?? 0m);
+            var awaitingBooking = awaitingList.FirstOrDefault();
 
             return new CommissionSummaryDto(
-                hotel.Id, hotel.Name, owed, awaiting, paid, owedList.Count, awaitingList.Count);
+                hotel.Id, hotel.Name, owed, awaiting, paid, owedList.Count, awaitingList.Count,
+                awaitingBooking?.CommissionSenderWallet, awaitingBooking?.CommissionSenderName);
         }
     }
 }

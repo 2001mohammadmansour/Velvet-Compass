@@ -1,5 +1,9 @@
 namespace HotelBooking.Application.DTOs.Commission
 {
+    // Sent by the owner when they claim a payment — their own Sham Cash wallet/name, so the admin
+    // can match it against their app before confirming.
+    public record ClaimCommissionRequest(string? SenderWallet, string? SenderName);
+
     // One hotel's commission position with the platform.
     public record CommissionSummaryDto(
         long HotelId,
@@ -8,7 +12,9 @@ namespace HotelBooking.Application.DTOs.Commission
         decimal AwaitingConfirmation, // owner clicked "I paid", admin hasn't confirmed
         decimal Paid,               // lifetime confirmed
         int OwedBookingCount,
-        int AwaitingBookingCount
+        int AwaitingBookingCount,
+        string? SenderWallet = null, // who the awaiting payment was sent from (if any)
+        string? SenderName = null
     );
 
     // Admin overview across all hotels.
@@ -23,6 +29,8 @@ namespace HotelBooking.Application.DTOs.Commission
         string HotelName,
         string OwnerName,
         decimal Owed,
-        decimal AwaitingConfirmation
+        decimal AwaitingConfirmation,
+        string? SenderWallet = null,
+        string? SenderName = null
     );
 }

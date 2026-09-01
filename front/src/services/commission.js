@@ -14,3 +14,13 @@ export async function getCommissionOverview() {
 export async function confirmCommission(hotelId) {
   return request(`/api/v1/commission/hotel/${hotelId}/confirm`, { method: 'POST' });
 }
+
+// Admin: the claimed payment never arrived — goes back to "owed".
+export async function rejectCommission(hotelId) {
+  return request(`/api/v1/commission/hotel/${hotelId}/reject`, { method: 'POST' });
+}
+
+// Admin: write the claimed commission off — no money moves.
+export async function waiveCommission(hotelId) {
+  return request(`/api/v1/commission/hotel/${hotelId}/waive`, { method: 'POST' });
+}

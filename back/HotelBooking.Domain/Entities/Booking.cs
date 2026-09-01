@@ -25,6 +25,21 @@ public class Booking : BaseEntity
     public DateTime? CommissionClaimedAt { get; set; }
     public DateTime? CommissionPaidAt { get; set; }
 
+    // Admin says the claimed payment never arrived — set instead of PaidAt, clears the claim so
+    // it goes back to "owed". Or admin decides to write the commission off entirely — set instead
+    // of ClaimedAt/PaidAt, and it's excluded from owed/claimed/paid from then on.
+    public DateTime? CommissionWaivedAt { get; set; }
+
+    // Who the commission payment was sent from — the owner's own Sham Cash wallet/name, so the
+    // admin can match it against their Sham Cash app before confirming.
+    public string? CommissionSenderWallet { get; set; }
+    public string? CommissionSenderName { get; set; }
+
+    // For a Sham Cash booking: the guest's own wallet/name, so the owner can match the incoming
+    // payment against their Sham Cash app before accepting.
+    public string? PaymentSenderWallet { get; set; }
+    public string? PaymentSenderName { get; set; }
+
     // ─── Cancellation Fields ───────────────────────────────────
     public decimal? CancellationPenalty { get; set; }  // 20% من الإجمالي
     public decimal? RefundAmount { get; set; }          // 80% للزبون

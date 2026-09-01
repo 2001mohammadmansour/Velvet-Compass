@@ -282,7 +282,12 @@
       "payModalWallet": "رقم المحفظة:",
       "payModalNoWallet": "لم تقم المنصة بإعداد محفظة شام كاش بعد. تواصل مع المسؤول.",
       "payModalHint": "بعد إرسال الدفعة، اضغط الزر أدناه. سيتحقق المسؤول من وصولها ويؤكد استلامها.",
-      "payModalConfirm": "لقد أرسلت الدفعة"
+      "payModalConfirm": "لقد أرسلت الدفعة",
+      "senderRequired": "أدخل رقم المحفظة والاسم اللذين أرسلت الدفعة منهما.",
+      "senderWallet": "رقم محفظة شام كاش الخاصة بك",
+      "senderWalletPlaceholder": "مثال: 0912345678",
+      "senderName": "اسمك (كما يظهر في شام كاش)",
+      "senderNamePlaceholder": "الاسم الكامل"
     },
     "metrics": {
       "title": "المشاهدات والإجراءات",
@@ -889,6 +894,11 @@
     "shamCashWallet": "رقم المحفظة:",
     "shamCashThenConfirm": "بعد إرسال الدفعة، اضغط تأكيد الحجز أدناه. سيتحقق الفندق منها ويقبل حجزك.",
     "shamCashUnavailable": "لم يقم هذا الفندق بإعداد الدفع عبر شام كاش بعد — يرجى اختيار طريقة أخرى.",
+    "shamCashSenderRequired": "أدخل رقم المحفظة والاسم اللذين أرسلت الدفعة منهما.",
+    "shamCashSenderWallet": "رقم محفظة شام كاش الخاصة بك",
+    "shamCashSenderWalletPlaceholder": "مثال: 0912345678",
+    "shamCashSenderName": "اسمك (كما يظهر في شام كاش)",
+    "shamCashSenderNamePlaceholder": "الاسم الكامل",
     "cardNumber": "رقم البطاقة",
     "expiryDate": "تاريخ الانتهاء (شهر/سنة)",
     "cvv": "رمز التحقق CVV",
@@ -1152,10 +1162,17 @@
     "saving": "جارٍ الحفظ...",
     "walletSaved": "تم الحفظ.",
     "walletSaveError": "تعذّر حفظ المحفظة: ",
+    "notReceived": "لم تُستلم",
+    "waive": "إعفاء",
+    "rejectConfirm": "تعليم هذه كغير مستلمة؟ ستعود إلى \"مستحقة\" ليتمكن المالك من إعادة المحاولة.",
+    "rejectError": "تعذّر رفض الدفعة: ",
+    "waiveConfirm": "إعفاء هذه العمولة؟ لن ينتقل أي مبلغ ولن تكون مستحقة مرة أخرى.",
+    "waiveError": "تعذّر إعفاء العمولة: ",
     "col": {
       "hotel": "الفندق",
       "owed": "مستحقة",
-      "claimed": "المالك يقول إنه دفع"
+      "claimed": "المالك يقول إنه دفع",
+      "sender": "أُرسلت من"
     }
   }
 }

@@ -282,7 +282,12 @@
       "payModalWallet": "Wallet number:",
       "payModalNoWallet": "The platform hasn't set up its Sham Cash wallet yet. Contact the admin.",
       "payModalHint": "After you've sent the payment, press the button below. The admin will verify it arrived and mark it received.",
-      "payModalConfirm": "I have sent the payment"
+      "payModalConfirm": "I have sent the payment",
+      "senderRequired": "Enter the wallet number and name you sent the payment from.",
+      "senderWallet": "Your Sham Cash wallet number",
+      "senderWalletPlaceholder": "e.g. 0912345678",
+      "senderName": "Your name (as it appears on Sham Cash)",
+      "senderNamePlaceholder": "Full name"
     },
     "metrics": {
       "title": "Views & Actions",
@@ -862,6 +867,11 @@
     "shamCashWallet": "Wallet number:",
     "shamCashThenConfirm": "Once you've sent the payment, press Confirm booking below. The hotel will verify it and accept your booking.",
     "shamCashUnavailable": "This hotel hasn't set up Sham Cash payments yet — please choose another method.",
+    "shamCashSenderRequired": "Enter the wallet number and name you sent the payment from.",
+    "shamCashSenderWallet": "Your Sham Cash wallet number",
+    "shamCashSenderWalletPlaceholder": "e.g. 0912345678",
+    "shamCashSenderName": "Your name (as it appears on Sham Cash)",
+    "shamCashSenderNamePlaceholder": "Full name",
     "cardNumber": "Card Number",
     "expiryDate": "Expiry Date (MM/YY)",
     "cvv": "CVV",
@@ -1121,10 +1131,17 @@
     "saving": "Saving...",
     "walletSaved": "Saved.",
     "walletSaveError": "Unable to save wallet: ",
+    "notReceived": "Didn't receive",
+    "waive": "Waive",
+    "rejectConfirm": "Mark this as not received? It goes back to \"owed\" so the owner can retry.",
+    "rejectError": "Unable to reject payment: ",
+    "waiveConfirm": "Write this commission off? No money will move and it won't be owed again.",
+    "waiveError": "Unable to waive commission: ",
     "col": {
       "hotel": "Hotel",
       "owed": "Owed",
-      "claimed": "Owner says paid"
+      "claimed": "Owner says paid",
+      "sender": "Sent from"
     }
   }
 }

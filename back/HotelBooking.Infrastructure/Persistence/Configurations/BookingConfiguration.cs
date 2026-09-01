@@ -21,6 +21,10 @@ namespace HotelBooking.Infrastructure.Persistence.Configurations
             builder.Property(x => x.BreakfastFee).HasPrecision(10, 2);
             builder.Property(x => x.ModificationFee).HasPrecision(10, 2);
             builder.Property(x => x.CommissionAmount).HasPrecision(10, 2);
+            builder.Property(x => x.CommissionSenderWallet).HasMaxLength(100);
+            builder.Property(x => x.CommissionSenderName).HasMaxLength(150);
+            builder.Property(x => x.PaymentSenderWallet).HasMaxLength(100);
+            builder.Property(x => x.PaymentSenderName).HasMaxLength(150);
 
             builder.HasOne(x => x.User)
                    .WithMany()
