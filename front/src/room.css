@@ -230,6 +230,11 @@
   color: #4b5563;
 }
 
+.booking-status-completed {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
 .room-img {
   width: 100%;
   height: 180px;
@@ -330,6 +335,11 @@
 }
 
 /* ── REVIEW WRITE MODAL ── */
+@keyframes rv-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rv-modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
 .rv-overlay {
   position: fixed;
   inset: 0;
@@ -339,6 +349,8 @@
   justify-content: center;
   z-index: 1000;
   padding: 16px;
+  overflow-y: auto;
+  animation: rv-overlay-in 0.15s ease both;
 }
 .rv-modal {
   background: #fff;
@@ -349,6 +361,7 @@
   overflow-y: auto;
   padding: 28px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: rv-modal-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .rv-modal-header {
   display: flex;

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import './room.css';
@@ -44,13 +45,13 @@ function ReviewModal({ booking, userId, onClose, onSubmitted }) {
     }
   };
 
-  return (
+  return createPortal((
     <div className="rv-overlay" onClick={onClose}>
       <div className="rv-modal" onClick={(e) => e.stopPropagation()}>
         <div className="rv-modal-header">
           <div>
             <h3>{t('myBookings.review.title')}</h3>
-            <p>{booking.roomName} · {booking.hotelName} · {booking.checkIn} → {booking.checkOut}</p>
+            <p>{booking.hotelName} · {booking.roomName} · {booking.checkIn} → {booking.checkOut}</p>
           </div>
           <button className="rv-close" onClick={onClose} aria-label={t('common.close')}>×</button>
         </div>
@@ -106,7 +107,15 @@ function ReviewModal({ booking, userId, onClose, onSubmitted }) {
         </div>
       </div>
     </div>
-  );
+  ), document.body);
+}
+
+// A booking whose checkout date has passed (and wasn't cancelled) is treated as completed —
+// it can no longer be modified or cancelled. The backend enforces the same.
+function isCompleted(b) {
+  if (b.status === 'cancelled') return false;
+  const today = new Date().toISOString().split('T')[0];
+  return String(b.checkOut) < today;
 }
 
 // CHANGED BY AI (2026-07-13): please review — removed the old "pending bookings are always free
@@ -254,11 +263,14 @@ export default function MyBookings() {
           {bookings.map((b, i) => (
             <div key={b.id} className="booking-row" style={{ flexWrap: 'wrap', gap: 12, animationDelay: `${i * 0.06}s` }}>
               <div className="booking-row-info">
-                <h3>{b.roomName}</h3>
-                <p className="hotel-name">{b.hotelName}</p>
+                <h3>{b.hotelName}</h3>
+                <p className="hotel-name">{b.roomName}</p>
               </div>
               <div className="booking-row-dates">{b.checkIn} → {b.checkOut}</div>
-              <span className={`booking-status booking-status-${b.status}`}>{t(`myBookings.statuses.${b.status}`, b.status)}</span>
+              {(() => {
+                const status = isCompleted(b) ? 'completed' : b.status;
+                return <span className={`booking-status booking-status-${status}`}>{t(`myBookings.statuses.${status}`, status)}</span>;
+              })()}
               {b.modificationFee ? (
                 <span className="muted small" title={t('myBookings.lateFeeTooltip')}>
                   {t('myBookings.lateFeeApplied', { amount: Number(b.modificationFee).toFixed(2) })}
@@ -266,7 +278,7 @@ export default function MyBookings() {
               ) : null}
 
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                {(b.status === 'pending' || b.status === 'confirmed') && (
+                {(b.status === 'pending' || b.status === 'confirmed') && !isCompleted(b) && (
                   <>
                     <button type="button" className="back-btn" onClick={() => openModify(b)}>{t('myBookings.modify')}</button>
                     <button type="button" className="back-btn" onClick={() => handleCancel(b)}>{t('myBookings.cancel')}</button>
@@ -282,7 +294,7 @@ export default function MyBookings() {
                 )}
               </div>
 
-              {modifyingId === b.id && (
+              {modifyingId === b.id && !isCompleted(b) && (
                 <div style={{ width: '100%', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '16px', marginTop: 4 }}>
                   <p style={{ margin: '0 0 12px', fontWeight: 600 }}>{t('myBookings.changeDates')}</p>
                   {computeModificationFee(b) > 0 && (
