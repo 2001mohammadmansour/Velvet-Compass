@@ -139,7 +139,8 @@
       "pending": "Pending",
       "confirmed": "Confirmed",
       "cancelled": "Cancelled",
-      "completed": "Completed"
+      "completed": "Completed",
+      "noshow": "No-show"
     },
     "cancelConfirmFree": "Cancel your booking for {{room}} at {{hotel}}? This cancellation is free.",
     "cancelConfirmFee": "Cancel your booking for {{room}} at {{hotel}}? Per this hotel's cancellation policy, you'll be charged a ${{fee}} fee. Cancel anyway?",
@@ -266,6 +267,22 @@
       "netToOwner": "Net to Owner",
       "viewStats": "View Stats"
     },
+    "wallet": {
+      "title": "Wallet & Settlement",
+      "available": "Available",
+      "availableHint": "From online bookings — owed to you, stay completed, awaiting the next payout.",
+      "pending": "Pending",
+      "pendingHint": "From online bookings — becomes available once the guest checks out.",
+      "commissionOwed": "Commission owed",
+      "commissionOwedHint": "15% on cash bookings you collected — paid to the platform at settlement.",
+      "netPosition": "Net position",
+      "footnote": "Cash collected directly (yours already): ${{cash}} · Paid out to you so far: ${{paidOut}} · Commission paid: ${{commissionPaid}}",
+      "payoutHistory": "Payout history",
+      "noPayouts": "No settlements yet.",
+      "payoutPeriod": "Period",
+      "payoutBookings": "Bookings",
+      "payoutAmount": "Amount"
+    },
     "metrics": {
       "title": "Views & Actions",
       "views": "Views",
@@ -288,6 +305,10 @@
       "room": "Room {{id}}",
       "accept": "Accept",
       "reject": "Reject",
+      "markNoShow": "Mark no-show",
+      "noShowConfirm": "Mark this guest as a no-show? The booking will be pulled out of settlement.",
+      "arrivalsTitle": "Arrivals — confirm or flag",
+      "arrivalsHint": "Check-in date has passed. Leave these alone if the guest stayed; mark a no-show only if they never arrived.",
       "close": "Close",
       "reservations": "Reservations",
       "occupiedRooms": "Occupied rooms",
@@ -412,7 +433,8 @@
       "saveRoomFailed": "Unable to save room: ",
       "updateSettingFailed": "Unable to update setting: ",
       "acceptReservationFailed": "Unable to accept reservation: ",
-      "rejectReservationFailed": "Unable to reject reservation: "
+      "rejectReservationFailed": "Unable to reject reservation: ",
+      "noShowFailed": "Unable to mark no-show: "
     }
   },
   "pricingManager": {
@@ -507,6 +529,7 @@
       "overview": "Overview",
       "hotels": "Hotels Analytics",
       "stats": "Revenue Stats",
+      "settlements": "Settlements",
       "users": "Users",
       "requests": "Hotel Requests",
       "amenities": "Amenities"
@@ -515,6 +538,7 @@
       "overview": "Admin panel overview and quick navigation",
       "hotels": "Platform revenue, bookings, and top hotels",
       "stats": "Monthly, quarterly, and yearly revenue charts across all hotels",
+      "settlements": "Pay owners and collect commission for completed stays",
       "users": "All users, their booking activity, and hotels owned",
       "requests": "Approve or reject hotel owner requests to create or edit a hotel",
       "amenities": "Manage the catalog of hotel and room benefits owners can pick from"
@@ -524,6 +548,9 @@
       "loadError": "Unable to load overview.",
       "platformRevenue": "Platform Revenue",
       "platformRevenueSub": "All-time booking fees + penalties",
+      "platformRevenuePending": "+ ${{amount}} pending (stay not finished)",
+      "settlementPosition": "Settlement Position",
+      "settlementPositionSub": "Owed to owners / owed by owners",
       "hotelsUsers": "Hotels / Users",
       "totalRegistered": "Total registered",
       "confirmedBookings": "Confirmed Bookings",
@@ -1075,6 +1102,31 @@
         "signInAfterVerifyFailedNotice": "Account verified, but we couldn't sign you in automatically. Please sign in manually.",
         "verifyCodeGenericError": "Unable to verify code."
       }
+    }
+  },
+  "settlements": {
+    "loading": "Loading settlements...",
+    "loadError": "Unable to load settlements.",
+    "runError": "Unable to run settlement: ",
+    "pendingTitle": "Ready to settle",
+    "nothingDue": "Nothing is due for settlement — no completed stays are waiting.",
+    "historyTitle": "Settlement history",
+    "noHistory": "No settlements have been run yet.",
+    "settle": "Settle",
+    "settling": "Settling...",
+    "settleAll": "Settle all",
+    "settleAllConfirm": "Run settlement for all {{count}} hotels?",
+    "direction": {
+      "PlatformToOwner": "platform pays owner",
+      "OwnerToPlatform": "owner pays platform"
+    },
+    "col": {
+      "hotel": "Hotel",
+      "bookings": "Bookings",
+      "ownerCredit": "Owed to owner",
+      "commission": "Commission",
+      "transfer": "Transfer",
+      "period": "Period"
     }
   }
 }

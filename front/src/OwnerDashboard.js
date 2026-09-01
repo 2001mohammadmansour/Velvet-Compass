@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./ownerDashboard.css";
 import * as ownerSvc from "./services/owner";
+import { getHotelSettlements } from "./services/settlements";
 import { getAmenities, createAmenity } from "./services/amenities";
 import HotelPricingManager from "./HotelPricingManager";
 import { getCurrentUser } from "./services/auth";
@@ -170,8 +171,8 @@ export default function OwnerDashboard() {
   });
   const [autoAcceptBookings, setAutoAcceptBookings] = useState(true);
   const [hotelReviews, setHotelReviews] = useState(null);
+  const [payouts, setPayouts] = useState([]);
 
-  const net = useMemo(() => (bills ? bills.gross * (1 - bills.platformCutPercent / 100) : 0), [bills]);
   const campaignEndDate = useMemo(() => {
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + Number(durationDays || 0));
@@ -629,7 +630,7 @@ export default function OwnerDashboard() {
       setLoading(true);
       setError(null);
       try {
-        const [b, m, r, res, settings, rv, profile, hotelCatalog, roomCatalog] = await Promise.all([
+        const [b, m, r, res, settings, rv, profile, hotelCatalog, roomCatalog, payouts] = await Promise.all([
           ownerSvc.getBilling(hotelId).catch(() => null),
           ownerSvc.getMetrics(hotelId).catch(() => null),
           ownerSvc.getRooms(hotelId).catch(() => null),
@@ -642,6 +643,7 @@ export default function OwnerDashboard() {
           ownerSvc.getHotelProfile(hotelId).catch(() => null),
           getAmenities('Hotel').catch(() => []),
           getAmenities('RoomType').catch(() => []),
+          getHotelSettlements(hotelId).catch(() => []),
         ]);
         if (!mounted) return;
         if (b) setBills(b); else setBills({ gross: 0, platformCutPercent: 0 });
@@ -653,6 +655,7 @@ export default function OwnerDashboard() {
         if (profile) setHotelAmenityIds((profile.amenities || []).map((a) => a.id));
         setHotelAmenityCatalog(hotelCatalog);
         setRoomAmenityCatalog(roomCatalog);
+        setPayouts(Array.isArray(payouts) ? payouts : []);
         if (settings && typeof settings.autoAcceptBookings !== 'undefined') setAutoAcceptBookings(Boolean(settings.autoAcceptBookings));
         if (settings?.cancelPolicy) {
           setCancelPolicy({
@@ -703,6 +706,19 @@ export default function OwnerDashboard() {
     } catch (err) { alert(t('ownerDashboard.errors.rejectReservationFailed') + (err.message || err)); }
   }
 
+  async function handleNoShow(reservationId) {
+    if (!window.confirm(t('ownerDashboard.calendar.noShowConfirm'))) return;
+    try {
+      await ownerSvc.markNoShow(reservationId);
+      const [updated, freshBills] = await Promise.all([
+        ownerSvc.getReservations(hotelId).catch(() => null),
+        ownerSvc.getBilling(hotelId).catch(() => null),
+      ]);
+      if (updated) setReservations(updated);
+      if (freshBills) setBills(freshBills);
+    } catch (err) { alert(t('ownerDashboard.errors.noShowFailed') + (err.message || err)); }
+  }
+
   return (
     <div className="owner-dashboard">
       <header className="od-header">
@@ -740,25 +756,72 @@ export default function OwnerDashboard() {
       {loading && <div className="muted small" style={{ marginBottom: 12 }}>{t('ownerDashboard.loadingData')}</div>}
 
       <section className="od-row od-bills">
-        <h2>{t('ownerDashboard.bills.title')}</h2>
+        <h2>{t('ownerDashboard.wallet.title')}</h2>
         <div className="bills-grid">
           <div className="bill-card">
-            <div className="label">{t('ownerDashboard.bills.grossEarnings')}</div>
-            <div className="value">${(bills?.gross || 0).toLocaleString()}</div>
+            <div className="label">{t('ownerDashboard.wallet.available')}</div>
+            <div className="value">${Math.round(bills?.availableToOwner || 0).toLocaleString()}</div>
+            <div className="muted small">{t('ownerDashboard.wallet.availableHint')}</div>
           </div>
           <div className="bill-card">
-            <div className="label">{t('ownerDashboard.bills.platformCut')}</div>
-            <div className="value">{bills?.platformCutPercent ?? 0}%</div>
+            <div className="label">{t('ownerDashboard.wallet.pending')}</div>
+            <div className="value">${Math.round(bills?.pendingToOwner || 0).toLocaleString()}</div>
+            <div className="muted small">{t('ownerDashboard.wallet.pendingHint')}</div>
           </div>
           <div className="bill-card">
-            <div className="label">{t('ownerDashboard.bills.netToOwner')}</div>
+            <div className="label">{t('ownerDashboard.wallet.commissionOwed')}</div>
+            <div className="value">${Math.round(bills?.commissionDue || 0).toLocaleString()}</div>
+            <div className="muted small">{t('ownerDashboard.wallet.commissionOwedHint')}</div>
+          </div>
+          <div className="bill-card">
+            <div className="label">{t('ownerDashboard.wallet.netPosition')}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-              <div className="value">${Math.round(net).toLocaleString()}</div>
+              <div className="value">${Math.round(bills?.netPositionNow || 0).toLocaleString()}</div>
               <Link to="/owner/stats" className="cta" style={{ display: 'inline-block', textDecoration: 'none' }}>
                 {t('ownerDashboard.bills.viewStats')}
               </Link>
             </div>
           </div>
+        </div>
+        <div className="muted small" style={{ marginTop: 8 }}>
+          {t('ownerDashboard.wallet.footnote', {
+            cash: Math.round(bills?.cashInHand || 0).toLocaleString(),
+            paidOut: Math.round(bills?.paidOutToOwner || 0).toLocaleString(),
+            commissionPaid: Math.round(bills?.commissionPaid || 0).toLocaleString(),
+          })}
+        </div>
+
+        <div style={{ marginTop: 16 }}>
+          <h3 style={{ fontSize: '1rem', margin: '0 0 8px' }}>{t('ownerDashboard.wallet.payoutHistory')}</h3>
+          {payouts.length === 0 ? (
+            <p className="muted small">{t('ownerDashboard.wallet.noPayouts')}</p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '2px solid #e2e8f0' }}>{t('ownerDashboard.wallet.payoutPeriod')}</th>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '2px solid #e2e8f0' }}>{t('ownerDashboard.wallet.payoutBookings')}</th>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '2px solid #e2e8f0' }}>{t('ownerDashboard.wallet.payoutAmount')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payouts.map((s) => (
+                    <tr key={s.id}>
+                      <td style={{ padding: '6px 8px', borderBottom: '1px solid #f1f5f9' }}>{s.periodLabel}</td>
+                      <td style={{ padding: '6px 8px', borderBottom: '1px solid #f1f5f9' }}>{s.bookingCount}</td>
+                      <td style={{ padding: '6px 8px', borderBottom: '1px solid #f1f5f9' }}>
+                        {s.direction === 'PlatformToOwner'
+                          ? `+ $${Math.round(s.netAmount).toLocaleString()}`
+                          : `− $${Math.round(s.netAmount).toLocaleString()}`}
+                        <span className="muted small"> · {t(`settlements.direction.${s.direction}`)}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </section>
 
@@ -921,6 +984,31 @@ export default function OwnerDashboard() {
             ))
           )}
         </div>
+
+        {(() => {
+          const todayStr = new Date().toISOString().slice(0, 10);
+          const arrived = reservations.filter(
+            (r) => r.status === 'confirmed' && String(r.checkIn) <= todayStr,
+          );
+          if (arrived.length === 0) return null;
+          return (
+            <div style={{ marginTop: 12 }} className="pending-reservations">
+              <h3>{t('ownerDashboard.calendar.arrivalsTitle')}</h3>
+              <p className="muted small">{t('ownerDashboard.calendar.arrivalsHint')}</p>
+              {arrived.map((reservation) => (
+                <div key={`arr-${reservation.id}`} className="pending-row" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <strong>{reservation.guestName}</strong>
+                    <div className="muted small">{(reservation.roomName || t('ownerDashboard.calendar.room', { id: reservation.roomId }))} — {reservation.checkIn} → {reservation.checkOut}</div>
+                  </div>
+                  <button className="campaign-back" onClick={() => handleNoShow(reservation.id)}>
+                    {t('ownerDashboard.calendar.markNoShow')}
+                  </button>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </section>
 
       {calendarDayOpen && selectedCalendarDay && selectedDayInfo && (

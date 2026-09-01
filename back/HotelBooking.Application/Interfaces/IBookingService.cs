@@ -14,6 +14,9 @@ public interface IBookingService
     // Pending bookings (previously there was no way for an owner to act on a booking at all).
     Task<BookingDto> AcceptAsync(long callerId, bool isAdmin, long bookingId);
     Task<BookingDto> RejectAsync(long callerId, bool isAdmin, long bookingId);
+    // Owner/admin: the guest never checked in. Pulls the booking out of settlement; applies the
+    // hotel's cancellation penalty on online bookings (nothing to charge on cash).
+    Task<BookingDto> MarkNoShowAsync(long callerId, bool isAdmin, long bookingId);
     // CHANGED BY AI (2026-07-13): please review. New guest-facing "modify booking dates" action.
     Task<BookingDto> ModifyDatesAsync(long userId, long bookingId, ModifyBookingDatesRequest request);
 }

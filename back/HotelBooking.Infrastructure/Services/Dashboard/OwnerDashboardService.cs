@@ -26,18 +26,43 @@ public class OwnerDashboardService : IOwnerDashboardService
             .Where(b => b.HotelId == hotelId)
             .ToListAsync();
 
+        // "In play" = a real, non-cancelled, non-no-show booking. (This is the same set the old
+        // code called "paidBookings" — the name was misleading; it never meant money changed hands.)
         var paidBookings = bookings.Where(b =>
             b.Status == BookingStatus.Confirmed ||
             b.Status == BookingStatus.Completed).ToList();
 
         var cancelledBookings = bookings.Where(b =>
-            b.Status == BookingStatus.Cancelled).ToList();
+            b.Status == BookingStatus.Cancelled ||
+            b.Status == BookingStatus.NoShow).ToList();
 
-        // ─── Revenue ──────────────────────────────────────────
+        // ─── Revenue (totals, unchanged) ─────────────────────
         var grossRevenue = paidBookings.Sum(b => b.TotalAmount);
         var platformFee = paidBookings.Sum(b => b.PlatformFee);
         var netRevenue = paidBookings.Sum(b => b.OwnerAmount);
         var cancelLosses = cancelledBookings.Sum(b => b.CancellationPenalty ?? 0);
+
+        // ─── Owner money position ────────────────────────────
+        // A booking's money "matures" once its checkout date has passed (or it's been settled).
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        bool Matured(Booking b) => b.SettledAt != null || b.CheckoutDate < today;
+        bool Pending(Booking b) => b.SettledAt == null && b.CheckoutDate >= today;
+        bool Due(Booking b) => b.SettledAt == null && b.CheckoutDate < today;
+
+        var online = paidBookings.Where(b => b.PaymentMethod == PaymentMethod.Online).ToList();
+        var cash = paidBookings.Where(b => b.PaymentMethod == PaymentMethod.CashOnArrival).ToList();
+
+        var availableToOwner = online.Where(Due).Sum(b => b.OwnerAmount);
+        var pendingToOwner = online.Where(Pending).Sum(b => b.OwnerAmount);
+        var paidOutToOwner = online.Where(b => b.SettledAt != null).Sum(b => b.OwnerAmount);
+
+        var commissionDue = cash.Where(Due).Sum(b => b.PlatformFee);
+        var commissionPending = cash.Where(Pending).Sum(b => b.PlatformFee);
+        var commissionPaid = cash.Where(b => b.SettledAt != null).Sum(b => b.PlatformFee);
+
+        var cashInHand = cash.Where(Matured).Sum(b => b.OwnerAmount);
+        var penaltyIncome = Math.Round(cancelledBookings.Sum(b => b.CancellationPenalty ?? 0) * 0.85m, 2);
+        var netPositionNow = availableToOwner - commissionDue;
 
         // ─── Views ────────────────────────────────────────────
         var views = await _context.HotelViews
@@ -51,8 +76,10 @@ public class OwnerDashboardService : IOwnerDashboardService
             : 0;
 
         // ─── Monthly Revenue (آخر 12 شهر) ────────────────────
+        // Attributed to the stay's check-in date, not when the booking was made — a booking made
+        // today for an August stay is August revenue.
         var monthly = paidBookings
-            .GroupBy(b => new { b.CreatedAt.Year, b.CreatedAt.Month })
+            .GroupBy(b => new { b.CheckinDate.Year, b.CheckinDate.Month })
             .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
             .Select(g => new PeriodRevenueDto(
                 $"{g.Key.Year}-{g.Key.Month:D2}",
@@ -63,7 +90,7 @@ public class OwnerDashboardService : IOwnerDashboardService
 
         // ─── Quarterly Revenue ────────────────────────────────
         var quarterly = paidBookings
-            .GroupBy(b => new { b.CreatedAt.Year, Quarter = (b.CreatedAt.Month - 1) / 3 + 1 })
+            .GroupBy(b => new { b.CheckinDate.Year, Quarter = (b.CheckinDate.Month - 1) / 3 + 1 })
             .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Quarter)
             .Select(g => new PeriodRevenueDto(
                 $"Q{g.Key.Quarter} {g.Key.Year}",
@@ -74,7 +101,7 @@ public class OwnerDashboardService : IOwnerDashboardService
 
         // ─── Yearly Revenue ───────────────────────────────────
         var yearly = paidBookings
-            .GroupBy(b => b.CreatedAt.Year)
+            .GroupBy(b => b.CheckinDate.Year)
             .OrderBy(g => g.Key)
             .Select(g => new PeriodRevenueDto(
                 $"{g.Key}",
@@ -86,7 +113,11 @@ public class OwnerDashboardService : IOwnerDashboardService
         return new OwnerDashboardDto(
             hotelId,
             hotel.Name,
-            new RevenueDto(grossRevenue, platformFee, netRevenue, cancelLosses),
+            new RevenueDto(
+                grossRevenue, platformFee, netRevenue, cancelLosses,
+                availableToOwner, pendingToOwner, paidOutToOwner,
+                commissionDue, commissionPending, commissionPaid,
+                cashInHand, penaltyIncome, netPositionNow),
             new BookingStatsDto(
                 bookings.Count,
                 bookings.Count(b => b.Status == BookingStatus.Confirmed),
@@ -112,8 +143,8 @@ public class OwnerDashboardService : IOwnerDashboardService
 
         var bookings = await _context.Bookings
             .Where(b => b.HotelId == request.HotelId &&
-                        DateOnly.FromDateTime(b.CreatedAt) >= request.From &&
-                        DateOnly.FromDateTime(b.CreatedAt) <= request.To)
+                        b.CheckinDate >= request.From &&
+                        b.CheckinDate <= request.To)
             .ToListAsync();
 
         var paidBookings = bookings.Where(b =>

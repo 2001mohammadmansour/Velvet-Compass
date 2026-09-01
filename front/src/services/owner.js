@@ -32,10 +32,26 @@ const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "S
 
 export async function getBilling(hotelId) {
   const d = await request(`/api/v1/owner/dashboard/${hotelId}`);
-  const gross = Number(d?.revenue?.grossRevenue) || 0;
-  const platformFee = Number(d?.revenue?.platformFee) || 0;
+  const r = d?.revenue || {};
+  const num = (v) => Number(v) || 0;
+  const gross = num(r.grossRevenue);
+  const platformFee = num(r.platformFee);
   const platformCutPercent = gross > 0 ? Math.round((platformFee / gross) * 1000) / 10 : 15;
-  return { gross, platformCutPercent };
+  return {
+    gross,
+    platformCutPercent,
+    // Owner "wallet": money owed to the owner from online bookings the platform collected.
+    availableToOwner: num(r.availableToOwner),
+    pendingToOwner: num(r.pendingToOwner),
+    paidOutToOwner: num(r.paidOutToOwner),
+    // Commission the owner owes the platform from cash bookings they collected.
+    commissionDue: num(r.commissionDue),
+    commissionPending: num(r.commissionPending),
+    commissionPaid: num(r.commissionPaid),
+    cashInHand: num(r.cashInHand),
+    penaltyIncome: num(r.penaltyIncome),
+    netPositionNow: num(r.netPositionNow),
+  };
 }
 
 // The dashboard endpoint only gives pre-aggregated monthly/quarterly/yearly totals, with no
@@ -314,6 +330,11 @@ export async function rejectReservation(hotelId, reservationId) {
   return request(`/api/v1/bookings/${reservationId}/reject`, { method: 'POST' });
 }
 
+// Guest never checked in — pulls the booking out of settlement.
+export async function markNoShow(reservationId) {
+  return request(`/api/v1/bookings/${reservationId}/no-show`, { method: 'POST' });
+}
+
 export async function createReservation(hotelId, payload) {
   return request(`/api/hotels/${hotelId}/reservations`, { method: 'POST', body: JSON.stringify(payload) });
 }
@@ -468,5 +489,5 @@ export async function getHotelReviews(hotelId) {
   return request(`/api/v1/hotels/${hotelId}/reviews`);
 }
 
-const ownerService = { getBilling, getRevenueStats, getMetrics, getRooms, getReservations, getSettings, getHotelProfile, updateHotelProfile, updateHotelAmenities, updateRoomTypeAmenities, updateSettings, acceptReservation, rejectReservation, createReservation, toggleCampaign, updateCancelPolicy, updateRoom, deleteRoom, uploadHotelPhoto, deleteHotelPhoto, uploadRoomTypePhoto, deleteRoomTypePhoto, getRoomTypeImages, createRoom, getHotelReviews };
+const ownerService = { getBilling, getRevenueStats, getMetrics, getRooms, getReservations, getSettings, getHotelProfile, updateHotelProfile, updateHotelAmenities, updateRoomTypeAmenities, updateSettings, acceptReservation, rejectReservation, markNoShow, createReservation, toggleCampaign, updateCancelPolicy, updateRoom, deleteRoom, uploadHotelPhoto, deleteHotelPhoto, uploadRoomTypePhoto, deleteRoomTypePhoto, getRoomTypeImages, createRoom, getHotelReviews };
 export default ownerService;

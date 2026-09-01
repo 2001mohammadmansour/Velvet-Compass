@@ -1,5 +1,6 @@
 using HotelBooking.Application.DTOs.Dashboard;
 using HotelBooking.Application.Interfaces;
+using HotelBooking.Domain.Entities;
 using HotelBooking.Domain.Enum;
 using HotelBooking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -37,12 +38,29 @@ public class AdminDashboardService : IAdminDashboardService
             b.Status == BookingStatus.Completed).ToList();
 
         var cancelledBookings = bookings.Where(b =>
-            b.Status == BookingStatus.Cancelled).ToList();
+            b.Status == BookingStatus.Cancelled ||
+            b.Status == BookingStatus.NoShow).ToList();
 
         // ─── Platform Revenue ─────────────────────────────────
         var platformRevenue = paidBookings.Sum(b => b.PlatformFee);
-        var cancellationRevenue = cancelledBookings.Sum(b => b.CancellationPenalty ?? 0);
+        // The platform's 15% share of cancellation penalties (the owner keeps the other 85%).
+        var cancellationRevenue = Math.Round(cancelledBookings.Sum(b => b.CancellationPenalty ?? 0) * 0.15m, 2);
         var totalPlatformRevenue = platformRevenue + cancellationRevenue;
+
+        // ─── Realisation split + settlement position ──────────
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        bool Matured(Booking b) => b.SettledAt != null || b.CheckoutDate < today;
+        bool DueUnsettled(Booking b) => b.SettledAt == null && b.CheckoutDate < today;
+
+        var earnedPlatformRevenue = paidBookings.Where(Matured).Sum(b => b.PlatformFee);
+        var pendingPlatformRevenue = platformRevenue - earnedPlatformRevenue;
+
+        var owedToOwners = paidBookings
+            .Where(b => b.PaymentMethod == PaymentMethod.Online && DueUnsettled(b))
+            .Sum(b => b.OwnerAmount);
+        var owedByOwners = paidBookings
+            .Where(b => b.PaymentMethod == PaymentMethod.CashOnArrival && DueUnsettled(b))
+            .Sum(b => b.PlatformFee);
 
         // ─── Top Hotels By Revenue ────────────────────────────
         var topByRevenue = bookings
@@ -105,7 +123,10 @@ public class AdminDashboardService : IAdminDashboardService
         var totalUsers = await _context.Users.CountAsync();
 
         return new AdminDashboardDto(
-            new AdminRevenueDto(platformRevenue, cancellationRevenue, totalPlatformRevenue),
+            new AdminRevenueDto(
+                platformRevenue, cancellationRevenue, totalPlatformRevenue,
+                earnedPlatformRevenue, pendingPlatformRevenue,
+                owedToOwners, owedByOwners),
             new AdminBookingStatsDto(
                 bookings.Count,
                 bookings.Count(b => b.Status == BookingStatus.Confirmed),
@@ -124,8 +145,7 @@ public class AdminDashboardService : IAdminDashboardService
         DateOnly from, DateOnly to)
     {
         var bookings = await _context.Bookings
-            .Where(b => DateOnly.FromDateTime(b.CreatedAt) >= from &&
-                        DateOnly.FromDateTime(b.CreatedAt) <= to)
+            .Where(b => b.CheckinDate >= from && b.CheckinDate <= to)
             .ToListAsync();
 
         var paidBookings = bookings.Where(b =>

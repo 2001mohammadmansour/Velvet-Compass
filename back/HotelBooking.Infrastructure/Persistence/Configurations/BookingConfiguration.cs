@@ -12,6 +12,7 @@ namespace HotelBooking.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Id).ValueGeneratedOnAdd();
             builder.Property(x => x.TotalAmount).HasPrecision(10, 2);
             builder.Property(x => x.Status).HasConversion<string>();
+            builder.Property(x => x.PaymentMethod).HasConversion<string>().HasMaxLength(20);
             builder.Property(x => x.SpecialRequests).HasMaxLength(1000);
             builder.Property(x => x.PlatformFeeRate).HasPrecision(5, 2);
             builder.Property(x => x.PlatformFee).HasPrecision(10, 2);
@@ -45,6 +46,11 @@ namespace HotelBooking.Infrastructure.Persistence.Configurations
                    .WithOne(x => x.Booking)
                    .HasForeignKey<Payment>(x => x.BookingId)
                    .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(x => x.Settlement)
+                   .WithMany(s => s.Bookings)
+                   .HasForeignKey(x => x.SettlementId)
+                   .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

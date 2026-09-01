@@ -5,6 +5,7 @@ import HotelRequests from './HotelRequests';
 import AdminStats from './AdminStats';
 import AdminUsers from './AdminUsers';
 import AmenitiesAdmin from './AmenitiesAdmin';
+import Settlements from './Settlements';
 import { getAdminDashboard } from './services/hotels';
 import { getAllHotelRequests } from './services/hotelRequests';
 import './AdminDashboard.css';
@@ -47,8 +48,17 @@ function OverviewTab({ onTabChange }) {
         <div className="admin-stats-row">
           <div className="admin-stat-card">
             <div className="admin-stat-label">{t('adminDashboard.overviewTab.platformRevenue')}</div>
-            <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(data.revenue?.totalRevenue)}</div>
-            <div className="admin-stat-sub">{t('adminDashboard.overviewTab.platformRevenueSub')}</div>
+            <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(data.revenue?.earnedPlatformRevenue)}</div>
+            <div className="admin-stat-sub">
+              {t('adminDashboard.overviewTab.platformRevenuePending', { amount: formatMoney(data.revenue?.pendingPlatformRevenue) })}
+            </div>
+          </div>
+          <div className="admin-stat-card">
+            <div className="admin-stat-label">{t('adminDashboard.overviewTab.settlementPosition')}</div>
+            <div className="admin-stat-value" style={{ fontSize: 20 }}>
+              {formatMoney(data.revenue?.owedToOwners)} / {formatMoney(data.revenue?.owedByOwners)}
+            </div>
+            <div className="admin-stat-sub">{t('adminDashboard.overviewTab.settlementPositionSub')}</div>
           </div>
           <div className="admin-stat-card">
             <div className="admin-stat-label">{t('adminDashboard.overviewTab.hotelsUsers')}</div>
@@ -88,6 +98,7 @@ export default function AdminDashboard() {
     { key: 'overview', icon: '📊', label: t('adminDashboard.nav.overview') },
     { key: 'hotels', icon: '🏨', label: t('adminDashboard.nav.hotels') },
     { key: 'stats', icon: '📈', label: t('adminDashboard.nav.stats') },
+    { key: 'settlements', icon: '💸', label: t('adminDashboard.nav.settlements') },
     { key: 'users', icon: '👥', label: t('adminDashboard.nav.users') },
     { key: 'requests', icon: '📥', label: t('adminDashboard.nav.requests') },
     { key: 'amenities', icon: '🛎️', label: t('adminDashboard.nav.amenities') },
@@ -97,6 +108,7 @@ export default function AdminDashboard() {
     overview: t('adminDashboard.sectionDescriptions.overview'),
     hotels: t('adminDashboard.sectionDescriptions.hotels'),
     stats: t('adminDashboard.sectionDescriptions.stats'),
+    settlements: t('adminDashboard.sectionDescriptions.settlements'),
     users: t('adminDashboard.sectionDescriptions.users'),
     requests: t('adminDashboard.sectionDescriptions.requests'),
     amenities: t('adminDashboard.sectionDescriptions.amenities'),
@@ -133,6 +145,7 @@ export default function AdminDashboard() {
           {activeTab === 'overview' && <OverviewTab onTabChange={setActiveTab} />}
           {activeTab === 'hotels' && <HotelsAnalytics />}
           {activeTab === 'stats' && <AdminStats />}
+          {activeTab === 'settlements' && <Settlements />}
           {activeTab === 'users' && <AdminUsers />}
           {activeTab === 'requests' && <HotelRequests />}
           {activeTab === 'amenities' && <AmenitiesAdmin />}
