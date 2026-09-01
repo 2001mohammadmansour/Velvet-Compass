@@ -43,6 +43,8 @@ export async function getHotelById(hotelId) {
     country: h.country,
     stars: h.starRating,
     amenities: Array.isArray(h.amenities) ? h.amenities : [],
+    shamCashWallet: h.shamCashWallet || '',
+    shamCashQrUrl: h.shamCashQrUrl || '',
   };
 }
 

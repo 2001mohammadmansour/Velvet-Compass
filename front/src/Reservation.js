@@ -3,12 +3,13 @@
 // guests/add-ons now get chosen on the new RoomDetail.js page instead (which shows photos,
 // description, and amenities and computes the running total), and this page is purely the
 // checkout: a compact room+price summary, your contact info, and a payment method.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./reservation.css";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "./services/auth";
 import { createBooking, initiatePayment, confirmPayment } from "./services/guest";
+import { getHotelById } from "./services/hotels";
 
 export default function Reservation() {
   const { t } = useTranslation();
@@ -26,6 +27,16 @@ export default function Reservation() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
   const [discountCode, setDiscountCode] = useState("");
+  const [shamCash, setShamCash] = useState(null); // { wallet, qrUrl } for this hotel
+
+  useEffect(() => {
+    if (!room?.hotelId) return;
+    let mounted = true;
+    getHotelById(room.hotelId)
+      .then((h) => { if (mounted) setShamCash({ wallet: h.shamCashWallet || "", qrUrl: h.shamCashQrUrl || "" }); })
+      .catch(() => { if (mounted) setShamCash({ wallet: "", qrUrl: "" }); });
+    return () => { mounted = false; };
+  }, [room?.hotelId]);
 
   const discountApplied = discountCode.trim().toLowerCase() === "alhamid";
   const finalTotal = discountApplied ? 0 : grandTotal;
@@ -45,6 +56,10 @@ export default function Reservation() {
       setError(t('reservation.errors.paymentMethodRequired'));
       return;
     }
+    if (payment.method === "shamcash" && !(shamCash?.wallet || shamCash?.qrUrl)) {
+      setError(t('reservation.shamCashUnavailable'));
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -60,10 +75,11 @@ export default function Reservation() {
         extraBedCount: extraBeds,
       });
 
-      // "Pay on arrival" leaves the booking Pending; card confirms it immediately. The
-      // backend doesn't validate real payment details, so card fields aren't sent anywhere.
+      // Only "card" runs the mock payment flow (and confirms the booking immediately).
+      // "Pay on arrival" and "Sham Cash" leave the booking Pending for the hotel to accept —
+      // with Sham Cash the guest has already sent the money to the hotel's wallet.
       let status = "pending";
-      if (payment.method !== "cash") {
+      if (payment.method === "card") {
         const paymentRecord = await initiatePayment(booking.id, payment.method);
         await confirmPayment(paymentRecord.id, `DEMO-${Date.now()}-${booking.id}`);
         status = "confirmed";
@@ -232,7 +248,46 @@ export default function Reservation() {
               >
                 {t('reservation.payOnArrival')}
               </button>
+
+              <button
+                type="button"
+                className={`method ${payment.method === "shamcash" ? "active" : ""}`}
+                onClick={() => setPayment({ ...payment, method: "shamcash" })}
+              >
+                {t('reservation.shamCash')}
+              </button>
             </div>
+
+            {payment.method === "shamcash" && (
+              <div className="shamcash-pay">
+                {shamCash && (shamCash.wallet || shamCash.qrUrl) ? (
+                  <>
+                    <p style={{ fontSize: 14, margin: '0 0 10px' }}>
+                      {t('reservation.shamCashInstruction', { amount: finalTotal.toFixed(2) })}
+                    </p>
+                    {shamCash.qrUrl && (
+                      <img
+                        src={shamCash.qrUrl}
+                        alt="Sham Cash QR"
+                        style={{ width: 200, height: 200, objectFit: 'contain', border: '1px solid #e2e8f0', borderRadius: 8, display: 'block' }}
+                      />
+                    )}
+                    {shamCash.wallet && (
+                      <p style={{ fontSize: 15, marginTop: 10 }}>
+                        {t('reservation.shamCashWallet')} <strong style={{ fontFamily: 'monospace' }}>{shamCash.wallet}</strong>
+                      </p>
+                    )}
+                    <p style={{ fontSize: 13, color: '#64748b', marginTop: 8 }}>
+                      {t('reservation.shamCashThenConfirm')}
+                    </p>
+                  </>
+                ) : (
+                  <p style={{ fontSize: 14, color: '#9b1c1c', margin: 0 }}>
+                    {t('reservation.shamCashUnavailable')}
+                  </p>
+                )}
+              </div>
+            )}
 
             {payment.method === "card" && (
               <div className="card-fields">
