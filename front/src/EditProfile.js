@@ -109,7 +109,14 @@ export default function EditProfile() {
       {loadError && <p style={{ textAlign: 'center', color: '#9b1c1c', marginBottom: 20 }}>{loadError}</p>}
 
       {user?.id && !loading && !loadError && profile && (
-        <div style={{ maxWidth: 520, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: 24,
+          alignItems: 'start',
+        }}>
           <section className="section-card">
             <h2 className="section-title" style={{ fontSize: '1.1rem', marginBottom: 12 }}>{t('editProfile.accountInformation')}</h2>
             <form onSubmit={handleProfileSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
