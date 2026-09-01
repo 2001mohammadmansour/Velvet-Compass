@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./ownerDashboard.css";
@@ -1547,7 +1548,7 @@ export default function OwnerDashboard() {
         </div>
       )}
 
-      {payModalOpen && (
+      {payModalOpen && createPortal((
         <div className="campaign-modal-overlay" onClick={() => setPayModalOpen(false)}>
           <div className="campaign-modal" onClick={(e) => e.stopPropagation()}>
             <div className="campaign-modal-header">
@@ -1587,7 +1588,7 @@ export default function OwnerDashboard() {
             </button>
           </div>
         </div>
-      )}
+      ), document.body)}
 
       {campaignModalOpen && (
         <div className="campaign-modal-overlay" onClick={closeCampaignModal}>
