@@ -821,6 +821,7 @@
     "errors": {
       "chooseDates": "Please choose check-in and check-out dates.",
       "checkoutAfterCheckin": "Check-out date must be after check-in date.",
+      "checkinPast": "Check-in date cannot be in the past.",
       "capacityExceeded": "This room sleeps up to {{capacity}} guests.",
       "capacityExceededWithBeds_one": "This room sleeps up to {{capacity}} guests (including {{beds}} extra bed).",
       "capacityExceededWithBeds_other": "This room sleeps up to {{capacity}} guests (including {{beds}} extra beds)."

@@ -33,6 +33,9 @@ namespace HotelBooking.Infrastructure.Services
             if (request.CheckinDate >= request.CheckoutDate)
                 throw new Exception("Checkout date must be after checkin date.");
 
+            if (request.CheckinDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                throw new Exception("Check-in date cannot be in the past.");
+
             var totalNights = request.CheckoutDate.DayNumber - request.CheckinDate.DayNumber;
 
             var bookingItems = new List<BookingItem>();
@@ -415,6 +418,9 @@ namespace HotelBooking.Infrastructure.Services
 
             if (request.CheckinDate >= request.CheckoutDate)
                 throw new Exception("Checkout date must be after checkin date.");
+
+            if (request.CheckinDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                throw new Exception("Check-in date cannot be in the past.");
 
             // CHANGED BY AI (2026-07-13): please review. Late-modification fee: free if modifying
             // at least 24 hours before check-in; otherwise the guest forfeits the OLD booking's

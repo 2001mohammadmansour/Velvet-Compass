@@ -21,6 +21,7 @@ export default function Navbar({ transparent = false, flush = false }) {
   // CHANGED BY AI (2026-07-13): please review — owners no longer have a separate home page, so
   // they use the same Home/nav as everyone else, with Dashboard added as a direct top-level link.
   const OWNER_NAV_LINK = { label: t('nav.dashboard'), href: '/owner/dashboard' };
+  const ADMIN_NAV_LINK = { label: t('nav.adminDashboard'), href: '/admin' };
   const role = getCurrentRole();
   const isAdmin = role === 'admin';
   const isGuest = role === 'guest';
@@ -56,7 +57,11 @@ export default function Navbar({ transparent = false, flush = false }) {
   const isActive = (href) =>
     href === '/' ? location.pathname === '/' || location.pathname === '/home' : location.pathname === href;
 
-  const navLinks = isOwner ? [...NAV_LINKS, OWNER_NAV_LINK] : NAV_LINKS;
+  const navLinks = isOwner
+    ? [...NAV_LINKS, OWNER_NAV_LINK]
+    : isAdmin
+    ? [...NAV_LINKS, ADMIN_NAV_LINK]
+    : NAV_LINKS;
 
   return (
     <nav className={`navbar${solid ? ' navbar-solid' : ''}${flush ? ' navbar-flush' : ''}`}>
@@ -93,7 +98,7 @@ export default function Navbar({ transparent = false, flush = false }) {
             subtitle={currentUser?.email || ''}
             links={[
               { to: '/profile', label: t('nav.editProfile') },
-              { to: '/my-bookings', label: `📖 ${t('nav.myBookings')}` },
+              { to: '/my-bookings', label: t('nav.myBookings') },
             ]}
             onSignOut={handleSignOut}
           />

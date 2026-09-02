@@ -833,6 +833,7 @@
     "errors": {
       "chooseDates": "يرجى اختيار تاريخي الوصول والمغادرة.",
       "checkoutAfterCheckin": "يجب أن يكون تاريخ المغادرة بعد تاريخ الوصول.",
+      "checkinPast": "لا يمكن أن يكون تاريخ الوصول في الماضي.",
       "capacityExceeded": "تتسع هذه الغرفة لحد أقصى {{capacity}} ضيوف.",
       "capacityExceededWithBeds_one": "تتسع هذه الغرفة لحد أقصى {{capacity}} ضيوف (بما في ذلك سرير إضافي واحد).",
       "capacityExceededWithBeds_other": "تتسع هذه الغرفة لحد أقصى {{capacity}} ضيوف (بما في ذلك {{beds}} أسرّة إضافية)."

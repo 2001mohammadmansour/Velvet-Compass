@@ -153,6 +153,7 @@ export default function RoomDetail() {
     setBookError('');
     if (!dates.checkIn || !dates.checkOut) { setBookError(t('roomDetail.errors.chooseDates')); return; }
     if (new Date(dates.checkIn) >= new Date(dates.checkOut)) { setBookError(t('roomDetail.errors.checkoutAfterCheckin')); return; }
+    if (dates.checkIn < new Date().toISOString().split('T')[0]) { setBookError(t('roomDetail.errors.checkinPast')); return; }
     if (guests > hardCapacity) {
       setBookError(
         maxExtraBeds
@@ -267,10 +268,10 @@ export default function RoomDetail() {
               <p className="price">${room.price}<span style={{ fontSize: 13, fontWeight: 500, color: '#6b7280' }}>{t('roomDetail.perNight')}</span></p>
 
               <label className="field-label">{t('roomDetail.checkIn')}</label>
-              <input type="date" value={dates.checkIn} onChange={(e) => setDates((d) => ({ ...d, checkIn: e.target.value }))} />
+              <input type="date" min={new Date().toISOString().split('T')[0]} value={dates.checkIn} onChange={(e) => setDates((d) => ({ ...d, checkIn: e.target.value }))} />
 
               <label className="field-label">{t('roomDetail.checkOut')}</label>
-              <input type="date" min={dates.checkIn || undefined} value={dates.checkOut} onChange={(e) => setDates((d) => ({ ...d, checkOut: e.target.value }))} />
+              <input type="date" min={dates.checkIn || new Date().toISOString().split('T')[0]} value={dates.checkOut} onChange={(e) => setDates((d) => ({ ...d, checkOut: e.target.value }))} />
 
               <label className="field-label">{t('roomDetail.guests')}</label>
               <input
