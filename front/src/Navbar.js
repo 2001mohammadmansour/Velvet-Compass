@@ -112,8 +112,8 @@ export default function Navbar({ transparent = false, flush = false }) {
             links={[
               { to: '/profile', label: t('nav.editProfile') },
               { to: '/owner/dashboard', label: t('nav.dashboard') },
-              { to: '/owner/hotel-info', label: t('nav.hotelInfo') },
-              { to: '/owner/requests', label: t('nav.hotelRequests') },
+              { to: '/owner/dashboard?tab=hotelInfo', label: t('nav.hotelInfo') },
+              { to: '/owner/dashboard?tab=requests', label: t('nav.hotelRequests') },
             ]}
             onSignOut={handleSignOut}
             triggerLabel={t('nav.ownerProfile')}

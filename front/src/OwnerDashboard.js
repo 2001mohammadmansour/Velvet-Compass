@@ -1,13 +1,30 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./ownerDashboard.css";
+import "./AdminDashboard.css";
 import * as ownerSvc from "./services/owner";
 import { getPlatformSettings } from "./services/platformSettings";
 import { getAmenities, createAmenity } from "./services/amenities";
 import HotelPricingManager from "./HotelPricingManager";
+import OwnerStats from "./OwnerStats";
+import OwnerHotelInfo from "./OwnerHotelInfo";
+import OwnerRequests from "./OwnerRequests";
 import { getCurrentUser } from "./services/auth";
+
+const OWNER_NAV_ITEMS = [
+  { key: "revenue" },
+  { key: "bookings" },
+  { key: "rooms" },
+  { key: "reviews" },
+  { key: "policies" },
+  { key: "pricing" },
+  { key: "stats" },
+  { key: "hotelInfo" },
+  { key: "requests" },
+];
+const OWNER_NAV_KEYS = OWNER_NAV_ITEMS.map((i) => i.key);
 
 const CAT_LABELS = { staff: 'Staff', location: 'Location', facilities: 'Facilities', cleanliness: 'Cleanliness', comfort: 'Comfort', value: 'Value' };
 
@@ -99,6 +116,27 @@ function groupBlockedRanges(days) {
 
 export default function OwnerDashboard() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const initialTab = (() => {
+    const q = new URLSearchParams(location.search).get("tab");
+    return OWNER_NAV_KEYS.includes(q) ? q : "revenue";
+  })();
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  const selectTab = (key) => {
+    setActiveTab(key);
+    navigate(`/owner/dashboard?tab=${key}`, { replace: true });
+  };
+
+  // Keep the tab in sync if the URL changes underneath us (e.g. a nav-menu deep link).
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get("tab");
+    if (OWNER_NAV_KEYS.includes(q) && q !== activeTab) setActiveTab(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
   const hotelId = useMemo(() => {
     const envHotelId = process.env.REACT_APP_HOTEL_ID;
     if (envHotelId) return envHotelId;
@@ -735,41 +773,44 @@ export default function OwnerDashboard() {
     } catch (err) { alert(t('ownerDashboard.errors.rejectReservationFailed') + (err.message || err)); }
   }
 
+  const embeddedTabs = { stats: <OwnerStats embedded />, hotelInfo: <OwnerHotelInfo embedded />, requests: <OwnerRequests embedded /> };
+
   return (
-    <div className="owner-dashboard">
-      <header className="od-header">
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <Link to="/ownerhome" className="cta" style={{ textDecoration: "none", display: "inline-block" }}>
-            {t('ownerDashboard.back')}
-          </Link>
-          <h1 style={{ margin: 0 }}>{t('ownerDashboard.title')}</h1>
-          <Link
-            to="/owner/requests"
-            className="cta"
-            style={{ textDecoration: "none", display: "inline-block", marginInlineStart: "auto" }}
-          >
-            {t('ownerDashboard.hotelRequests')}
-          </Link>
-        </div>
-        <p className="muted">{t('ownerDashboard.subtitle')}</p>
-        {/* CHANGED BY AI (2026-07-13): please review — was reading getCurrentUser()?.stars, a
-            field never populated anywhere in the real-backend-integrated app; now reads the
-            hotel's actual starRating via getMetrics(). */}
-        {(() => { const s = Number(metrics?.stars) || 0; return s > 0 ? (
-          <p style={{ margin: '4px 0 0', fontSize: 22, color: '#f59e0b', letterSpacing: 3 }}>
-            {'★'.repeat(s)}{'☆'.repeat(5 - s)}
-            <span style={{ fontSize: 13, color: '#6b7280', letterSpacing: 0, marginInlineStart: 8 }}>{t('ownerDashboard.starHotel', { stars: s })}</span>
-          </p>
-        ) : null; })()}
-      </header>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input type="checkbox" checked={autoAcceptBookings} onChange={toggleAutoAccept} /> {t('ownerDashboard.autoAcceptBookings')}
-        </label>
-        <div className="muted small">{t('ownerDashboard.autoAcceptHint')}</div>
-      </div>
-      {error && <div className="od-error" style={{ color: '#9b1c1c', padding: 10, borderRadius: 6, background: '#fff1f0', marginBottom: 12 }}>{error}</div>}
-      {loading && <div className="muted small" style={{ marginBottom: 12 }}>{t('ownerDashboard.loadingData')}</div>}
+    <div className="admin-root">
+      <div className="admin-body">
+        <aside className="admin-sidebar">
+          <div className="admin-sidebar-label">{t('ownerDashboard.navigation')}</div>
+          {OWNER_NAV_ITEMS.map((item) => (
+            <div
+              key={item.key}
+              className={`admin-nav-item ${activeTab === item.key ? 'active' : ''}`}
+              onClick={() => selectTab(item.key)}
+            >
+              {t(`ownerDashboard.nav.${item.key}`)}
+            </div>
+          ))}
+        </aside>
+
+        <main className="admin-main">
+          <div key={activeTab} className="admin-tab-panel">
+          <div className="admin-section-header">
+            <h2>
+              {t(`ownerDashboard.nav.${activeTab}`)}
+              {(() => { const s = Number(metrics?.stars) || 0; return s > 0 ? (
+                <span style={{ fontSize: 16, color: '#f59e0b', letterSpacing: 2, marginInlineStart: 10 }} title={t('ownerDashboard.starHotel', { stars: s })}>
+                  {'★'.repeat(s)}{'☆'.repeat(5 - s)}
+                </span>
+              ) : null; })()}
+            </h2>
+            <p>{t(`ownerDashboard.sectionDescriptions.${activeTab}`)}</p>
+          </div>
+
+          {error && <div className="od-error" style={{ color: '#9b1c1c', padding: 10, borderRadius: 6, background: '#fff1f0', marginBottom: 12 }}>{error}</div>}
+          {loading && !embeddedTabs[activeTab] && <div className="muted small" style={{ marginBottom: 12 }}>{t('ownerDashboard.loadingData')}</div>}
+
+          {embeddedTabs[activeTab] || null}
+
+          {activeTab === 'revenue' && (<>
 
       <section className="od-row od-bills">
         <h2>{t('ownerDashboard.bills.title')}</h2>
@@ -786,9 +827,9 @@ export default function OwnerDashboard() {
             <div className="label">{t('ownerDashboard.bills.netToOwner')}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               <div className="value">${Math.round(net).toLocaleString()}</div>
-              <Link to="/owner/stats" className="cta" style={{ display: 'inline-block', textDecoration: 'none' }}>
+              <button type="button" className="cta" onClick={() => selectTab('stats')}>
                 {t('ownerDashboard.bills.viewStats')}
-              </Link>
+              </button>
             </div>
           </div>
           <div className="bill-card">
@@ -875,6 +916,15 @@ export default function OwnerDashboard() {
           <p className="muted small">Shows whether your prices are lower, higher, or near the category average.</p>
         </section>
       )}
+          </>)}
+
+          {activeTab === 'bookings' && (<>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input type="checkbox" checked={autoAcceptBookings} onChange={toggleAutoAccept} /> {t('ownerDashboard.autoAcceptBookings')}
+        </label>
+        <div className="muted small">{t('ownerDashboard.autoAcceptHint')}</div>
+      </div>
 
       <section className="od-row od-calendar">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -1047,7 +1097,9 @@ export default function OwnerDashboard() {
           </div>
         </div>
       )}
+          </>)}
 
+          {activeTab === 'rooms' && (<>
       <section className="od-row od-rooms">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2>{t('ownerDashboard.rooms.title')}</h2>
@@ -1081,7 +1133,9 @@ export default function OwnerDashboard() {
           ))}
         </div>
       </section>
+          </>)}
 
+          {activeTab === 'reviews' && (<>
       <section className="od-row">
         <h2>{t('ownerDashboard.reviews.title')}</h2>
         {!hotelReviews || hotelReviews.reviewCount === 0 ? (
@@ -1135,7 +1189,9 @@ export default function OwnerDashboard() {
           </>
         )}
       </section>
+          </>)}
 
+          {activeTab === 'policies' && (<>
       <section className="od-row od-cancel">
         <h2>{t('ownerDashboard.cancellation.title')}</h2>
         <div className="cancel-row">
@@ -1264,15 +1320,21 @@ export default function OwnerDashboard() {
           }}>{hotelAmenitiesSaving ? t('ownerDashboard.amenities.saving') : t('ownerDashboard.amenities.save')}</button>
         </div>
       </section>
+          </>)}
 
+          {activeTab === 'pricing' && (<>
       {/* CHANGED BY AI (2026-07-15): please review. Seasonal/demand pricing moved from per-room-type
           to hotel scope — configured once here and applied to every room type in this hotel. */}
       <section className="od-row">
         <h2>{t('ownerDashboard.pricing.title')}</h2>
         <HotelPricingManager hotelId={hotelId} />
       </section>
+          </>)}
+          </div>
 
-      <footer style={{ marginTop: 28, opacity: .8 }} className="muted small">{t('ownerDashboard.footer')}</footer>
+          <footer style={{ marginTop: 28, opacity: .8 }} className="muted small">{t('ownerDashboard.footer')}</footer>
+        </main>
+      </div>
 
       {addRoomOpen && (
         <div className="campaign-modal-overlay" onClick={closeAddRoom}>

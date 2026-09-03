@@ -131,6 +131,91 @@ public class OwnerDashboardService : IOwnerDashboardService
         );
     }
 
+    private sealed class RoomAgg
+    {
+        public int Booked;
+        public int RoomNights;
+        public int Cancelled;
+        public decimal Revenue;
+        public int StayNights;
+        public int Stays;
+    }
+
+    public async Task<List<RoomPerformanceDto>> GetRoomPerformanceAsync(
+        long callerId, bool isAdmin, long hotelId, DateOnly? from, DateOnly? to)
+    {
+        var hotel = await _context.Hotels.FirstOrDefaultAsync(h => h.Id == hotelId)
+            ?? throw new HotelNotFoundException(hotelId);
+
+        if (hotel.OwnerId != callerId && !isAdmin)
+            throw new UnAuthoraizedOwnerException();
+
+        var bookings = await _context.Bookings
+            .Include(b => b.Items).ThenInclude(i => i.RoomType)
+            .Where(b => b.HotelId == hotelId)
+            .Where(b => (from == null || b.CheckinDate >= from) && (to == null || b.CheckinDate <= to))
+            .ToListAsync();
+
+        var roomTypes = await _context.RoomTypes
+            .Where(rt => rt.HotelId == hotelId)
+            .ToListAsync();
+
+        var map = new Dictionary<string, RoomAgg>();
+        RoomAgg Agg(string name)
+        {
+            if (!map.TryGetValue(name, out var a)) { a = new RoomAgg(); map[name] = a; }
+            return a;
+        }
+
+        // Seed every room type so ones with no activity still show as zero rows.
+        foreach (var rt in roomTypes) Agg(rt.Name);
+
+        foreach (var b in bookings)
+        {
+            var paid = b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Completed;
+            var cancelled = b.Status == BookingStatus.Cancelled;
+            if (!paid && !cancelled) continue;
+
+            foreach (var it in b.Items)
+            {
+                var a = Agg(it.RoomType?.Name ?? "—");
+                if (cancelled)
+                {
+                    a.Cancelled += 1;
+                }
+                else
+                {
+                    a.Booked += 1;
+                    a.RoomNights += it.Qty * it.Nights;
+                    a.Revenue += it.TotalPrice;
+                    a.StayNights += it.Nights;
+                    a.Stays += 1;
+                }
+            }
+        }
+
+        var totalRevenue = map.Values.Sum(a => a.Revenue);
+
+        return map
+            .Select(kv =>
+            {
+                var a = kv.Value;
+                var denom = a.Booked + a.Cancelled;
+                return new RoomPerformanceDto(
+                    kv.Key,
+                    a.Booked,
+                    a.RoomNights,
+                    a.Cancelled,
+                    denom > 0 ? Math.Round((double)a.Cancelled / denom, 4) : 0,
+                    Math.Round(a.Revenue, 2),
+                    totalRevenue > 0 ? Math.Round((double)(a.Revenue / totalRevenue), 4) : 0,
+                    a.RoomNights > 0 ? Math.Round(a.Revenue / a.RoomNights, 2) : 0,
+                    a.Stays > 0 ? Math.Round((double)a.StayNights / a.Stays, 1) : 0);
+            })
+            .OrderByDescending(r => r.RoomNights)
+            .ToList();
+    }
+
     public async Task TrackViewAsync(long hotelId)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);

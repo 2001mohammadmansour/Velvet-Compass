@@ -13,9 +13,6 @@ import OurPartners from "./OurPartners";
 import SignUp from "./SignUp";
 import Login from "./Login"
 import OwnerDashboard from "./OwnerDashboard";
-import OwnerStats from "./OwnerStats";
-import OwnerHotelInfo from "./OwnerHotelInfo";
-import OwnerRequests from "./OwnerRequests";
 import AboutUs from "./AboutUs"
 import Contact from "./Contact"
 import AllCities from "./AllCities";
@@ -82,9 +79,10 @@ export default function App() {
           <Route path="/cities" element={<AllCities />} />
           <Route path="/login" element={<Login />} />
           <Route path="/owner/dashboard" element={<OwnerRoute><OwnerDashboard /></OwnerRoute>} />
-          <Route path="/owner/stats" element={<OwnerRoute><OwnerStats /></OwnerRoute>} />
-          <Route path="/owner/hotel-info" element={<OwnerRoute><OwnerHotelInfo /></OwnerRoute>} />
-          <Route path="/owner/requests" element={<OwnerRequests />} />
+          {/* Owner sub-pages are now tabs inside the dashboard — keep the old URLs working as deep links. */}
+          <Route path="/owner/stats" element={<Navigate to="/owner/dashboard?tab=stats" replace />} />
+          <Route path="/owner/hotel-info" element={<Navigate to="/owner/dashboard?tab=hotelInfo" replace />} />
+          <Route path="/owner/requests" element={<Navigate to="/owner/dashboard?tab=requests" replace />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         </Routes>
       </div>

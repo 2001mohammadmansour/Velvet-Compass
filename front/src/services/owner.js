@@ -116,6 +116,29 @@ export async function getRevenueStats(hotelId, filters = {}) {
   return { summary, points };
 }
 
+// Per-room-type performance for a date window (attributed by check-in date). Room types with no
+// activity in the window still come back as zero rows. `from`/`to` are "YYYY-MM-DD" strings
+// (inclusive); omit for all-time.
+export async function getRoomPerformance(hotelId, { from, to } = {}) {
+  const params = new URLSearchParams();
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  const qs = params.toString();
+  const raw = await request(`/api/v1/owner/dashboard/${hotelId}/room-performance${qs ? `?${qs}` : ''}`);
+  const rows = (Array.isArray(raw) ? raw : []).map((r) => ({
+    roomType: r.roomType,
+    booked: Number(r.booked) || 0,
+    roomNights: Number(r.roomNights) || 0,
+    cancelled: Number(r.cancelled) || 0,
+    cancelRate: Number(r.cancelRate) || 0,
+    revenue: Number(r.revenue) || 0,
+    revenueShare: Number(r.revenueShare) || 0,
+    adr: Number(r.adr) || 0,
+    avgStay: Number(r.avgStay) || 0,
+  }));
+  return { rows };
+}
+
 // CHANGED BY AI (2026-07-13): the dashboard endpoint has no star-rating field, so it's fetched
 // separately from the hotel record itself and merged in — this is now the single reliable source
 // for the owner dashboard's star display (OwnerDashboard.js previously read a stale/never-set
@@ -497,5 +520,5 @@ export async function getHotelReviews(hotelId) {
   return request(`/api/v1/hotels/${hotelId}/reviews`);
 }
 
-const ownerService = { getBilling, getRevenueStats, getMetrics, getRooms, getReservations, getSettings, getHotelProfile, updateHotelProfile, updateHotelAmenities, updateRoomTypeAmenities, updateSettings, acceptReservation, rejectReservation, createReservation, toggleCampaign, updateCancelPolicy, updateRoom, deleteRoom, uploadHotelPhoto, deleteHotelPhoto, uploadRoomTypePhoto, deleteRoomTypePhoto, getRoomTypeImages, createRoom, getHotelReviews, uploadShamCashQr, getCommission, payCommission };
+const ownerService = { getBilling, getRevenueStats, getRoomPerformance, getMetrics, getRooms, getReservations, getSettings, getHotelProfile, updateHotelProfile, updateHotelAmenities, updateRoomTypeAmenities, updateSettings, acceptReservation, rejectReservation, createReservation, toggleCampaign, updateCancelPolicy, updateRoom, deleteRoom, uploadHotelPhoto, deleteHotelPhoto, uploadRoomTypePhoto, deleteRoomTypePhoto, getRoomTypeImages, createRoom, getHotelReviews, uploadShamCashQr, getCommission, payCommission };
 export default ownerService;

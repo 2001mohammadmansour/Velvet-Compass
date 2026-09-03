@@ -5,7 +5,13 @@ import "./ownerDashboard.css";
 import * as ownerSvc from "./services/owner";
 import { getCurrentUser } from "./services/auth";
 
-export default function OwnerStats() {
+const ROOM_PERF_COLS = [
+  "roomType", "booked", "roomNights", "cancelled", "cancelRate", "revenue", "revenueShare", "adr", "avgStay",
+];
+const rpTdNum = { padding: "8px 10px", textAlign: "center", whiteSpace: "nowrap" };
+const ROOM_PERIODS = ["all", "month", "quarter", "year", "last12", "custom"];
+
+export default function OwnerStats({ embedded = false }) {
   const { t } = useTranslation();
   const monthLabels = t('common.months', { returnObjects: true });
   const hotelId = useMemo(() => {
@@ -34,11 +40,43 @@ export default function OwnerStats() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [roomRows, setRoomRows] = useState([]);
+  const [roomLoading, setRoomLoading] = useState(true);
+  const [roomSort, setRoomSort] = useState({ key: "roomNights", dir: "desc" });
+  const [roomPeriod, setRoomPeriod] = useState("year"); // all | month | quarter | year | last12 | custom
+  const [roomCustom, setRoomCustom] = useState(() => {
+    const start = new Date();
+    start.setMonth(start.getMonth() - 3);
+    return { from: start.toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) };
+  });
+
   const yearOptions = useMemo(() => {
     return [currentYear - 2, currentYear - 1, currentYear];
   }, [currentYear]);
 
   const effectiveYear = chartMode === "ytd" ? currentYear : selectedYear;
+
+  // The room-performance table has its own date window, independent of the revenue chart above.
+  // Strings are "YYYY-MM-DD", inclusive; "all" sends no bounds (all-time).
+  const roomRange = useMemo(() => {
+    const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const today = new Date();
+    if (roomPeriod === "all") return {};
+    if (roomPeriod === "custom") return { from: roomCustom.from, to: roomCustom.to };
+    if (roomPeriod === "month") {
+      return { from: ymd(new Date(today.getFullYear(), today.getMonth(), 1)), to: ymd(new Date(today.getFullYear(), today.getMonth() + 1, 0)) };
+    }
+    if (roomPeriod === "last12") {
+      const start = new Date(today);
+      start.setFullYear(start.getFullYear() - 1);
+      return { from: ymd(start), to: ymd(today) };
+    }
+    if (roomPeriod === "quarter") {
+      const qs = Math.floor(today.getMonth() / 3) * 3;
+      return { from: ymd(new Date(today.getFullYear(), qs, 1)), to: ymd(new Date(today.getFullYear(), qs + 3, 0)) };
+    }
+    return { from: ymd(new Date(today.getFullYear(), 0, 1)), to: ymd(new Date(today.getFullYear(), 11, 31)) };
+  }, [roomPeriod, roomCustom]);
 
   useEffect(() => {
     let mounted = true;
@@ -106,6 +144,46 @@ export default function OwnerStats() {
       mounted = false;
     };
   }, [chartMode, customEndDate, customStartDate, effectiveYear, hotelId, selectedMonth, selectedQuarter, t]);
+
+  useEffect(() => {
+    let mounted = true;
+    setRoomLoading(true);
+    ownerSvc.getRoomPerformance(hotelId, roomRange)
+      .then((res) => { if (mounted) setRoomRows(Array.isArray(res?.rows) ? res.rows : []); })
+      .catch(() => { if (mounted) setRoomRows([]); })
+      .finally(() => { if (mounted) setRoomLoading(false); });
+    return () => { mounted = false; };
+  }, [hotelId, roomRange]);
+
+  const sortedRoomRows = useMemo(() => {
+    const rows = [...roomRows];
+    const { key, dir } = roomSort;
+    rows.sort((a, b) => {
+      if (key === "roomType") return dir === "asc" ? a.roomType.localeCompare(b.roomType) : b.roomType.localeCompare(a.roomType);
+      const av = Number(a[key]) || 0;
+      const bv = Number(b[key]) || 0;
+      return dir === "asc" ? av - bv : bv - av;
+    });
+    return rows;
+  }, [roomRows, roomSort]);
+
+  const roomHighlights = useMemo(() => {
+    const active = roomRows.filter((r) => r.booked > 0 || r.cancelled > 0);
+    if (active.length === 0) return null;
+    const mostBooked = [...active].sort((a, b) => b.roomNights - a.roomNights)[0];
+    const withCancels = active.filter((r) => r.cancelled > 0);
+    const mostCancelled = withCancels.length
+      ? [...withCancels].sort((a, b) => b.cancelRate - a.cancelRate || b.cancelled - a.cancelled)[0]
+      : null;
+    const topEarner = [...active].sort((a, b) => b.revenue - a.revenue)[0];
+    return { mostBooked, mostCancelled, topEarner };
+  }, [roomRows]);
+
+  const toggleRoomSort = (key) => {
+    setRoomSort((prev) => (prev.key === key
+      ? { key, dir: prev.dir === "desc" ? "asc" : "desc" }
+      : { key, dir: key === "roomType" ? "asc" : "desc" }));
+  };
 
   const lineChart = useMemo(() => {
     const pointsSource = chartPoints.length ? chartPoints : [{ label: "-", value: 0 }];
@@ -245,19 +323,23 @@ export default function OwnerStats() {
     : 1;
 
   return (
-    <div className="owner-dashboard">
-      <header className="od-header">
-        <h1>{t('ownerStats.title')}</h1>
-        <p className="muted">{t('ownerStats.subtitle')}</p>
-      </header>
+    <div className={embedded ? "" : "owner-dashboard"}>
+      {!embedded && (
+        <header className="od-header">
+          <h1>{t('ownerStats.title')}</h1>
+          <p className="muted">{t('ownerStats.subtitle')}</p>
+        </header>
+      )}
       {error && <div className="od-error" style={{ color: "#9b1c1c", padding: 10, borderRadius: 6, background: "#fff1f0", marginBottom: 12 }}>{error}</div>}
       {loading && <div className="muted small" style={{ marginBottom: 12 }}>{t('ownerStats.loading')}</div>}
 
-      <div style={{ marginBottom: 14 }}>
-        <Link to="/owner/dashboard" className="cta" style={{ textDecoration: "none", display: "inline-block" }}>
-          {t('ownerStats.backToDashboard')}
-        </Link>
-      </div>
+      {!embedded && (
+        <div style={{ marginBottom: 14 }}>
+          <Link to="/owner/dashboard" className="cta" style={{ textDecoration: "none", display: "inline-block" }}>
+            {t('ownerStats.backToDashboard')}
+          </Link>
+        </div>
+      )}
 
       <section className="od-row">
         <h2>{t('ownerStats.revenuePeriods')}</h2>
@@ -430,6 +512,111 @@ export default function OwnerStats() {
                   : t('ownerStats.descriptions.yearly')}{t('ownerStats.descriptions.suffix')}
           </p>
         </div>
+      </section>
+
+      <section className="od-row">
+        <h2>{t('ownerStats.roomPerf.title')}</h2>
+        <p className="muted small" style={{ marginTop: -8, marginBottom: 14 }}>{t('ownerStats.roomPerf.subtitle')}</p>
+
+        <div className="revenue-mode-switch" style={{ marginBottom: 12 }}>
+          {ROOM_PERIODS.map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={`cta ${roomPeriod === p ? 'active' : ''}`}
+              onClick={() => setRoomPeriod(p)}
+            >
+              {t(`ownerStats.roomPerf.period.${p}`)}
+            </button>
+          ))}
+        </div>
+        {roomPeriod === 'custom' && (
+          <div className="revenue-filters" style={{ marginBottom: 14 }}>
+            <input
+              type="date"
+              value={roomCustom.from}
+              max={roomCustom.to}
+              onChange={(e) => setRoomCustom((c) => ({ ...c, from: e.target.value }))}
+            />
+            <input
+              type="date"
+              value={roomCustom.to}
+              min={roomCustom.from}
+              onChange={(e) => setRoomCustom((c) => ({ ...c, to: e.target.value }))}
+            />
+          </div>
+        )}
+
+        {roomLoading ? (
+          <p className="muted small">{t('ownerStats.roomPerf.loading')}</p>
+        ) : sortedRoomRows.length === 0 ? (
+          <p className="muted small">{t('ownerStats.roomPerf.empty')}</p>
+        ) : (
+          <>
+            {roomHighlights && (
+              <div className="metrics-grid" style={{ marginBottom: 16 }}>
+                <div className="metric">
+                  <div className="m-num" style={{ fontSize: 16 }}>{roomHighlights.mostBooked.roomType}</div>
+                  <div className="m-label">{t('ownerStats.roomPerf.mostBooked')} · {t('ownerStats.roomPerf.nightsUnit', { count: roomHighlights.mostBooked.roomNights })}</div>
+                </div>
+                <div className="metric">
+                  <div className="m-num" style={{ fontSize: 16 }}>{roomHighlights.mostCancelled ? roomHighlights.mostCancelled.roomType : t('ownerStats.roomPerf.none')}</div>
+                  <div className="m-label">
+                    {t('ownerStats.roomPerf.mostCancelled')}
+                    {roomHighlights.mostCancelled ? ` · ${Math.round(roomHighlights.mostCancelled.cancelRate * 100)}%` : ''}
+                  </div>
+                </div>
+                <div className="metric">
+                  <div className="m-num" style={{ fontSize: 16 }}>{roomHighlights.topEarner.roomType}</div>
+                  <div className="m-label">{t('ownerStats.roomPerf.topEarner')} · {formatMoney(roomHighlights.topEarner.revenue)}</div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                <thead>
+                  <tr>
+                    {ROOM_PERF_COLS.map((key) => (
+                      <th
+                        key={key}
+                        onClick={() => toggleRoomSort(key)}
+                        style={{
+                          padding: '8px 10px',
+                          borderBottom: '2px solid #e5e7eb',
+                          textAlign: key === 'roomType' ? 'start' : 'center',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          color: roomSort.key === key ? '#1a2a4a' : '#6b7280',
+                          fontWeight: 700,
+                          userSelect: 'none',
+                        }}
+                      >
+                        {t(`ownerStats.roomPerf.col.${key}`)}
+                        {roomSort.key === key ? (roomSort.dir === 'desc' ? ' ▾' : ' ▴') : ''}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedRoomRows.map((r) => (
+                    <tr key={r.roomType} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      <td style={{ padding: '8px 10px', fontWeight: 600 }}>{r.roomType}</td>
+                      <td style={rpTdNum}>{r.booked}</td>
+                      <td style={rpTdNum}>{r.roomNights}</td>
+                      <td style={rpTdNum}>{r.cancelled}</td>
+                      <td style={rpTdNum}>{r.booked + r.cancelled > 0 ? `${Math.round(r.cancelRate * 100)}%` : '—'}</td>
+                      <td style={rpTdNum}>{formatMoney(r.revenue)}</td>
+                      <td style={rpTdNum}>{Math.round(r.revenueShare * 100)}%</td>
+                      <td style={rpTdNum}>{r.roomNights > 0 ? formatMoney(r.adr) : '—'}</td>
+                      <td style={rpTdNum}>{r.avgStay > 0 ? r.avgStay.toFixed(1) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

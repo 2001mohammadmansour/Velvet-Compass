@@ -15,7 +15,7 @@ const initialForm = {
 };
 const MAX_HOTEL_PHOTOS = 8;
 
-export default function OwnerHotelInfo() {
+export default function OwnerHotelInfo({ embedded = false }) {
   const { t } = useTranslation();
   const hotelId = useMemo(() => {
     const envHotelId = process.env.REACT_APP_HOTEL_ID;
@@ -220,17 +220,21 @@ export default function OwnerHotelInfo() {
   }
 
   return (
-    <div className="owner-dashboard">
-      <header className="od-header">
-        <h1>{t('ownerHotelInfo.title')}</h1>
-        <p className="muted">{t('ownerHotelInfo.subtitle')}</p>
-      </header>
+    <div className={embedded ? "" : "owner-dashboard"}>
+      {!embedded && (
+        <>
+          <header className="od-header">
+            <h1>{t('ownerHotelInfo.title')}</h1>
+            <p className="muted">{t('ownerHotelInfo.subtitle')}</p>
+          </header>
 
-      <div style={{ marginBottom: 14 }}>
-        <Link to="/ownerhome" className="cta" style={{ textDecoration: "none", display: "inline-block" }}>
-          {t('ownerHotelInfo.backToOwnerHome')}
-        </Link>
-      </div>
+          <div style={{ marginBottom: 14 }}>
+            <Link to="/ownerhome" className="cta" style={{ textDecoration: "none", display: "inline-block" }}>
+              {t('ownerHotelInfo.backToOwnerHome')}
+            </Link>
+          </div>
+        </>
+      )}
 
       {loading && <div className="muted small" style={{ marginBottom: 12 }}>{t('ownerHotelInfo.loadingProfile')}</div>}
       {error && <div className="od-error" style={{ color: "#9b1c1c", padding: 10, borderRadius: 6, background: "#fff1f0", marginBottom: 12 }}>{error}</div>}

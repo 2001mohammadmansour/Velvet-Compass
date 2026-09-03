@@ -125,21 +125,23 @@ export default function AdminDashboard() {
 
         {/* Main */}
         <main className="admin-main">
-          <div className="admin-section-header">
-            <h2>
-              {NAV_ITEMS.find((n) => n.key === activeTab)?.icon}{' '}
-              {NAV_ITEMS.find((n) => n.key === activeTab)?.label}
-            </h2>
-            <p>{SECTION_DESCRIPTIONS[activeTab]}</p>
-          </div>
+          <div key={activeTab} className="admin-tab-panel">
+            <div className="admin-section-header">
+              <h2>
+                {NAV_ITEMS.find((n) => n.key === activeTab)?.icon}{' '}
+                {NAV_ITEMS.find((n) => n.key === activeTab)?.label}
+              </h2>
+              <p>{SECTION_DESCRIPTIONS[activeTab]}</p>
+            </div>
 
-          {activeTab === 'overview' && <OverviewTab onTabChange={setActiveTab} />}
-          {activeTab === 'hotels' && <HotelsAnalytics />}
-          {activeTab === 'stats' && <AdminStats />}
-          {activeTab === 'commission' && <CommissionAdmin />}
-          {activeTab === 'users' && <AdminUsers />}
-          {activeTab === 'requests' && <HotelRequests />}
-          {activeTab === 'amenities' && <AmenitiesAdmin />}
+            {activeTab === 'overview' && <OverviewTab onTabChange={setActiveTab} />}
+            {activeTab === 'hotels' && <HotelsAnalytics />}
+            {activeTab === 'stats' && <AdminStats />}
+            {activeTab === 'commission' && <CommissionAdmin />}
+            {activeTab === 'users' && <AdminUsers />}
+            {activeTab === 'requests' && <HotelRequests />}
+            {activeTab === 'amenities' && <AmenitiesAdmin />}
+          </div>
         </main>
       </div>
     </div>

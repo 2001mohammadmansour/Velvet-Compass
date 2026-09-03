@@ -263,6 +263,29 @@
     "autoAcceptBookings": "Auto-accept bookings",
     "autoAcceptHint": "When off, new bookings arrive as pending and require approval.",
     "loadingData": "Loading data...",
+    "navigation": "Navigation",
+    "nav": {
+      "revenue": "Revenue",
+      "bookings": "Bookings & Calendar",
+      "rooms": "Rooms",
+      "reviews": "Reviews",
+      "policies": "Policies & Amenities",
+      "pricing": "Seasonal Pricing",
+      "stats": "Statistics",
+      "hotelInfo": "Hotel Info",
+      "requests": "Hotel Requests"
+    },
+    "sectionDescriptions": {
+      "revenue": "Your earnings, the platform's cut, and the commission you owe.",
+      "bookings": "Your booking calendar, upcoming stays, and pending requests to approve.",
+      "rooms": "Add, edit, and manage availability for your room types.",
+      "reviews": "What guests are saying about your hotel.",
+      "policies": "Cancellation policy, breakfast, and hotel amenities.",
+      "pricing": "Seasonal and demand-based pricing rules for all your rooms.",
+      "stats": "Revenue trends and performance over time.",
+      "hotelInfo": "Your hotel's name, description, photos, and Sham Cash wallet.",
+      "requests": "Change requests you've sent to the platform admin."
+    },
     "bills": {
       "title": "Bills",
       "grossEarnings": "Gross Earnings",
@@ -517,6 +540,36 @@
       "label": "Label",
       "revenue": "Revenue",
       "noData": "No data"
+    },
+    "roomPerf": {
+      "title": "Room Performance",
+      "subtitle": "How each room type performed over the selected period. Click a column to sort.",
+      "loading": "Loading room performance...",
+      "empty": "No room types yet.",
+      "period": {
+        "all": "All time",
+        "month": "This month",
+        "year": "This year",
+        "last12": "Last 12 months",
+        "quarter": "This quarter",
+        "custom": "Custom"
+      },
+      "mostBooked": "Most booked",
+      "mostCancelled": "Most cancelled",
+      "topEarner": "Top earner",
+      "nightsUnit": "{{count}} nights",
+      "none": "—",
+      "col": {
+        "roomType": "Room type",
+        "booked": "Booked",
+        "roomNights": "Room-nights",
+        "cancelled": "Cancelled",
+        "cancelRate": "Cancel rate",
+        "revenue": "Revenue",
+        "revenueShare": "Rev share",
+        "adr": "ADR",
+        "avgStay": "Avg stay"
+      }
     }
   },
   "adminDashboard": {

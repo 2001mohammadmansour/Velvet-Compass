@@ -37,7 +37,7 @@ function StatusBadge({ status }) {
   return <span className={`orq-badge ${s.cls}`}>{s.label}</span>;
 }
 
-export default function OwnerRequests() {
+export default function OwnerRequests({ embedded = false }) {
   const { t } = useTranslation();
   const owner = useMemo(() => {
     const user = getCurrentUser() || {};
@@ -149,17 +149,21 @@ export default function OwnerRequests() {
   }
 
   return (
-    <div className="owner-dashboard">
-      <header className="od-header">
-        <h1>{t('ownerRequests.title')}</h1>
-        <p className="muted">{t('ownerRequests.subtitle')}</p>
-      </header>
+    <div className={embedded ? "" : "owner-dashboard"}>
+      {!embedded && (
+        <>
+          <header className="od-header">
+            <h1>{t('ownerRequests.title')}</h1>
+            <p className="muted">{t('ownerRequests.subtitle')}</p>
+          </header>
 
-      <div style={{ marginBottom: 14 }}>
-        <Link to="/ownerhome" className="cta" style={{ textDecoration: 'none', display: 'inline-block' }}>
-          {t('ownerRequests.backToOwnerHome')}
-        </Link>
-      </div>
+          <div style={{ marginBottom: 14 }}>
+            <Link to="/ownerhome" className="cta" style={{ textDecoration: 'none', display: 'inline-block' }}>
+              {t('ownerRequests.backToOwnerHome')}
+            </Link>
+          </div>
+        </>
+      )}
 
       {error && <div className="orq-alert orq-alert-error">{error}</div>}
       {success && <div className="orq-alert orq-alert-success">{success}</div>}

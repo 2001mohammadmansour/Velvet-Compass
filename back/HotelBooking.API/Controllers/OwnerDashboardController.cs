@@ -27,6 +27,13 @@ public class OwnerDashboardController : ControllerBase
         return Ok(await _dashboardService.GetRevenueByDateRangeAsync(User.GetUserId(), isAdmin, request));
     }
 
+    [HttpGet("{hotelId:long}/room-performance")]
+    public async Task<IActionResult> GetRoomPerformance(long hotelId, [FromQuery] DateOnly? from, [FromQuery] DateOnly? to)
+    {
+        var isAdmin = User.IsInRole("Admin");
+        return Ok(await _dashboardService.GetRoomPerformanceAsync(User.GetUserId(), isAdmin, hotelId, from, to));
+    }
+
     [HttpPost("{hotelId:long}/track-view")]
     [AllowAnonymous]
     public async Task<IActionResult> TrackView(long hotelId)

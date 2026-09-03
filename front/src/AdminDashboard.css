@@ -204,6 +204,20 @@
   padding: 32px;
 }
 
+/* ===== TAB PANEL TRANSITION ===== */
+/* Keyed on the active tab so it replays on every switch. Subtle fade + tiny rise only —
+   no horizontal slide (the sidebar sections have no spatial order). Off under reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .admin-tab-panel {
+    animation: admin-tab-in 0.16s ease both;
+  }
+}
+
+@keyframes admin-tab-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ===== SECTION HEADER ===== */
 .admin-section-header {
   margin-bottom: 28px;
