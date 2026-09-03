@@ -1,0 +1,13 @@
+# Without this, `COPY . .` in the Dockerfile copies the host's (Windows) node_modules over the
+# Linux one that `npm install` just built inside the image — which breaks the build.
+node_modules
+build
+npm-debug.log*
+
+# Not needed for the production (static) build
+server
+README.md
+Dockerfile
+.dockerignore
+.git
+.gitignore

@@ -1,0 +1,11 @@
+# Keep host build output (and Windows-specific artifacts) out of the build context so
+# `dotnet publish` inside the image always builds from clean sources.
+**/bin
+**/obj
+.vs
+.vscode
+.git
+.gitignore
+Dockerfile
+.dockerignore
+**/wwwroot/uploads

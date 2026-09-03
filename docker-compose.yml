@@ -26,6 +26,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Server=db,1433;Database=HotelBookingDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=true;"
+      # Public host URL of this API — used to build absolute URLs for uploaded images
+      # (overrides Uploads:BaseUrl in appsettings.json, which points at the non-Docker port).
+      Uploads__BaseUrl: "http://localhost:5000"
     ports:
       - "5000:8080"
     depends_on:
@@ -36,6 +39,11 @@ services:
     build:
       context: ./front
       dockerfile: Dockerfile
+      args:
+        # Baked into the static bundle at build time. Must be the API's public origin as seen
+        # from the browser (the published "back" port below) with NO /api suffix — the frontend
+        # code already adds the /api/v1/... path itself.
+        REACT_APP_API_BASE_URL: "${REACT_APP_API_BASE_URL:-http://localhost:5000}"
     container_name: velvet-compass-front
     ports:
       - "3000:80"
