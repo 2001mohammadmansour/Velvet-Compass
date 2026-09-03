@@ -1143,6 +1143,21 @@
       "owed": "Owed",
       "claimed": "Owner says paid",
       "sender": "Sent from"
+    },
+    "breakdown": {
+      "title": "Unpaid commissions",
+      "booking": "Booking",
+      "stay": "Stay",
+      "basis": "Basis",
+      "kept": "Owner kept",
+      "commission": "Commission",
+      "state": "Status",
+      "owed": "Owed",
+      "awaiting": "Owner says paid",
+      "stayBasis": "Completed stay",
+      "cancellationBasis": "Cancellation penalty",
+      "count_one": "{{count}} unpaid booking",
+      "count_other": "{{count}} unpaid bookings"
     }
   }
 }

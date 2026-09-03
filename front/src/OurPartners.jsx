@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { getCurrentRole } from "./services/auth";
 import {
@@ -66,7 +67,7 @@ function PartnerFormModal({ initialPartner, onSave, onCancel, saving }) {
     );
   };
 
-  return (
+  return createPortal((
     <div className="partner-form-overlay" onClick={onCancel}>
       <div className="partner-form-modal" onClick={(e) => e.stopPropagation()}>
         <h2>{isEditing ? t('partners.form.editTitle') : t('partners.form.addTitle')}</h2>
@@ -138,7 +139,7 @@ function PartnerFormModal({ initialPartner, onSave, onCancel, saving }) {
         </form>
       </div>
     </div>
-  );
+  ), document.body);
 }
 
 export default function OurPartners() {
@@ -181,7 +182,12 @@ export default function OurPartners() {
   const openWebsite = (partner) => {
     if (!partner.websiteUrl) return;
     registerPartnerClick(partner.id);
-    window.open(partner.websiteUrl, "_blank", "noopener,noreferrer");
+    // A URL saved without a scheme ("hertz.com") is treated as relative and opens
+    // localhost/hertz.com — force an absolute https:// link.
+    const url = /^https?:\/\//i.test(partner.websiteUrl)
+      ? partner.websiteUrl
+      : `https://${partner.websiteUrl}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleAddPartner = async (newPartner, file) => {

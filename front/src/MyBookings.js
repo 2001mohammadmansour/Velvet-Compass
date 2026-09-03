@@ -114,11 +114,10 @@ function isCompleted(b) {
   return String(b.checkOut) < today;
 }
 
-// CHANGED BY AI (2026-07-13): please review — removed the old "pending bookings are always free
-// to cancel" special case, since the real backend (BookingService.CancelAsync) doesn't special-
-// case Pending at all; it applies the same hotel policy regardless of status. This now matches
-// exactly what the backend actually charges.
+// A booking the hotel hasn't accepted yet is just a request — cancelling it is always free,
+// no penalty. Matches BookingService.CancelAsync, which forces the penalty to 0 for Pending.
 function isCancellationFree(booking) {
+  if (booking.status === 'pending') return true;
   const policy = booking.cancelPolicy || { freeCancel: true, daysBefore: 2 };
   if (!policy.freeCancel) return false;
   const daysUntilCheckIn = Math.floor((new Date(booking.checkIn) - new Date()) / (1000 * 60 * 60 * 24));

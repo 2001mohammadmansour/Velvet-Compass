@@ -157,13 +157,36 @@ namespace HotelBooking.Infrastructure.Services
                 if (owed > 0m || awaiting > 0m)
                 {
                     var awaitingBooking = hb.FirstOrDefault(IsAwaitingConfirmation);
+
+                    var lines = new List<CommissionBookingLineDto>();
+                    foreach (var b in hb.Where(b => IsOwed(b, today))
+                                        .OrderBy(b => b.CheckoutDate))
+                        lines.Add(LineFor(b, today, "owed"));
+                    foreach (var b in hb.Where(IsAwaitingConfirmation)
+                                        .OrderBy(b => b.CheckoutDate))
+                        lines.Add(LineFor(b, today, "awaiting"));
+
                     rows.Add(new HotelCommissionRowDto(hotel.Id, hotel.Name, hotel.Owner?.UserName ?? "", owed, awaiting,
-                        awaitingBooking?.CommissionSenderWallet, awaitingBooking?.CommissionSenderName));
+                        awaitingBooking?.CommissionSenderWallet, awaitingBooking?.CommissionSenderName, lines));
                 }
             }
 
             return new PlatformCommissionDto(pending, collected,
                 rows.OrderByDescending(r => r.Owed + r.AwaitingConfirmation).ToList());
+        }
+
+        private static CommissionBookingLineDto LineFor(Booking b, DateOnly today, string state)
+        {
+            var kept = state == "awaiting" && b.CommissionAmount != null
+                ? Math.Round(b.CommissionAmount.Value / Rate, 2)
+                : KeptAmount(b, today);
+            var commission = state == "awaiting" && b.CommissionAmount != null
+                ? b.CommissionAmount.Value
+                : Math.Round(kept * Rate, 2);
+            return new CommissionBookingLineDto(
+                b.Id, b.CheckinDate, b.CheckoutDate,
+                b.Status == BookingStatus.Cancelled ? "cancellation" : "stay",
+                kept, commission, state);
         }
 
         private static CommissionSummaryDto Summarise(Hotel hotel, List<Booking> bookings)

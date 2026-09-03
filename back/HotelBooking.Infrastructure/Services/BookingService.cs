@@ -267,7 +267,11 @@ namespace HotelBooking.Infrastructure.Services
             if (booking.Status == BookingStatus.Completed)
                 throw new Exception("Cannot cancel a completed booking.");
 
-            var penalty = ComputeCancellationPenalty(booking.Hotel, booking.CheckinDate, booking.TotalAmount);
+            // A booking the hotel never accepted is just a request — cancelling it is always free,
+            // full refund, no penalty (and so no platform commission).
+            var penalty = booking.Status == BookingStatus.Pending
+                ? 0m
+                : ComputeCancellationPenalty(booking.Hotel, booking.CheckinDate, booking.TotalAmount);
             var refund = Math.Round(booking.TotalAmount - penalty, 2);
 
             booking.Status = BookingStatus.Cancelled;

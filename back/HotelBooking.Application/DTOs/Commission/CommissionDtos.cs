@@ -31,6 +31,19 @@ namespace HotelBooking.Application.DTOs.Commission
         decimal Owed,
         decimal AwaitingConfirmation,
         string? SenderWallet = null,
-        string? SenderName = null
+        string? SenderName = null,
+        List<CommissionBookingLineDto>? Lines = null
+    );
+
+    // One unpaid booking behind a hotel's commission total — shown when the admin
+    // expands a row to see exactly which bookings make it up.
+    public record CommissionBookingLineDto(
+        long BookingId,
+        DateOnly CheckinDate,
+        DateOnly CheckoutDate,
+        string Basis,          // "stay" (completed) or "cancellation" (penalty)
+        decimal KeptAmount,    // what the owner kept — the 15% base
+        decimal Commission,    // 15% of KeptAmount
+        string State           // "owed" or "awaiting"
     );
 }

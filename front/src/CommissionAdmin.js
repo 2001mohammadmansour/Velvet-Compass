@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCommissionOverview, confirmCommission, rejectCommission } from './services/commission';
 import { getPlatformSettings, updatePlatformShamCash, uploadPlatformShamCashQr } from './services/platformSettings';
@@ -12,6 +12,7 @@ export default function CommissionAdmin() {
   const [error, setError] = useState('');
   const [confirmingId, setConfirmingId] = useState(null);
   const [actingId, setActingId] = useState(null); // { hotelId, action }
+  const [expandedId, setExpandedId] = useState(null);
 
   const [wallet, setWallet] = useState('');
   const [qrUrl, setQrUrl] = useState('');
@@ -142,9 +143,27 @@ export default function CommissionAdmin() {
               </tr>
             </thead>
             <tbody>
-              {data.hotels.map((h) => (
-                <tr key={h.hotelId}>
-                  <td style={td}>{h.hotelName}<div className="muted small">{h.ownerName}</div></td>
+              {data.hotels.map((h) => {
+                const lines = Array.isArray(h.lines) ? h.lines : [];
+                const isOpen = expandedId === h.hotelId;
+                return (
+                <Fragment key={h.hotelId}>
+                <tr>
+                  <td style={td}>
+                    {lines.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isOpen ? null : h.hotelId)}
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', textAlign: 'start', color: '#1d4ed8' }}
+                      >
+                        {isOpen ? '▾' : '▸'} {h.hotelName}
+                        <span className="muted small" style={{ marginInlineStart: 6 }}>
+                          ({t('commission.breakdown.count', { count: lines.length })})
+                        </span>
+                      </button>
+                    ) : h.hotelName}
+                    <div className="muted small">{h.ownerName}</div>
+                  </td>
                   <td style={td}>{money(h.owed)}</td>
                   <td style={td}>{h.awaitingConfirmation > 0 ? money(h.awaitingConfirmation) : '—'}</td>
                   <td style={td}>
@@ -168,7 +187,50 @@ export default function CommissionAdmin() {
                     )}
                   </td>
                 </tr>
-              ))}
+                {isOpen && (
+                  <tr>
+                    <td colSpan={5} style={{ ...td, background: '#f8fafc', padding: '10px 14px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                        {t('commission.breakdown.title')}
+                      </div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr>
+                            <th style={subTh}>{t('commission.breakdown.booking')}</th>
+                            <th style={subTh}>{t('commission.breakdown.stay')}</th>
+                            <th style={subTh}>{t('commission.breakdown.basis')}</th>
+                            <th style={subTh}>{t('commission.breakdown.kept')}</th>
+                            <th style={subTh}>{t('commission.breakdown.commission')}</th>
+                            <th style={subTh}>{t('commission.breakdown.state')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {lines.map((ln) => (
+                            <tr key={ln.bookingId}>
+                              <td style={subTd}>#{ln.bookingId}</td>
+                              <td style={subTd}>{ln.checkinDate} → {ln.checkoutDate}</td>
+                              <td style={subTd}>
+                                {ln.basis === 'cancellation'
+                                  ? t('commission.breakdown.cancellationBasis')
+                                  : t('commission.breakdown.stayBasis')}
+                              </td>
+                              <td style={subTd}>{money(ln.keptAmount)}</td>
+                              <td style={subTd}>{money(ln.commission)}</td>
+                              <td style={subTd}>
+                                {ln.state === 'awaiting'
+                                  ? t('commission.breakdown.awaiting')
+                                  : t('commission.breakdown.owed')}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -179,3 +241,5 @@ export default function CommissionAdmin() {
 
 const th = { textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #e2e8f0', fontSize: 13 };
 const td = { padding: '8px 10px', borderBottom: '1px solid #f1f5f9', fontSize: 14, verticalAlign: 'top' };
+const subTh = { textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid #e2e8f0', fontSize: 12, color: '#64748b' };
+const subTd = { padding: '6px 8px', borderBottom: '1px solid #eef2f7', fontSize: 13 };
