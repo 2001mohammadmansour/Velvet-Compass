@@ -44,64 +44,33 @@ public class AdminDashboardService : IAdminDashboardService
         var cancellationRevenue = cancelledBookings.Sum(b => b.CancellationPenalty ?? 0);
         var totalPlatformRevenue = platformRevenue + cancellationRevenue;
 
-        // ─── Top Hotels By Revenue ────────────────────────────
-        var topByRevenue = bookings
-            .Where(b => b.Status == BookingStatus.Confirmed ||
-                        b.Status == BookingStatus.Completed)
-            .GroupBy(b => new
+        // ─── Per-hotel performance (every hotel, zero-activity included) ──────
+        var allHotels = await _context.Hotels.ToListAsync();
+        var bookingsByHotel = bookings
+            .GroupBy(b => b.HotelId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var hotelRows = allHotels
+            .Select(h =>
             {
-                b.HotelId,
-                b.Hotel.Name,
-                b.Hotel.City,
-                b.Hotel.Country,
-                b.Hotel.StarRating
+                var hb = bookingsByHotel.TryGetValue(h.Id, out var list) ? list : new List<Domain.Entities.Booking>();
+                var paid = hb.Where(b => b.Status == BookingStatus.Confirmed ||
+                                         b.Status == BookingStatus.Completed).ToList();
+                return new HotelRankingDto(
+                    h.Id,
+                    h.Name,
+                    h.City,
+                    h.Country,
+                    h.StarRating,
+                    paid.Sum(b => b.TotalAmount),
+                    paid.Sum(b => b.PlatformFee),
+                    paid.Count,                                              // "bookings" = confirmed/completed
+                    hb.Count(b => b.Status == BookingStatus.Cancelled));
             })
-            .Select(g => new HotelRankingDto(
-                g.Key.HotelId,
-                g.Key.Name,
-                g.Key.City,
-                g.Key.Country,
-                g.Key.StarRating,
-                g.Sum(b => b.TotalAmount),
-                g.Sum(b => b.PlatformFee),
-                g.Count(),
-                bookings.Count(b => b.HotelId == g.Key.HotelId &&
-                                    b.Status == BookingStatus.Cancelled)
-            ))
             .OrderByDescending(h => h.GrossRevenue)
-            .Take(10)
             .ToList();
 
-        // ─── Top Hotels By Bookings ───────────────────────────
-        var topByBookings = bookings
-            .GroupBy(b => new
-            {
-                b.HotelId,
-                b.Hotel.Name,
-                b.Hotel.City,
-                b.Hotel.Country,
-                b.Hotel.StarRating
-            })
-            .Select(g => new HotelRankingDto(
-                g.Key.HotelId,
-                g.Key.Name,
-                g.Key.City,
-                g.Key.Country,
-                g.Key.StarRating,
-                g.Where(b => b.Status == BookingStatus.Confirmed ||
-                             b.Status == BookingStatus.Completed)
-                 .Sum(b => b.TotalAmount),
-                g.Where(b => b.Status == BookingStatus.Confirmed ||
-                             b.Status == BookingStatus.Completed)
-                 .Sum(b => b.PlatformFee),
-                g.Count(),
-                g.Count(b => b.Status == BookingStatus.Cancelled)
-            ))
-            .OrderByDescending(h => h.BookingsCount)
-            .Take(10)
-            .ToList();
-
-        var totalHotels = await _context.Hotels.CountAsync();
+        var totalHotels = allHotels.Count;
         var totalUsers = await _context.Users.CountAsync();
 
         return new AdminDashboardDto(
@@ -115,8 +84,7 @@ public class AdminDashboardService : IAdminDashboardService
                 totalHotels,
                 totalUsers
             ),
-            topByRevenue,
-            topByBookings
+            hotelRows
         );
     }
 

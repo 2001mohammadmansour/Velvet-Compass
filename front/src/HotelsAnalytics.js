@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAdminDashboard, getRoomTypesForHotel, deleteReview } from './services/hotels';
 import { getRoomReviews } from './services/guest';
@@ -134,7 +134,7 @@ function RoomTypeCard({ hotelId, room }) {
 
 // New room-type drill-down for a hotel row in the admin analytics ranking tables (previously
 // there was no way to see a hotel's rooms here at all).
-function HotelRoomsRow({ hotelId }) {
+function HotelRoomsRow({ hotelId, colSpan = 5 }) {
   const { t } = useTranslation();
   const [rooms, setRooms] = useState(null);
   const [error, setError] = useState('');
@@ -149,7 +149,7 @@ function HotelRoomsRow({ hotelId }) {
 
   return (
     <tr className="ha-row-active">
-      <td colSpan={5} style={{ padding: '12px 14px' }}>
+      <td colSpan={colSpan} style={{ padding: '12px 14px' }}>
         {error && <p className="ha-hint" style={{ color: '#e05555' }}>{error}</p>}
         {!error && !rooms && <p className="ha-hint">{t('hotelsAnalytics.loadingRooms')}</p>}
         {!error && rooms && rooms.length === 0 && <p className="ha-hint">{t('hotelsAnalytics.noRoomTypesYet')}</p>}
@@ -188,52 +188,99 @@ function BarChart({ items, valueKey, labelKey, color = '#6C8BC7', formatValue })
   );
 }
 
-function RankingTable({ title, icon, items, valueKey, valueLabel, formatValue }) {
+const HOTEL_PERF_COLS = ['hotel', 'stars', 'bookings', 'revenue', 'platformCut', 'cancelled', 'cancelRate'];
+
+function HotelPerfTable({ hotels }) {
   const { t } = useTranslation();
   const [expandedHotelId, setExpandedHotelId] = useState(null);
+  const [sort, setSort] = useState({ key: 'revenue', dir: 'desc' });
+
+  const rows = useMemo(() => {
+    const withRate = (Array.isArray(hotels) ? hotels : []).map((h) => ({
+      ...h,
+      cancelRate: (h.bookingsCount + h.cancelledCount) > 0
+        ? h.cancelledCount / (h.bookingsCount + h.cancelledCount)
+        : 0,
+    }));
+    const val = (h) => {
+      switch (sort.key) {
+        case 'hotel': return h.hotelName || '';
+        case 'stars': return Number(h.starRating) || 0;
+        case 'bookings': return Number(h.bookingsCount) || 0;
+        case 'revenue': return Number(h.grossRevenue) || 0;
+        case 'platformCut': return Number(h.platformRevenue) || 0;
+        case 'cancelled': return Number(h.cancelledCount) || 0;
+        case 'cancelRate': return h.cancelRate;
+        default: return 0;
+      }
+    };
+    return withRate.sort((a, b) => {
+      const av = val(a);
+      const bv = val(b);
+      if (typeof av === 'string') return sort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sort.dir === 'asc' ? av - bv : bv - av;
+    });
+  }, [hotels, sort]);
+
+  const toggleSort = (key) => setSort((p) => (p.key === key
+    ? { key, dir: p.dir === 'desc' ? 'asc' : 'desc' }
+    : { key, dir: key === 'hotel' ? 'asc' : 'desc' }));
 
   return (
     <div className="admin-card">
-      <div className="admin-card-title">{icon} {title}</div>
+      <div className="admin-card-title">{t('hotelsAnalytics.hotelPerfTitle')}</div>
       <p className="ha-hint" style={{ margin: '2px 0 8px' }}>{t('hotelsAnalytics.clickHint')}</p>
       <div className="ha-table-wrap">
-        <table className="ha-table">
+        <table className="ha-table ha-table-centered">
           <thead>
             <tr>
-              <th>{t('hotelsAnalytics.hotel')}</th>
-              <th>{t('hotelsAnalytics.city')}</th>
-              <th>{t('hotelsAnalytics.country')}</th>
-              <th className="ha-stars-col">{t('hotelsAnalytics.stars')}</th>
-              <th className="ha-num">{valueLabel}</th>
+              {HOTEL_PERF_COLS.map((key) => (
+                <th
+                  key={key}
+                  onClick={() => toggleSort(key)}
+                  className={key === 'hotel' ? '' : 'ha-num'}
+                  style={{ cursor: 'pointer', userSelect: 'none' }}
+                >
+                  {t(`hotelsAnalytics.col.${key}`)}
+                  {sort.key === key ? (sort.dir === 'desc' ? ' ▾' : ' ▴') : ''}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {items.map((h) => {
+            {rows.map((h) => {
               const n = Math.min(5, Math.max(0, Number(h.starRating) || 0));
               const isExpanded = expandedHotelId === h.hotelId;
               return (
-              <Fragment key={h.hotelId}>
-              <tr
-                className={isExpanded ? 'ha-row-active' : ''}
-                onClick={() => setExpandedHotelId(isExpanded ? null : h.hotelId)}
-              >
-                <td><strong>{h.hotelName}</strong></td>
-                <td>{h.city}</td>
-                <td>{h.country}</td>
-                <td className="ha-stars-col">
-                  <span className="ha-star-rating">
-                    <span className="ha-star-filled">{'★'.repeat(n)}</span>
-                    <span className="ha-star-empty">{'★'.repeat(5 - n)}</span>
-                  </span>
-                </td>
-                <td className="ha-num">{formatValue(h[valueKey])}</td>
-              </tr>
-              {isExpanded && <HotelRoomsRow hotelId={h.hotelId} />}
-              </Fragment>
+                <Fragment key={h.hotelId}>
+                  <tr
+                    className={isExpanded ? 'ha-row-active' : ''}
+                    onClick={() => setExpandedHotelId(isExpanded ? null : h.hotelId)}
+                  >
+                    <td>
+                      <strong>{h.hotelName}</strong>
+                      <div className="ha-room-meta">{[h.city, h.country].filter(Boolean).join(' · ')}</div>
+                    </td>
+                    <td className="ha-num">
+                      <span className="ha-star-rating">
+                        <span className="ha-star-filled">{'★'.repeat(n)}</span>
+                        <span className="ha-star-empty">{'★'.repeat(5 - n)}</span>
+                      </span>
+                    </td>
+                    <td className="ha-num">{h.bookingsCount}</td>
+                    <td className="ha-num">{formatMoney(h.grossRevenue)}</td>
+                    <td className="ha-num">{formatMoney(h.platformRevenue)}</td>
+                    <td className="ha-num">{h.cancelledCount}</td>
+                    <td className="ha-num">
+                      {(h.bookingsCount + h.cancelledCount) > 0 ? `${Math.round(h.cancelRate * 100)}%` : '—'}
+                    </td>
+                  </tr>
+                  {isExpanded && <HotelRoomsRow hotelId={h.hotelId} colSpan={HOTEL_PERF_COLS.length} />}
+                </Fragment>
               );
             })}
-            {items.length === 0 && (
-              <tr><td colSpan={5} className="ha-hint">{t('hotelsAnalytics.noHotelsYet')}</td></tr>
+            {rows.length === 0 && (
+              <tr><td colSpan={HOTEL_PERF_COLS.length} className="ha-hint">{t('hotelsAnalytics.noHotelsYet')}</td></tr>
             )}
           </tbody>
         </table>
@@ -271,11 +318,10 @@ export default function HotelsAnalytics() {
   if (error) return <div className="ha-root">{filterBar}<p className="admin-stat-sub" style={{ color: '#e05555' }}>{error}</p></div>;
   if (!data) return null;
 
-  const { revenue, bookingStats, topHotelsByRevenue, topHotelsByBookings } = {
+  const { revenue, bookingStats, hotels } = {
     revenue: data.revenue,
     bookingStats: data.bookingStats,
-    topHotelsByRevenue: data.topHotelsByRevenue || [],
-    topHotelsByBookings: data.topHotelsByBookings || [],
+    hotels: data.hotels || [],
   };
 
   return (
@@ -322,23 +368,7 @@ export default function HotelsAnalytics() {
         <p className="ha-hint">{t('hotelsAnalytics.bookingsTotal', { count: bookingStats.totalBookings })}</p>
       </div>
 
-      <RankingTable
-        title={t('hotelsAnalytics.topHotelsByRevenue')}
-        icon="💰"
-        items={topHotelsByRevenue}
-        valueKey="grossRevenue"
-        valueLabel={t('hotelsAnalytics.grossRevenue')}
-        formatValue={formatMoney}
-      />
-
-      <RankingTable
-        title={t('hotelsAnalytics.topHotelsByBookings')}
-        icon="📊"
-        items={topHotelsByBookings}
-        valueKey="bookingsCount"
-        valueLabel={t('hotelsAnalytics.bookings')}
-        formatValue={(v) => v}
-      />
+      <HotelPerfTable hotels={hotels} />
     </div>
   );
 }

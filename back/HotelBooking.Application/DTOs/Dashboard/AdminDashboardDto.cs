@@ -3,8 +3,9 @@ namespace HotelBooking.Application.DTOs.Dashboard;
 public record AdminDashboardDto(
     AdminRevenueDto Revenue,
     AdminBookingStatsDto BookingStats,
-    List<HotelRankingDto> TopHotelsByRevenue,
-    List<HotelRankingDto> TopHotelsByBookings
+    // Every hotel with its performance for the selected period (zero-activity hotels included),
+    // ordered by gross revenue. The client sorts by whatever column the admin clicks.
+    List<HotelRankingDto> Hotels
 );
 
 public record AdminRevenueDto(

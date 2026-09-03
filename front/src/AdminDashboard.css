@@ -687,6 +687,13 @@
 .ha-table tbody tr:hover { background: var(--adm-surface2); }
 .ha-table tbody tr.ha-row-active { background: #EEF3FB; }
 .ha-num { text-align: end; white-space: nowrap; }
+
+/* Hotel Performance table: center every column except the first (hotel name). */
+.ha-table-centered th,
+.ha-table-centered td { text-align: center; }
+.ha-table-centered th:first-child,
+.ha-table-centered td:first-child { text-align: start; }
+.ha-table-centered .ha-num { text-align: center; }
 .ha-profit { color: #2E9E6B; font-weight: 700; }
 .ha-platform { color: #B8762F; font-weight: 700; }
 .ha-stars { color: #E0A800; margin-inline-start: 6px; font-size: 12px; }
