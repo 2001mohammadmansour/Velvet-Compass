@@ -64,11 +64,12 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
     try
     {
         await context.Database.MigrateAsync();
-        await DataSeeder.SeedAsync(context, userManager);
+        await DataSeeder.SeedAsync(context, userManager, configuration);
     }
     catch (Exception ex)
     {
