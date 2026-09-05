@@ -11,6 +11,9 @@ namespace HotelBooking.Application.Interfaces
         // this project's existing convention — see SubmitHotelRequestRequest's string Type — enum
         // parsing happens in the Infrastructure-layer implementation instead).
         Task CreateAsync(long userId, string type, string title, string message, long? relatedBookingId = null, long? relatedHotelRequestId = null);
+        // Fan-out helper: creates the same notification for every admin account, so it keeps
+        // working if a second admin is added.
+        Task NotifyAdminsAsync(string type, string title, string message, long? relatedBookingId = null, long? relatedHotelRequestId = null);
         Task<List<NotificationDto>> GetMyNotificationsAsync(long userId, int take = 30);
         Task<int> GetUnreadCountAsync(long userId);
         Task MarkAsReadAsync(long userId, long notificationId);

@@ -251,13 +251,11 @@ export default function OwnerHotelInfo({ embedded = false }) {
         <form onSubmit={handleSave}>
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
             <label>
-              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.hotelName')}</div>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.hotelName')} <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>{t('ownerHotelInfo.cannotBeChanged')}</span></div>
               <input
                 value={form.hotelName}
-                onChange={(e) => updateField("hotelName", e.target.value)}
-                placeholder={t('ownerHotelInfo.hotelNamePlaceholder')}
-                required
-                style={{ width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8 }}
+                readOnly
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 8, background: "#f8fafc", color: "#64748b", cursor: "not-allowed" }}
               />
             </label>
 

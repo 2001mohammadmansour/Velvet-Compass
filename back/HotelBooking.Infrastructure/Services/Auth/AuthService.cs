@@ -24,11 +24,13 @@ namespace HotelBooking.Infrastructure.Services.Auth
         private readonly UserManager<User> _userManager;
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
-        public AuthService(UserManager<User> userManager, AppDbContext context, IConfiguration config)
+        private readonly INotificationService _notificationService;
+        public AuthService(UserManager<User> userManager, AppDbContext context, IConfiguration config, INotificationService notificationService)
         {
             _userManager = userManager;
             _context = context;
             _config = config;
+            _notificationService = notificationService;
         }
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -63,6 +65,15 @@ namespace HotelBooking.Infrastructure.Services.Auth
             var result = await _userManager.CreateAsync(user, request.Password);
             if (!result.Succeeded)
                 throw new InvalidRequestException(string.Join(", ", result.Errors.Select(e => e.Description)));
+
+            if (role == UserRole.Owner)
+            {
+                await _notificationService.NotifyAdminsAsync(
+                    NotificationType.NewOwner.ToString(),
+                    "New hotel owner",
+                    $"{user.UserName} registered as a hotel owner.");
+            }
+
             return await GenerateAuthResponseAsync(user);
 
         }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import HotelsAnalytics from './HotelsAnalytics';
 import HotelRequests from './HotelRequests';
@@ -81,9 +82,28 @@ function OverviewTab({ onTabChange }) {
 /* ══════════════════════════════════
    MAIN ADMIN DASHBOARD COMPONENT
 ══════════════════════════════════ */
+const ADMIN_TAB_KEYS = ['overview', 'hotels', 'stats', 'commission', 'users', 'requests', 'amenities'];
+
 export default function AdminDashboard() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('overview');
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState(() => {
+    const q = new URLSearchParams(location.search).get('tab');
+    return ADMIN_TAB_KEYS.includes(q) ? q : 'overview';
+  });
+
+  const selectTab = (key) => {
+    setActiveTab(key);
+    navigate(`/admin?tab=${key}`, { replace: true });
+  };
+
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get('tab');
+    if (ADMIN_TAB_KEYS.includes(q) && q !== activeTab) setActiveTab(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   const NAV_ITEMS = [
     { key: 'overview', icon: '📊', label: t('adminDashboard.nav.overview') },
@@ -115,7 +135,7 @@ export default function AdminDashboard() {
             <div
               key={item.key}
               className={`admin-nav-item ${activeTab === item.key ? 'active' : ''}`}
-              onClick={() => setActiveTab(item.key)}
+              onClick={() => selectTab(item.key)}
             >
               <span className="admin-nav-icon">{item.icon}</span>
               {item.label}
@@ -134,7 +154,7 @@ export default function AdminDashboard() {
               <p>{SECTION_DESCRIPTIONS[activeTab]}</p>
             </div>
 
-            {activeTab === 'overview' && <OverviewTab onTabChange={setActiveTab} />}
+            {activeTab === 'overview' && <OverviewTab onTabChange={selectTab} />}
             {activeTab === 'hotels' && <HotelsAnalytics />}
             {activeTab === 'stats' && <AdminStats />}
             {activeTab === 'commission' && <CommissionAdmin />}

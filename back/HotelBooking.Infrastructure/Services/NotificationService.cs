@@ -30,6 +30,31 @@ namespace HotelBooking.Infrastructure.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task NotifyAdminsAsync(string type, string title, string message, long? relatedBookingId = null, long? relatedHotelRequestId = null)
+        {
+            var adminIds = await _context.Users
+                .Where(u => u.Role == UserRole.Admin)
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            if (adminIds.Count == 0) return;
+
+            var parsedType = Enum.Parse<NotificationType>(type, ignoreCase: true);
+            foreach (var adminId in adminIds)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = adminId,
+                    Type = parsedType,
+                    Title = title,
+                    Message = message,
+                    RelatedBookingId = relatedBookingId,
+                    RelatedHotelRequestId = relatedHotelRequestId,
+                });
+            }
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<List<NotificationDto>> GetMyNotificationsAsync(long userId, int take = 30)
         {
             return await _context.Notifications

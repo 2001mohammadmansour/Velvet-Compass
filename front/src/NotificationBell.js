@@ -71,7 +71,20 @@ export default function NotificationBell({ inline = false }) {
       markNotificationRead(n.id).catch(() => {});
     }
     setOpen(false);
-    const isOwner = getCurrentRole() === 'hotel_owner';
+    const role = getCurrentRole();
+
+    if (role === 'admin') {
+      const adminTab = {
+        HotelRequestSubmitted: 'requests',
+        CommissionClaimed: 'commission',
+        NewOwner: 'users',
+      }[n.type];
+      if (adminTab) navigate(`/admin?tab=${adminTab}`);
+      else if (n.relatedHotelRequestId) navigate('/admin?tab=requests');
+      return;
+    }
+
+    const isOwner = role === 'hotel_owner';
     if (n.relatedHotelRequestId) {
       navigate('/owner/requests');
     } else if (n.relatedBookingId) {

@@ -10,6 +10,10 @@ namespace HotelBooking.Domain.Enum
         NewBooking,
         HotelRequestApproved,
         HotelRequestRejected,
-        NewReview
+        NewReview,
+        // ─── Admin-facing ────────────────────────────────────────
+        HotelRequestSubmitted,  // an owner submitted a create/edit request for review
+        CommissionClaimed,      // an owner marked a commission payment as sent
+        NewOwner                // a new hotel-owner account registered
     }
 }

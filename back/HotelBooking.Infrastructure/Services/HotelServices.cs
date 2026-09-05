@@ -113,12 +113,19 @@ namespace HotelBooking.Infrastructure.Services
 
             var hotel = await GetOwnedHotelAsync(callerId, isAdmin, HotelId);
 
-            hotel.Name = request.Name;
+            // Name, City, Address, Country and Star rating are identity/location fields — an owner
+            // can only change them through an approved Hotel Request. Those come through here with
+            // isAdmin: true (HotelRequestService.ApproveAsync), as do direct admin-panel edits.
+            if (isAdmin)
+            {
+                hotel.Name = request.Name;
+                hotel.Address = request.Address;
+                hotel.City = request.City;
+                hotel.Country = request.Country;
+                hotel.StarRating = request.StarRating;
+            }
+
             hotel.Description = request.Description;
-            hotel.Address = request.Address;
-            hotel.City = request.City;
-            hotel.Country = request.Country;
-            hotel.StarRating = request.StarRating;
             hotel.Phone = request.Phone;
             hotel.Email = request.Email;
             hotel.ShamCashWallet = string.IsNullOrWhiteSpace(request.ShamCashWallet) ? null : request.ShamCashWallet.Trim();

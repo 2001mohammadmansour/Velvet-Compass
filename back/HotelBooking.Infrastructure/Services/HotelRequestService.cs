@@ -45,6 +45,15 @@ namespace HotelBooking.Infrastructure.Services
 
             _context.HotelRequests.Add(hotelRequest);
             await _context.SaveChangesAsync();
+
+            var owner = await _context.Users.FirstOrDefaultAsync(u => u.Id == ownerId);
+            var kind = type == HotelRequestType.Create ? "create a new hotel" : "edit their hotel";
+            await _notificationService.NotifyAdminsAsync(
+                NotificationType.HotelRequestSubmitted.ToString(),
+                "New hotel request",
+                $"{owner?.UserName ?? "An owner"} submitted a request to {kind} ({hotelRequest.HotelName}). It needs review.",
+                relatedHotelRequestId: hotelRequest.Id);
+
             return await MapToDtoAsync(hotelRequest);
         }
 

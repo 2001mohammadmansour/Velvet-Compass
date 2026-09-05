@@ -14,7 +14,12 @@ namespace HotelBooking.Infrastructure.Services
         private const decimal Rate = 0.15m;
 
         private readonly AppDbContext _context;
-        public CommissionService(AppDbContext context) => _context = context;
+        private readonly INotificationService _notificationService;
+        public CommissionService(AppDbContext context, INotificationService notificationService)
+        {
+            _context = context;
+            _notificationService = notificationService;
+        }
 
         // What the owner actually keeps from the guest — the base the 15% is charged on.
         // Only "finalised" bookings have a base: the stay happened, or it was cancelled.
@@ -71,6 +76,12 @@ namespace HotelBooking.Infrastructure.Services
                 b.CommissionSenderName = senderName;
             }
             await _context.SaveChangesAsync();
+
+            var claimedTotal = toClaim.Sum(b => b.CommissionAmount ?? 0m);
+            await _notificationService.NotifyAdminsAsync(
+                NotificationType.CommissionClaimed.ToString(),
+                "Commission payment claimed",
+                $"{hotel.Name} marked a commission payment of ${Math.Round(claimedTotal):N0} as sent. Verify it arrived and confirm.");
 
             return Summarise(hotel, bookings);
         }
