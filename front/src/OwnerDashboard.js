@@ -219,6 +219,7 @@ export default function OwnerDashboard() {
   const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
   const [calendarDayOpen, setCalendarDayOpen] = useState(false);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
+  const [detailReservation, setDetailReservation] = useState(null);
   const [calendarNotes, setCalendarNotes] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('owner-calendar-notes') || '{}');
@@ -997,7 +998,15 @@ export default function OwnerDashboard() {
             <p className="muted small">{t('ownerDashboard.calendar.noStaysThisMonth')}</p>
           ) : (
             calendarReservations.map((reservation) => (
-              <div key={reservation.id} className="calendar-list-item">
+              <div
+                key={reservation.id}
+                className="calendar-list-item"
+                role="button"
+                tabIndex={0}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setDetailReservation(reservation)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailReservation(reservation); } }}
+              >
                 <strong>{reservation.guestName}</strong>
                 {(reservation.guestEmail || reservation.guestPhone) && (
                   <span className="muted small">
@@ -1018,7 +1027,13 @@ export default function OwnerDashboard() {
           ) : (
             reservations.filter(r => r.status === 'pending').map((reservation) => (
               <div key={`pending-${reservation.id}`} className="pending-row" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                <div style={{ flex: 1 }}>
+                <div
+                  style={{ flex: 1, cursor: 'pointer' }}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDetailReservation(reservation)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailReservation(reservation); } }}
+                >
                   <strong>{reservation.guestName}</strong>
                   {(reservation.guestEmail || reservation.guestPhone) && (
                     <div className="muted small">
@@ -1026,6 +1041,7 @@ export default function OwnerDashboard() {
                     </div>
                   )}
                   <div className="muted small">{reservation.roomName || t('ownerDashboard.calendar.room', { id: reservation.roomId })} — {reservation.checkIn} → {reservation.checkOut}</div>
+                  <div className="small" style={{ color: '#2a3d66', fontWeight: 600, marginTop: 2 }}>{t('ownerDashboard.bookingDetails.viewLink')}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button className="cta" onClick={() => handleAccept(reservation.id)}>{t('ownerDashboard.calendar.accept')}</button>
@@ -1144,6 +1160,57 @@ export default function OwnerDashboard() {
               />
               <p className="muted small" style={{ marginTop: 8 }}>{t('ownerDashboard.calendar.notesHint')}</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {detailReservation && (
+        <div className="campaign-modal-overlay" onClick={() => setDetailReservation(null)}>
+          <div className="campaign-modal calendar-day-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="campaign-modal-header">
+              <h3>{t('ownerDashboard.bookingDetails.title')}</h3>
+              <button className="close-modal" onClick={() => setDetailReservation(null)} aria-label={t('ownerDashboard.calendar.close')}>×</button>
+            </div>
+
+            <div className="booking-detail-grid">
+              <div><span className="muted small">{t('ownerDashboard.bookingDetails.guest')}</span><p>{detailReservation.guestName || '—'}</p></div>
+              <div><span className="muted small">{t('ownerDashboard.bookingDetails.phone')}</span><p>{detailReservation.guestPhone || '—'}</p></div>
+              <div><span className="muted small">{t('ownerDashboard.bookingDetails.email')}</span><p>{detailReservation.guestEmail || '—'}</p></div>
+              <div><span className="muted small">{t('ownerDashboard.bookingDetails.walletNumber')}</span><p>{detailReservation.paymentSenderWallet || '—'}</p></div>
+              <div><span className="muted small">{t('ownerDashboard.bookingDetails.walletName')}</span><p>{detailReservation.paymentSenderName || '—'}</p></div>
+              <div><span className="muted small">{t('ownerDashboard.bookingDetails.dates')}</span><p>{detailReservation.checkIn} → {detailReservation.checkOut}{detailReservation.totalNights ? ` (${detailReservation.totalNights})` : ''}</p></div>
+              <div><span className="muted small">{t('ownerDashboard.bookingDetails.rooms')}</span><p>{reservationRooms(detailReservation) || '—'}</p></div>
+              <div><span className="muted small">{t('ownerDashboard.bookingDetails.total')}</span><p>${Number(detailReservation.totalAmount || 0).toLocaleString()}</p></div>
+              <div><span className="muted small">{t('ownerDashboard.bookingDetails.status')}</span><p>{t(`myBookings.statuses.${detailReservation.status}`, detailReservation.status)}</p></div>
+              {detailReservation.createdAt && (
+                <div><span className="muted small">{t('ownerDashboard.bookingDetails.bookedOn')}</span><p>{new Date(detailReservation.createdAt).toLocaleString()}</p></div>
+              )}
+            </div>
+
+            {detailReservation.specialRequests && (
+              <div style={{ marginTop: 12 }}>
+                <span className="muted small">{t('ownerDashboard.bookingDetails.specialRequests')}</span>
+                <p style={{ margin: '4px 0 0' }}>{detailReservation.specialRequests}</p>
+              </div>
+            )}
+
+            {Array.isArray(detailReservation.guests) && detailReservation.guests.filter((g) => !g.isPrimary).length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <span className="muted small">{t('ownerDashboard.bookingDetails.otherGuests')}</span>
+                {detailReservation.guests.filter((g) => !g.isPrimary).map((g, i) => (
+                  <p key={i} style={{ margin: '4px 0 0' }}>
+                    {g.fullName}{[g.nationality, g.passportNo].filter(Boolean).length ? ` — ${[g.nationality, g.passportNo].filter(Boolean).join(', ')}` : ''}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {detailReservation.status === 'pending' && (
+              <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button className="cta" onClick={() => { handleAccept(detailReservation.id); setDetailReservation(null); }}>{t('ownerDashboard.calendar.accept')}</button>
+                <button className="campaign-back" onClick={() => { handleReject(detailReservation.id); setDetailReservation(null); }}>{t('ownerDashboard.calendar.reject')}</button>
+              </div>
+            )}
           </div>
         </div>
       )}

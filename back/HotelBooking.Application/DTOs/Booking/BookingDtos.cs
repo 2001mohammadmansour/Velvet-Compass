@@ -35,7 +35,11 @@ public record BookingDto(
     // For a Sham Cash booking: the guest's own wallet/name, so the owner can match the incoming
     // payment against their Sham Cash app.
     string? PaymentSenderWallet = null,
-    string? PaymentSenderName = null
+    string? PaymentSenderName = null,
+    // The account holder who made the booking — shown to the hotel owner so they can contact the
+    // guest while reviewing the request. Null if the account has no phone on file.
+    string? GuestPhone = null,
+    string? GuestEmail = null
 );
 
 public record BookingItemDto(

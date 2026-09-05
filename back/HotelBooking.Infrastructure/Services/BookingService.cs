@@ -203,6 +203,7 @@ namespace HotelBooking.Infrastructure.Services
                 .Include(b => b.Items).ThenInclude(i => i.RoomType)
                 .Include(b => b.Guests)
                 .Include(b => b.Payment)
+                .Include(b => b.User)
                 .FirstOrDefaultAsync(b => b.Id == bookingId)
                 ?? throw new BookingNotFoundException(bookingId);
 
@@ -666,7 +667,9 @@ namespace HotelBooking.Infrastructure.Services
     CancellationFeeValue: b.Hotel.CancellationFeeValue,
     ModificationFee: b.ModificationFee,
     PaymentSenderWallet: b.PaymentSenderWallet,
-    PaymentSenderName: b.PaymentSenderName
+    PaymentSenderName: b.PaymentSenderName,
+    GuestPhone: b.User?.PhoneNumber,
+    GuestEmail: b.User?.Email
 );
     }
 }

@@ -355,6 +355,22 @@
       "notesPlaceholder": "Add notes for this date...",
       "notesHint": "Notes are saved locally for now until we connect the backend."
     },
+    "bookingDetails": {
+      "title": "Booking details",
+      "viewLink": "View details",
+      "guest": "Guest",
+      "phone": "Phone",
+      "email": "Email",
+      "walletNumber": "Sham Cash wallet number",
+      "walletName": "Name on wallet",
+      "dates": "Dates",
+      "rooms": "Room type",
+      "total": "Total paid",
+      "status": "Status",
+      "bookedOn": "Booked on",
+      "specialRequests": "Special requests",
+      "otherGuests": "Other guests"
+    },
     "rooms": {
       "title": "Manage Rooms",
       "addRoom": "+ Add Room",
