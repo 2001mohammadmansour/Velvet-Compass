@@ -1,6 +1,7 @@
 using HotelBooking.Application.DTOs.Booking;
 using HotelBooking.Application.DTOs.Bookings;
 using HotelBooking.Application.Interfaces;
+using HotelBooking.Domain.Common;
 using HotelBooking.Domain.Entities;
 using HotelBooking.Domain.Enum;
 using HotelBooking.Domain.Exceptions;
@@ -33,7 +34,7 @@ namespace HotelBooking.Infrastructure.Services
             if (request.CheckinDate >= request.CheckoutDate)
                 throw new Exception("Checkout date must be after checkin date.");
 
-            if (request.CheckinDate < DateOnly.FromDateTime(DateTime.UtcNow))
+            if (request.CheckinDate < SyriaClock.Today)
                 throw new Exception("Check-in date cannot be in the past.");
 
             var totalNights = request.CheckoutDate.DayNumber - request.CheckinDate.DayNumber;
@@ -208,7 +209,7 @@ namespace HotelBooking.Infrastructure.Services
             var hasReview = await _context.Reviews.AnyAsync(r => r.BookingId == bookingId);
             var reviewable = !hasReview
                 && booking.Status != BookingStatus.Cancelled
-                && booking.CheckoutDate < DateOnly.FromDateTime(DateTime.UtcNow);
+                && booking.CheckoutDate < SyriaClock.Today;
 
             return MapToDto(booking) with { Reviewable = reviewable, HasReview = hasReview };
         }
@@ -318,7 +319,7 @@ namespace HotelBooking.Infrastructure.Services
         // ModifyDatesAsync) — this one is specifically the cancellation policy.
         private static decimal ComputeCancellationPenalty(Hotel hotel, DateOnly checkinDate, decimal totalAmount)
         {
-            var daysUntilCheckin = (checkinDate.ToDateTime(TimeOnly.MinValue) - DateTime.UtcNow).TotalDays;
+            var daysUntilCheckin = (checkinDate.ToDateTime(TimeOnly.MinValue) - SyriaClock.Now).TotalDays;
             var isFree = hotel.FreeCancellationEnabled && daysUntilCheckin >= hotel.FreeCancellationDaysBefore;
             if (isFree) return 0m;
 
@@ -417,13 +418,13 @@ namespace HotelBooking.Infrastructure.Services
             if (booking.Status == BookingStatus.Cancelled || booking.Status == BookingStatus.Completed)
                 throw new BookingNotModifiableException("Cancelled or completed bookings can't be modified.");
 
-            if (booking.CheckinDate <= DateOnly.FromDateTime(DateTime.UtcNow))
+            if (booking.CheckinDate <= SyriaClock.Today)
                 throw new BookingNotModifiableException("This booking's check-in date has already passed.");
 
             if (request.CheckinDate >= request.CheckoutDate)
                 throw new Exception("Checkout date must be after checkin date.");
 
-            if (request.CheckinDate < DateOnly.FromDateTime(DateTime.UtcNow))
+            if (request.CheckinDate < SyriaClock.Today)
                 throw new Exception("Check-in date cannot be in the past.");
 
             // CHANGED BY AI (2026-07-13): please review. Late-modification fee: free if modifying
@@ -431,7 +432,7 @@ namespace HotelBooking.Infrastructure.Services
             // full amount (1-night stays) or just the first night's price (multi-night stays).
             // This is a distinct rule from the hotel's cancellation policy
             // (ComputeCancellationPenalty) — modifying isn't cancelling.
-            var hoursUntilCheckin = (booking.CheckinDate.ToDateTime(TimeOnly.MinValue) - DateTime.UtcNow).TotalHours;
+            var hoursUntilCheckin = (booking.CheckinDate.ToDateTime(TimeOnly.MinValue) - SyriaClock.Now).TotalHours;
             var modificationFee = 0m;
             if (hoursUntilCheckin < 24)
             {

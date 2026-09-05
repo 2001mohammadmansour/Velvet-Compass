@@ -2,6 +2,7 @@ using HotelBooking.Application.DTOs.Amenities;
 using HotelBooking.Application.DTOs.Common;
 using HotelBooking.Application.DTOs.Hotels;
 using HotelBooking.Application.Interfaces;
+using HotelBooking.Domain.Common;
 using HotelBooking.Domain.Entities;
 using HotelBooking.Domain.Enum;
 using HotelBooking.Domain.Exceptions;
@@ -103,7 +104,7 @@ namespace HotelBooking.Infrastructure.Services
             // CHANGED BY AI (2026-07-15): please review. Pre-populates sensible pricing defaults
             // (a seasonal calendar + occupancy surge tiers) so the owner doesn't start from a
             // blank slate; these are ordinary rows they can edit or delete afterward.
-            await _pricingService.SeedDefaultsAsync(hotel.Id, DateOnly.FromDateTime(DateTime.UtcNow));
+            await _pricingService.SeedDefaultsAsync(hotel.Id, SyriaClock.Today);
 
             return MapToHotelDetailDto(hotel);
         }

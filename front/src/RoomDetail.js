@@ -16,6 +16,13 @@ import { getCurrentUser } from "./services/auth";
 
 const CATEGORY_KEYS = ['staff', 'location', 'facilities', 'cleanliness', 'comfort', 'value'];
 
+// toISOString() converts to UTC first, so near local midnight (e.g. Syria is UTC+3) it can still
+// report yesterday's date — read the local Y/M/D fields directly instead.
+function todayLocalISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function ReviewSnippet({ hotelId, roomId }) {
   const { t } = useTranslation();
   const [data, setData] = useState(null);
@@ -153,7 +160,7 @@ export default function RoomDetail() {
     setBookError('');
     if (!dates.checkIn || !dates.checkOut) { setBookError(t('roomDetail.errors.chooseDates')); return; }
     if (new Date(dates.checkIn) >= new Date(dates.checkOut)) { setBookError(t('roomDetail.errors.checkoutAfterCheckin')); return; }
-    if (dates.checkIn < new Date().toISOString().split('T')[0]) { setBookError(t('roomDetail.errors.checkinPast')); return; }
+    if (dates.checkIn < todayLocalISO()) { setBookError(t('roomDetail.errors.checkinPast')); return; }
     if (guests > hardCapacity) {
       setBookError(
         maxExtraBeds
@@ -268,10 +275,10 @@ export default function RoomDetail() {
               <p className="price">${room.price}<span style={{ fontSize: 13, fontWeight: 500, color: '#6b7280' }}>{t('roomDetail.perNight')}</span></p>
 
               <label className="field-label">{t('roomDetail.checkIn')}</label>
-              <input type="date" min={new Date().toISOString().split('T')[0]} value={dates.checkIn} onChange={(e) => setDates((d) => ({ ...d, checkIn: e.target.value }))} />
+              <input type="date" min={todayLocalISO()} value={dates.checkIn} onChange={(e) => setDates((d) => ({ ...d, checkIn: e.target.value }))} />
 
               <label className="field-label">{t('roomDetail.checkOut')}</label>
-              <input type="date" min={dates.checkIn || new Date().toISOString().split('T')[0]} value={dates.checkOut} onChange={(e) => setDates((d) => ({ ...d, checkOut: e.target.value }))} />
+              <input type="date" min={dates.checkIn || todayLocalISO()} value={dates.checkOut} onChange={(e) => setDates((d) => ({ ...d, checkOut: e.target.value }))} />
 
               <label className="field-label">{t('roomDetail.guests')}</label>
               <input

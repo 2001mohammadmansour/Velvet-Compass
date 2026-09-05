@@ -1,5 +1,6 @@
 using HotelBooking.Application.DTOs.Reviews;
 using HotelBooking.Application.Interfaces;
+using HotelBooking.Domain.Common;
 using HotelBooking.Domain.Entities;
 using HotelBooking.Domain.Enum;
 using HotelBooking.Domain.Exceptions;
@@ -34,7 +35,7 @@ namespace HotelBooking.Infrastructure.Services
             // assigned anywhere in this codebase outside of seed data (no background job exists to
             // transition a booking after checkout), so eligibility is based on the checkout date
             // having passed instead of a status this app never sets in real usage.
-            if (booking.CheckoutDate >= DateOnly.FromDateTime(DateTime.UtcNow))
+            if (booking.CheckoutDate >= SyriaClock.Today)
                 throw new ReviewNotEligibleException("You can review this stay after your checkout date has passed.");
 
             if (await _context.Reviews.AnyAsync(r => r.BookingId == bookingId))

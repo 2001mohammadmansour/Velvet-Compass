@@ -1,5 +1,6 @@
 using HotelBooking.Application.DTOs.Pricing;
 using HotelBooking.Application.Interfaces;
+using HotelBooking.Domain.Common;
 using HotelBooking.Domain.Entities;
 using HotelBooking.Domain.Enum;
 using HotelBooking.Domain.Exceptions;
@@ -212,7 +213,7 @@ namespace HotelBooking.Infrastructure.Services
         {
             if (startDate > endDate)
                 throw new InvalidPricingRuleException("Start date must be on or before the end date.");
-            if (startDate < DateOnly.FromDateTime(DateTime.UtcNow))
+            if (startDate < SyriaClock.Today)
                 throw new InvalidPricingRuleException("Start date can't be in the past.");
 
             return ValidateAdjustment(minBasePrice, adjustmentType, adjustmentValue);

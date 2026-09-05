@@ -1,5 +1,6 @@
 using HotelBooking.Application.DTOs.Commission;
 using HotelBooking.Application.Interfaces;
+using HotelBooking.Domain.Common;
 using HotelBooking.Domain.Entities;
 using HotelBooking.Domain.Enum;
 using HotelBooking.Domain.Exceptions;
@@ -51,7 +52,7 @@ namespace HotelBooking.Infrastructure.Services
             if (hotel.OwnerId != callerId && !isAdmin)
                 throw new UnAuthoraizedOwnerException();
 
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = SyriaClock.Today;
             var bookings = await _context.Bookings.Where(b => b.HotelId == hotelId).ToListAsync();
 
             var toClaim = bookings.Where(b => IsOwed(b, today)).ToList();
@@ -136,7 +137,7 @@ namespace HotelBooking.Infrastructure.Services
 
         public async Task<PlatformCommissionDto> GetPlatformOverviewAsync()
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = SyriaClock.Today;
             var hotels = await _context.Hotels.Include(h => h.Owner).ToListAsync();
             var bookings = await _context.Bookings.ToListAsync();
             var byHotel = bookings.GroupBy(b => b.HotelId).ToDictionary(g => g.Key, g => g.ToList());
@@ -191,7 +192,7 @@ namespace HotelBooking.Infrastructure.Services
 
         private static CommissionSummaryDto Summarise(Hotel hotel, List<Booking> bookings)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = SyriaClock.Today;
 
             var owedList = bookings.Where(b => IsOwed(b, today)).ToList();
             var awaitingList = bookings.Where(IsAwaitingConfirmation).ToList();

@@ -1,5 +1,6 @@
 using HotelBooking.Application.DTOs.Dashboard;
 using HotelBooking.Application.Interfaces;
+using HotelBooking.Domain.Common;
 using HotelBooking.Domain.Entities;
 using HotelBooking.Domain.Enum;
 using HotelBooking.Domain.Exceptions;
@@ -218,7 +219,7 @@ public class OwnerDashboardService : IOwnerDashboardService
 
     public async Task TrackViewAsync(long hotelId)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = SyriaClock.Today;
 
         var record = await _context.HotelViews
             .FirstOrDefaultAsync(v => v.HotelId == hotelId && v.Date == today);
@@ -243,7 +244,7 @@ public class OwnerDashboardService : IOwnerDashboardService
 
     public async Task TrackClickAsync(long hotelId)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = SyriaClock.Today;
 
         var record = await _context.HotelViews
             .FirstOrDefaultAsync(v => v.HotelId == hotelId && v.Date == today);

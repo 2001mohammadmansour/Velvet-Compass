@@ -106,12 +106,18 @@ function ReviewModal({ booking, userId, onClose, onSubmitted }) {
   ), document.body);
 }
 
+// toISOString() converts to UTC first, so near local midnight (e.g. Syria is UTC+3) it can still
+// report yesterday's date — read the local Y/M/D fields directly instead.
+function todayLocalISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // A booking whose checkout date has passed (and wasn't cancelled) is treated as completed —
 // it can no longer be modified or cancelled. The backend enforces the same.
 function isCompleted(b) {
   if (b.status === 'cancelled') return false;
-  const today = new Date().toISOString().split('T')[0];
-  return String(b.checkOut) < today;
+  return String(b.checkOut) < todayLocalISO();
 }
 
 // A booking the hotel hasn't accepted yet is just a request — cancelling it is always free,
@@ -300,13 +306,13 @@ export default function MyBookings() {
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                     <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
                       {t('myBookings.checkIn')}
-                      <input type="date" value={modifyDates.checkIn} min={new Date().toISOString().split('T')[0]}
+                      <input type="date" value={modifyDates.checkIn} min={todayLocalISO()}
                         onChange={(e) => setModifyDates((d) => ({ ...d, checkIn: e.target.value }))}
                         style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                     </label>
                     <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
                       {t('myBookings.checkOut')}
-                      <input type="date" value={modifyDates.checkOut} min={modifyDates.checkIn || new Date().toISOString().split('T')[0]}
+                      <input type="date" value={modifyDates.checkOut} min={modifyDates.checkIn || todayLocalISO()}
                         onChange={(e) => setModifyDates((d) => ({ ...d, checkOut: e.target.value }))}
                         style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6 }} />
                     </label>
