@@ -1,7 +1,7 @@
 import './home.css';
 import heroImage from './assets/homepage_slider.webp';
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSiteContent } from './useSiteContent';
 import { getStats } from './services/hotels';
@@ -37,6 +37,16 @@ export default function Home() {
   useEffect(() => {
     getPartners().then(setPartners).catch(() => {});
   }, []);
+
+  // Home page shows just a rotating sample of partners; the full list lives at /partners.
+  const featuredPartners = useMemo(() => {
+    const shuffled = [...partners];
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, 5);
+  }, [partners]);
 
   useEffect(() => {
     getStats().then(s => setHotelStats(s)).catch(() => {});
@@ -170,7 +180,7 @@ export default function Home() {
             </button>
           </div>
           <div className="fh-grid">
-            {partners.map((partner, i) => (
+            {featuredPartners.map((partner, i) => (
               <div
                 key={partner.id}
                 className="fh-card"
