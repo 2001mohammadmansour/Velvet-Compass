@@ -22,10 +22,17 @@ namespace HotelBooking.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetStats()
         {
-            var hotels = await _context.Hotels.CountAsync();
-            var cities = await _context.Hotels.Select(h => h.City).Distinct().CountAsync();
+            // Hotels whose owner is suspended/banned drop out of discovery, so they shouldn't
+            // count toward the public platform totals either (see HotelServices.GetAllAsync).
+            var now = DateTimeOffset.UtcNow;
+            var liveHotels = _context.Hotels.Where(h =>
+                !_context.Users.Any(u => u.Id == h.OwnerId
+                    && u.LockoutEnabled && u.LockoutEnd != null && u.LockoutEnd > now));
+
+            var hotels = await liveHotels.CountAsync();
+            var cities = await liveHotels.Select(h => h.City).Distinct().CountAsync();
             var bookings = await _context.Bookings.CountAsync();
-            var rooms = await _context.Rooms.CountAsync();
+            var rooms = await _context.Rooms.CountAsync(r => liveHotels.Any(h => h.Id == r.RoomType.HotelId));
 
             return Ok(new { hotels, cities, bookings, rooms });
         }
