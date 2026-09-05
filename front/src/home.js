@@ -254,29 +254,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="contact" className="contact-section">
-        <div className="contact-left" data-reveal="left">
-          <h2>{content.contact.heading}</h2>
-          <p>{content.contact.subtext}</p>
-          <a href="/contact" className="contact-btn">{t('home.goToContact')}</a>
-        </div>
-        <div className="contact-divider"></div>
-        <div className="contact-right" data-reveal="right">
-          <div className="contact-item">
-            <span className="icon">📧</span>
-            <p>{content.contact.email}</p>
-          </div>
-          <div className="contact-item">
-            <span className="icon">📞</span>
-            <p>{content.contact.phone}</p>
-          </div>
-          <div className="contact-item">
-            <span className="icon">📍</span>
-            <p>{content.contact.address}</p>
-          </div>
-        </div>
-      </section>
-
       <footer className="footer">
         <p>{content.footer.text}</p>
       </footer>
