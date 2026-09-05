@@ -216,6 +216,7 @@ export default function OwnerDashboard() {
   const [addSaving, setAddSaving] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
   const [calendarStats, setCalendarStats] = useState({});
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
   const [calendarDayOpen, setCalendarDayOpen] = useState(false);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
   const [calendarNotes, setCalendarNotes] = useState(() => {
@@ -253,7 +254,7 @@ export default function OwnerDashboard() {
       .then((data) => { if (active) setCalendarStats(data); })
       .catch(() => { if (active) setCalendarStats({}); });
     return () => { active = false; };
-  }, [hotelId, calendarRange]);
+  }, [hotelId, calendarRange, calendarRefreshKey]);
 
   const calendarReservations = useMemo(() => {
     return [...reservations]
@@ -472,6 +473,7 @@ export default function OwnerDashboard() {
     try {
       await ownerSvc.setRoomAvailability(hotelId, availabilityRoomType.id, unitId, { from: form.from, to: form.to, status: 'Blocked' });
       await refreshUnitAvailability(unitId);
+      setCalendarRefreshKey((k) => k + 1);
       setBlockForm((prev) => ({ ...prev, [unitId]: { from: '', to: '' } }));
     } catch (err) {
       alert(t('ownerDashboard.errors.blockDatesFailed') + (err.message || err));
@@ -485,6 +487,7 @@ export default function OwnerDashboard() {
     try {
       await ownerSvc.setRoomAvailability(hotelId, availabilityRoomType.id, unitId, { from: range.from, to: range.to, status: 'Free' });
       await refreshUnitAvailability(unitId);
+      setCalendarRefreshKey((k) => k + 1);
     } catch (err) {
       alert(t('ownerDashboard.errors.unblockDatesFailed') + (err.message || err));
     } finally {
@@ -645,6 +648,7 @@ export default function OwnerDashboard() {
   function openCalendarDay(day) {
     setSelectedCalendarDay(day);
     setCalendarDayOpen(true);
+    setCalendarRefreshKey((k) => k + 1);
   }
 
   function closeCalendarDay() {
@@ -767,6 +771,7 @@ export default function OwnerDashboard() {
       await ownerSvc.acceptReservation(hotelId, reservationId);
       const updated = await ownerSvc.getReservations(hotelId).catch(() => null);
       if (updated) setReservations(updated);
+      setCalendarRefreshKey((k) => k + 1);
     } catch (err) { alert(t('ownerDashboard.errors.acceptReservationFailed') + (err.message || err)); }
   }
 
@@ -775,6 +780,7 @@ export default function OwnerDashboard() {
       await ownerSvc.rejectReservation(hotelId, reservationId);
       const updated = await ownerSvc.getReservations(hotelId).catch(() => null);
       if (updated) setReservations(updated);
+      setCalendarRefreshKey((k) => k + 1);
     } catch (err) { alert(t('ownerDashboard.errors.rejectReservationFailed') + (err.message || err)); }
   }
 
