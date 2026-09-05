@@ -63,20 +63,38 @@ public static class DataSeeder
             }).ToList();
 
         // ─── Users ────────────────────────────────────────────
-        var owner1 = new User { UserName = "owner1@test.com", Email = "owner1@test.com", Role = UserRole.Owner };
-        var owner2 = new User { UserName = "owner2@test.com", Email = "owner2@test.com", Role = UserRole.Owner };
+        // One owner per hotel (owner1@test.com .. owner10@test.com, same password as before).
+        const int ownerCount = 10;
+        for (int i = 1; i <= ownerCount; i++)
+        {
+            var email = $"owner{i}@test.com";
+            await userManager.CreateAsync(new User { UserName = email, Email = email, Role = UserRole.Owner }, "Test1234!");
+        }
+        var owners = new List<User>();
+        for (int i = 1; i <= ownerCount; i++)
+        {
+            var email = $"owner{i}@test.com";
+            owners.Add(await userManager.FindByEmailAsync(email) ?? throw new Exception($"{email} not found"));
+        }
+        var owner1 = owners[0];
+        var owner2 = owners[1];
+        var owner3 = owners[2];
+        var owner4 = owners[3];
+        var owner5 = owners[4];
+        var owner6 = owners[5];
+        var owner7 = owners[6];
+        var owner8 = owners[7];
+        var owner9 = owners[8];
+        var owner10 = owners[9];
+
         var guest1 = new User { UserName = "guest1@test.com", Email = "guest1@test.com", Role = UserRole.Guest };
         var guest2 = new User { UserName = "guest2@test.com", Email = "guest2@test.com", Role = UserRole.Guest };
         var admin1 = new User { UserName = "admin@test.com", Email = "admin@test.com", Role = UserRole.Admin };
 
-        await userManager.CreateAsync(owner1, "Test1234!");
-        await userManager.CreateAsync(owner2, "Test1234!");
         await userManager.CreateAsync(guest1, "Test1234!");
         await userManager.CreateAsync(guest2, "Test1234!");
         await userManager.CreateAsync(admin1, "Admin1234!");
 
-        owner1 = await userManager.FindByEmailAsync("owner1@test.com") ?? throw new Exception("owner1 not found");
-        owner2 = await userManager.FindByEmailAsync("owner2@test.com") ?? throw new Exception("owner2 not found");
         guest1 = await userManager.FindByEmailAsync("guest1@test.com") ?? throw new Exception("guest1 not found");
         guest2 = await userManager.FindByEmailAsync("guest2@test.com") ?? throw new Exception("guest2 not found");
 
@@ -97,7 +115,7 @@ public static class DataSeeder
 
         var damaRose = new Hotel
         {
-            OwnerId = owner1.Id,
+            OwnerId = owner2.Id,
             Name = "Dama Rose Hotel",
             Description = "فندق خمس نجوم يقع في منطقة أبو رمانة على شارع شكري القوتلي، ويضم غرفاً وأجنحة ومرافق تشمل مطاعم ومقهى ومسبحاً وسبا ومركزاً رياضياً ومركز أعمال.",
             Address = "Shukry Al-Qouwatly Street, Abou Roumaneh, Damascus, Syria",
@@ -111,7 +129,7 @@ public static class DataSeeder
 
         var fourSeasons = new Hotel
         {
-            OwnerId = owner2.Id,
+            OwnerId = owner3.Id,
             Name = "Four Seasons Hotel Damascus",
             Description = "فندق فاخر يقع في وسط دمشق على شارع شكري القوتلي، بالقرب من المناطق الرئيسية والمعالم التاريخية.",
             Address = "Shukri Al Quwatli Street, Damascus, Syria",
@@ -125,7 +143,7 @@ public static class DataSeeder
 
         var safirHoms = new Hotel
         {
-            OwnerId = owner2.Id,
+            OwnerId = owner4.Id,
             Name = "Safir Homs Hotel",
             Description = "فندق يقع في منطقة الإنشاءات في مدينة حمص، ضمن منطقة سكنية حديثة وقريب من مركز الأعمال والتسوق.",
             Address = "Ragheb Al Jamali Street, Al Inshaat, Homs, Syria",
@@ -139,7 +157,7 @@ public static class DataSeeder
 
         var seaView = new Hotel
         {
-            OwnerId = owner1.Id,
+            OwnerId = owner5.Id,
             Name = "Sea View Hotel",
             Description = "فندق يقع على الكورنيش الغربي في مدينة اللاذقية، ويوفر إقامة مع إطلالة بحرية ومرافق فندقية ومطعم.",
             Address = "Western Corniche, Latakia, Syria",
@@ -153,7 +171,7 @@ public static class DataSeeder
 
         var grandTartous = new Hotel
         {
-            OwnerId = owner2.Id,
+            OwnerId = owner6.Id,
             Name = "Grand Hotel Tartous",
             Description = "فندق في طرطوس يقع على الكورنيش الشرقي، ويضم مرافق فندقية ومنطقة للأطفال ومسبحاً للأطفال وخدمات للضيوف.",
             Address = "East Corniche, Tartus, Syria",
@@ -167,7 +185,7 @@ public static class DataSeeder
 
         var orientHouse = new Hotel
         {
-            OwnerId = owner1.Id,
+            OwnerId = owner7.Id,
             Name = "Orient House Hotel",
             Description = "فندق تاريخي في مدينة حماة يقع ضمن منزل قديم، ويتميز بالطابع التراثي والتصميم الداخلي التقليدي، مع مطعم وخدمات إقامة.",
             Address = "Fern Al-Ras Alley, Hama, Syria",
@@ -181,7 +199,7 @@ public static class DataSeeder
 
         var arman = new Hotel
         {
-            OwnerId = owner2.Id,
+            OwnerId = owner8.Id,
             Name = "Arman Hotel",
             Description = "فندق في مدينة حلب يقع ضمن منطقة مشروع الـ3000 شقة.",
             Address = "3000 Apartments Project, Aleppo, Syria",
@@ -195,7 +213,7 @@ public static class DataSeeder
 
         var sheratonAleppo = new Hotel
         {
-            OwnerId = owner1.Id,
+            OwnerId = owner9.Id,
             Name = "Sheraton Aleppo Hotel",
             Description = "فندق خمس نجوم في قلب مدينة حلب، قريب من باب الفرج، ويضم مطاعم وقاعات اجتماعات ومؤتمرات ومسبحاً أولمبياً ونادياً صحياً.",
             Address = "Jadet Al-Khandaq, Bab Al-Faraj, Aleppo, Syria",
@@ -209,7 +227,7 @@ public static class DataSeeder
 
         var baron = new Hotel
         {
-            OwnerId = owner2.Id,
+            OwnerId = owner10.Id,
             Name = "Baron Hotel",
             Description = "فندق تاريخي معروف في مدينة حلب، يحافظ على طابعه العريق منذ أوائل القرن الماضي.",
             Address = "Baron Street, Aleppo, Syria",
