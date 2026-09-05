@@ -37,6 +37,16 @@ function toDate(value) {
   return new Date(`${value}T00:00:00`);
 }
 
+// "Deluxe ×2, Suite" — every room type on a reservation, falling back to the single roomName.
+function reservationRooms(reservation) {
+  if (Array.isArray(reservation.items) && reservation.items.length) {
+    return reservation.items
+      .map((i) => (i.qty > 1 ? `${i.roomTypeName} ×${i.qty}` : i.roomTypeName))
+      .join(', ');
+  }
+  return reservation.roomName || '';
+}
+
 function formatMonthLabel(date) {
   return date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
@@ -205,6 +215,7 @@ export default function OwnerDashboard() {
   const [blockSavingId, setBlockSavingId] = useState(null);
   const [addSaving, setAddSaving] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
+  const [calendarStats, setCalendarStats] = useState({});
   const [calendarDayOpen, setCalendarDayOpen] = useState(false);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
   const [calendarNotes, setCalendarNotes] = useState(() => {
@@ -230,6 +241,20 @@ export default function OwnerDashboard() {
   }, [dailyBudget, durationDays, durationMode]);
 
   const calendarDays = useMemo(() => getCalendarDays(calendarMonth), [calendarMonth]);
+  const calendarRange = useMemo(() => {
+    if (!calendarDays.length) return null;
+    return { from: toDateKey(calendarDays[0]), to: toDateKey(calendarDays[calendarDays.length - 1]) };
+  }, [calendarDays]);
+
+  useEffect(() => {
+    if (!hotelId || !calendarRange) return;
+    let active = true;
+    ownerSvc.getCalendar(hotelId, calendarRange)
+      .then((data) => { if (active) setCalendarStats(data); })
+      .catch(() => { if (active) setCalendarStats({}); });
+    return () => { active = false; };
+  }, [hotelId, calendarRange]);
+
   const calendarReservations = useMemo(() => {
     return [...reservations]
       .filter((item) => {
@@ -276,44 +301,24 @@ export default function OwnerDashboard() {
       inHouse.push(reservation);
     });
 
-    // Occupancy only counts reservations that truly overlap (checking-out guests have left)
-    const occupiedUnitsByRoomId = reservations
-      .filter(r => (r.status === 'confirmed' || r.status === 'pending') && overlapsReservation(selectedCalendarDay, r))
-      .reduce((acc, reservation) => {
-        const roomKey = String(reservation.roomId || '');
-        if (!roomKey) return acc;
-        acc[roomKey] = (acc[roomKey] || 0) + 1;
-        return acc;
-      }, {});
-    const availableRoomCount = rooms.reduce((total, room) => {
-      if (room.bookable === false) return total;
-      const variantUnits = Array.isArray(room.variants)
-        ? room.variants.filter(v => v.name && v.name.trim()).reduce((s, v) => s + (Number(v.amount) || 0), 0)
-        : 0;
-      const totalUnits = Math.max(0, Number(room.amount) || 0) + variantUnits;
-      const occupiedUnits = occupiedUnitsByRoomId[String(room.id)] || 0;
-      return total + Math.max(0, totalUnits - occupiedUnits);
-    }, 0);
-    const blockedRooms = rooms.filter((room) => room.bookable === false);
-    const blockedRoomCount = blockedRooms.reduce((total, room) => {
-      const variantUnits = Array.isArray(room.variants)
-        ? room.variants.filter(v => v.name && v.name.trim()).reduce((s, v) => s + (Number(v.amount) || 0), 0)
-        : 0;
-      return total + Math.max(0, Number(room.amount) || 0) + variantUnits;
-    }, 0);
-    const occupiedRoomCount = Object.values(occupiedUnitsByRoomId).reduce((sum, count) => sum + count, 0);
+    // Unit counts (total / occupied / blocked / available), per room type, computed server-side
+    // from real bookings + per-room availability blocks — see ownerSvc.getCalendar.
+    const stat = calendarStats[toDateKey(selectedCalendarDay)] || null;
 
     return {
       dayReservations,
       checkIns,
       checkOuts,
       inHouse,
-      availableRoomCount,
-      blockedRooms,
-      blockedRoomCount,
-      occupiedRoomCount,
+      hasStat: Boolean(stat),
+      roomTypeRows: stat ? stat.roomTypes : [],
+      blockedRooms: stat ? stat.blockedRooms : [],
+      totalRoomCount: stat ? stat.totalUnits : 0,
+      occupiedRoomCount: stat ? stat.occupiedUnits : 0,
+      blockedRoomCount: stat ? stat.blockedUnits : 0,
+      availableRoomCount: stat ? stat.availableUnits : 0,
     };
-  }, [rooms, reservations, selectedCalendarDay]);
+  }, [reservations, selectedCalendarDay, calendarStats]);
 
   // helper functions handled inline when calling service endpoints
 
@@ -1041,13 +1046,52 @@ export default function OwnerDashboard() {
               <div><strong>{t('ownerDashboard.calendar.availableRooms')}</strong><p>{selectedDayInfo.availableRoomCount}</p></div>
             </div>
 
+            {selectedDayInfo.roomTypeRows.length > 0 && (
+              <div className="calendar-day-breakdown">
+                <h4>{t('ownerDashboard.calendar.roomBreakdown')}</h4>
+                <div className="calendar-breakdown-scroll">
+                  <table className="calendar-breakdown-table">
+                    <thead>
+                      <tr>
+                        <th>{t('ownerDashboard.calendar.colRoomType')}</th>
+                        <th>{t('ownerDashboard.calendar.colTotal')}</th>
+                        <th>{t('ownerDashboard.calendar.colOccupied')}</th>
+                        <th>{t('ownerDashboard.calendar.colBlocked')}</th>
+                        <th>{t('ownerDashboard.calendar.colAvailable')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedDayInfo.roomTypeRows.map((r) => (
+                        <tr key={r.roomTypeId}>
+                          <td>{r.roomTypeName}</td>
+                          <td>{r.totalUnits}</td>
+                          <td>{r.occupiedUnits}</td>
+                          <td>{r.blockedUnits}</td>
+                          <td>{r.availableUnits}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td>{t('ownerDashboard.calendar.total')}</td>
+                        <td>{selectedDayInfo.totalRoomCount}</td>
+                        <td>{selectedDayInfo.occupiedRoomCount}</td>
+                        <td>{selectedDayInfo.blockedRoomCount}</td>
+                        <td>{selectedDayInfo.availableRoomCount}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
+
             <div className="calendar-day-panels">
               <div className="calendar-day-panel">
                 <h4>{t('ownerDashboard.calendar.checkIns')}</h4>
                 {selectedDayInfo.checkIns.length === 0 ? <p className="muted small">{t('ownerDashboard.calendar.none')}</p> : selectedDayInfo.checkIns.map((reservation) => (
                   <div key={`in-${reservation.id}`} className="calendar-popup-row">
                     <strong>{reservation.guestName}</strong>
-                    <span>{reservation.roomName}</span>
+                    <span>{reservationRooms(reservation)}</span>
                   </div>
                 ))}
               </div>
@@ -1057,7 +1101,7 @@ export default function OwnerDashboard() {
                 {selectedDayInfo.checkOuts.length === 0 ? <p className="muted small">{t('ownerDashboard.calendar.none')}</p> : selectedDayInfo.checkOuts.map((reservation) => (
                   <div key={`out-${reservation.id}`} className="calendar-popup-row">
                     <strong>{reservation.guestName}</strong>
-                    <span>{reservation.roomName}</span>
+                    <span>{reservationRooms(reservation)}</span>
                   </div>
                 ))}
               </div>
@@ -1067,17 +1111,17 @@ export default function OwnerDashboard() {
                 {selectedDayInfo.inHouse.length === 0 ? <p className="muted small">{t('ownerDashboard.calendar.none')}</p> : selectedDayInfo.inHouse.map((reservation) => (
                   <div key={`house-${reservation.id}`} className="calendar-popup-row">
                     <strong>{reservation.guestName}</strong>
-                    <span>{reservation.roomName}</span>
+                    <span>{reservationRooms(reservation)}</span>
                   </div>
                 ))}
               </div>
 
               <div className="calendar-day-panel">
                 <h4>{t('ownerDashboard.calendar.blockedRooms')}</h4>
-                {selectedDayInfo.blockedRooms.length === 0 ? <p className="muted small">{t('ownerDashboard.calendar.none')}</p> : selectedDayInfo.blockedRooms.map((room) => (
-                  <div key={`blocked-${room.id}`} className="calendar-popup-row">
-                    <strong>{room.name}</strong>
-                    <span>{t('ownerDashboard.calendar.blocked')}</span>
+                {selectedDayInfo.blockedRooms.length === 0 ? <p className="muted small">{t('ownerDashboard.calendar.none')}</p> : selectedDayInfo.blockedRooms.map((room, i) => (
+                  <div key={`blocked-${room.roomNumber}-${i}`} className="calendar-popup-row">
+                    <strong>{room.roomNumber}</strong>
+                    <span>{room.roomTypeName}</span>
                   </div>
                 ))}
               </div>

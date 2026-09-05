@@ -217,6 +217,100 @@ public class OwnerDashboardService : IOwnerDashboardService
             .ToList();
     }
 
+    public async Task<List<CalendarDayDto>> GetCalendarAsync(
+        long callerId, bool isAdmin, long hotelId, DateOnly from, DateOnly to)
+    {
+        var hotel = await _context.Hotels.FirstOrDefaultAsync(h => h.Id == hotelId)
+            ?? throw new HotelNotFoundException(hotelId);
+
+        if (hotel.OwnerId != callerId && !isAdmin)
+            throw new UnAuthoraizedOwnerException();
+
+        if (to < from) (from, to) = (to, from);
+        if (to.DayNumber - from.DayNumber > 400) to = from.AddDays(400);
+
+        var roomTypes = await _context.RoomTypes
+            .Where(rt => rt.HotelId == hotelId)
+            .Select(rt => new { rt.Id, rt.Name })
+            .OrderBy(rt => rt.Name)
+            .ToListAsync();
+
+        var rooms = await _context.Rooms
+            .Where(r => r.RoomType.HotelId == hotelId)
+            .Select(r => new { r.Id, r.RoomTypeId, r.RoomNumber })
+            .ToListAsync();
+
+        var totalByType = rooms.GroupBy(r => r.RoomTypeId).ToDictionary(g => g.Key, g => g.Count());
+        var roomTypeOfRoom = rooms.ToDictionary(r => r.Id, r => r.RoomTypeId);
+        var roomNumberOfRoom = rooms.ToDictionary(r => r.Id, r => r.RoomNumber);
+        var typeName = roomTypes.ToDictionary(rt => rt.Id, rt => rt.Name);
+
+        var bookings = await _context.Bookings
+            .Where(b => b.HotelId == hotelId
+                        && (b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Completed)
+                        && b.CheckinDate <= to && b.CheckoutDate > from)
+            .Select(b => new
+            {
+                b.CheckinDate,
+                b.CheckoutDate,
+                Items = b.Items.Select(i => new { i.RoomTypeId, i.Qty }).ToList()
+            })
+            .ToListAsync();
+
+        var roomIds = rooms.Select(r => r.Id).ToHashSet();
+        var blocked = (await _context.RoomAvailabilities
+            .Where(a => a.Status == RoomAvailabilityStatus.Blocked && a.Date >= from && a.Date <= to)
+            .Select(a => new { a.RoomId, a.Date })
+            .ToListAsync())
+            .Where(a => roomIds.Contains(a.RoomId))
+            .ToList();
+
+        var days = new List<CalendarDayDto>();
+        for (var d = from; d <= to; d = d.AddDays(1))
+        {
+            var occByType = new Dictionary<long, int>();
+            foreach (var b in bookings)
+            {
+                if (b.CheckinDate > d || d >= b.CheckoutDate) continue;
+                foreach (var it in b.Items)
+                    occByType[it.RoomTypeId] = occByType.GetValueOrDefault(it.RoomTypeId) + it.Qty;
+            }
+
+            var blkByType = new Dictionary<long, int>();
+            var blockedRoomsToday = new List<CalendarBlockedRoomDto>();
+            foreach (var bl in blocked)
+            {
+                if (bl.Date != d) continue;
+                if (!roomTypeOfRoom.TryGetValue(bl.RoomId, out var rtId)) continue;
+                blkByType[rtId] = blkByType.GetValueOrDefault(rtId) + 1;
+                blockedRoomsToday.Add(new CalendarBlockedRoomDto(
+                    roomNumberOfRoom.GetValueOrDefault(bl.RoomId, "—"),
+                    typeName.GetValueOrDefault(rtId, "—")));
+            }
+
+            var typeRows = new List<CalendarRoomTypeDayDto>();
+            foreach (var rt in roomTypes)
+            {
+                var total = totalByType.GetValueOrDefault(rt.Id);
+                var occ = Math.Min(occByType.GetValueOrDefault(rt.Id), total);
+                var blk = Math.Min(blkByType.GetValueOrDefault(rt.Id), Math.Max(0, total - occ));
+                typeRows.Add(new CalendarRoomTypeDayDto(
+                    rt.Id, rt.Name, total, occ, blk, Math.Max(0, total - occ - blk)));
+            }
+
+            days.Add(new CalendarDayDto(
+                d,
+                typeRows.Sum(r => r.TotalUnits),
+                typeRows.Sum(r => r.OccupiedUnits),
+                typeRows.Sum(r => r.BlockedUnits),
+                typeRows.Sum(r => r.AvailableUnits),
+                typeRows,
+                blockedRoomsToday.OrderBy(r => r.RoomNumber).ToList()));
+        }
+
+        return days;
+    }
+
     public async Task TrackViewAsync(long hotelId)
     {
         var today = SyriaClock.Today;

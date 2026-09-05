@@ -16,6 +16,30 @@ public record DateRangeRevenueDto(
     int CancelledCount
 );
 
+// ─── Reservations calendar ────────────────────────────────────────────────
+// One physical room manually taken out of service (Blocked) on a given day.
+public record CalendarBlockedRoomDto(string RoomNumber, string RoomTypeName);
+
+// One room type's unit counts on a single calendar day.
+public record CalendarRoomTypeDayDto(
+    long RoomTypeId,
+    string RoomTypeName,
+    int TotalUnits,
+    int OccupiedUnits,   // Σ qty of confirmed/completed bookings whose stay covers this night
+    int BlockedUnits,    // physical rooms of this type blocked this day
+    int AvailableUnits   // TotalUnits − OccupiedUnits − BlockedUnits (floored at 0)
+);
+
+public record CalendarDayDto(
+    DateOnly Date,
+    int TotalUnits,
+    int OccupiedUnits,
+    int BlockedUnits,
+    int AvailableUnits,
+    List<CalendarRoomTypeDayDto> RoomTypes,
+    List<CalendarBlockedRoomDto> BlockedRooms
+);
+
 // One room type's performance over a date window (attributed by check-in date). Room types with
 // no activity in the window are still returned as zero rows.
 public record RoomPerformanceDto(

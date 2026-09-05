@@ -221,6 +221,7 @@ export async function getReservations(hotelId) {
       id: b.id,
       roomId: null,
       roomName: b.items?.[0]?.roomTypeName || '',
+      items: (b.items || []).map((i) => ({ roomTypeName: i.roomTypeName, qty: Number(i.qty) || 1 })),
       guestName: primaryGuest?.fullName || '',
       guestEmail: null,
       guestPhone: null,
@@ -229,6 +230,41 @@ export async function getReservations(hotelId) {
       status: String(b.status || '').toLowerCase(),
     };
   });
+}
+
+// Per-day, per-room-type unit counts for the reservations calendar. Occupied = confirmed/completed
+// bookings whose stay covers that night (Σ qty); blocked = physical rooms manually taken out of
+// service that day. `from`/`to` are the visible calendar grid's first and last dates (YYYY-MM-DD).
+// Returns an object keyed by date string for O(1) day lookup.
+export async function getCalendar(hotelId, { from, to } = {}) {
+  const params = new URLSearchParams();
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  const raw = await request(`/api/v1/owner/dashboard/${hotelId}/calendar?${params.toString()}`);
+  const list = Array.isArray(raw) ? raw : [];
+  const byDate = {};
+  for (const d of list) {
+    byDate[d.date] = {
+      date: d.date,
+      totalUnits: Number(d.totalUnits) || 0,
+      occupiedUnits: Number(d.occupiedUnits) || 0,
+      blockedUnits: Number(d.blockedUnits) || 0,
+      availableUnits: Number(d.availableUnits) || 0,
+      roomTypes: (d.roomTypes || []).map((r) => ({
+        roomTypeId: r.roomTypeId,
+        roomTypeName: r.roomTypeName,
+        totalUnits: Number(r.totalUnits) || 0,
+        occupiedUnits: Number(r.occupiedUnits) || 0,
+        blockedUnits: Number(r.blockedUnits) || 0,
+        availableUnits: Number(r.availableUnits) || 0,
+      })),
+      blockedRooms: (d.blockedRooms || []).map((r) => ({
+        roomNumber: r.roomNumber,
+        roomTypeName: r.roomTypeName,
+      })),
+    };
+  }
+  return byDate;
 }
 
 // Lists the individual physical rooms (e.g. "101", "102") under one room type, so a specific
@@ -520,5 +556,5 @@ export async function getHotelReviews(hotelId) {
   return request(`/api/v1/hotels/${hotelId}/reviews`);
 }
 
-const ownerService = { getBilling, getRevenueStats, getRoomPerformance, getMetrics, getRooms, getReservations, getSettings, getHotelProfile, updateHotelProfile, updateHotelAmenities, updateRoomTypeAmenities, updateSettings, acceptReservation, rejectReservation, createReservation, toggleCampaign, updateCancelPolicy, updateRoom, deleteRoom, uploadHotelPhoto, deleteHotelPhoto, uploadRoomTypePhoto, deleteRoomTypePhoto, getRoomTypeImages, createRoom, getHotelReviews, uploadShamCashQr, getCommission, payCommission };
+const ownerService = { getBilling, getRevenueStats, getRoomPerformance, getCalendar, getMetrics, getRooms, getReservations, getSettings, getHotelProfile, updateHotelProfile, updateHotelAmenities, updateRoomTypeAmenities, updateSettings, acceptReservation, rejectReservation, createReservation, toggleCampaign, updateCancelPolicy, updateRoom, deleteRoom, uploadHotelPhoto, deleteHotelPhoto, uploadRoomTypePhoto, deleteRoomTypePhoto, getRoomTypeImages, createRoom, getHotelReviews, uploadShamCashQr, getCommission, payCommission };
 export default ownerService;
