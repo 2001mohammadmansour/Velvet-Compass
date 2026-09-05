@@ -26,10 +26,21 @@ namespace HotelBooking.Infrastructure.Services
         // given) and reports AvailableCount so the frontend can show a "few left" notice.
         public async Task<List<RoomSearchResultDto>> SearchAsync(DateOnly? checkIn = null, DateOnly? checkOut = null)
         {
-            var roomTypes = await _context.RoomTypes
+            // Exclude room types belonging to hotels whose owner is currently suspended (matches
+            // the public hotel list — HotelServices.GetAllAsync).
+            var now = DateTimeOffset.UtcNow;
+            var suspendedOwnerIds = await _context.Users
+                .Where(u => u.LockoutEnabled && u.LockoutEnd != null && u.LockoutEnd > now)
+                .Select(u => u.Id)
+                .ToListAsync();
+            var suspendedOwnerSet = suspendedOwnerIds.ToHashSet();
+
+            var roomTypes = (await _context.RoomTypes
                 .Include(rt => rt.Hotel)
                 .Include(rt => rt.RoomTypeImages)
-                .ToListAsync();
+                .ToListAsync())
+                .Where(rt => !suspendedOwnerSet.Contains(rt.Hotel.OwnerId))
+                .ToList();
 
             var roomTypeIds = roomTypes.Select(rt => rt.Id).ToList();
             var reviewStats = await _context.Reviews

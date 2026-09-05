@@ -4,7 +4,9 @@
 import { apiRequest as request } from './apiClient';
 
 export async function getHotels() {
-  const result = await request("/api/v1/hotels");
+  // pageSize is large enough to return every hotel — the Hotels page has no pagination UI and
+  // the backend defaults to only 10 per page.
+  const result = await request("/api/v1/hotels?pageSize=1000");
   const items = Array.isArray(result?.items) ? result.items : [];
   return items.map((h) => ({
     hotelId: h.hotelId,

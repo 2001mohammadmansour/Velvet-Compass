@@ -214,7 +214,7 @@ export default function OwnerDashboard() {
       return {};
     }
   });
-  const [autoAcceptBookings, setAutoAcceptBookings] = useState(true);
+  const [autoAcceptBookings, setAutoAcceptBookings] = useState(false);
   const [hotelReviews, setHotelReviews] = useState(null);
 
   const net = useMemo(() => (bills ? bills.gross * (1 - bills.platformCutPercent / 100) : 0), [bills]);

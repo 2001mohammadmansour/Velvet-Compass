@@ -29,8 +29,13 @@ namespace HotelBooking.Infrastructure.Services
 
         public async Task<PagedResult<HotelSummaryDto>> GetAllAsync(HotelFilterRequest filterRequest)
         {
+            var now = DateTimeOffset.UtcNow;
             var query = _context.Hotels
                 .Include(x => x.HotelImages)
+                // Hide hotels whose owner is currently suspended — they can't accept bookings
+                // (auto-accept is off) or manage the listing. Existing bookings are untouched.
+                .Where(h => !_context.Users.Any(u =>
+                    u.Id == h.OwnerId && u.LockoutEnabled && u.LockoutEnd != null && u.LockoutEnd > now))
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(filterRequest.City))

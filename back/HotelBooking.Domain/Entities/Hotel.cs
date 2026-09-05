@@ -15,7 +15,9 @@ namespace HotelBooking.Domain.Entities
         public string Email { get; set; } = string.Empty;
         // CHANGED BY AI (2026-07-12): please review. New column for the owner-facing
         // "auto-accept bookings" toggle; see BookingService.CreateAsync for its effect.
-        public bool AutoAcceptBookings { get; set; } = true;
+        // Defaults off: with the Sham Cash model the guest pays the owner directly, so the owner
+        // should confirm the payment landed before accepting the booking.
+        public bool AutoAcceptBookings { get; set; } = false;
         // CHANGED BY AI (2026-07-12): please review. New columns backing the owner-facing
         // breakfast add-on toggle/price; see BookingService.CreateAsync for how it's priced.
         public bool BreakfastAvailable { get; set; } = false;

@@ -31,6 +31,14 @@ namespace HotelBooking.Infrastructure.Services
             var hotel = await _context.Hotels.FirstOrDefaultAsync(h => h.Id == request.HotelId)
                 ?? throw new HotelNotFoundException(request.HotelId);
 
+            // A suspended owner's hotel is hidden from listings/search; also block new bookings
+            // reached via a stale link. Existing bookings are unaffected.
+            var now = DateTimeOffset.UtcNow;
+            var ownerSuspended = await _context.Users.AnyAsync(u =>
+                u.Id == hotel.OwnerId && u.LockoutEnabled && u.LockoutEnd != null && u.LockoutEnd > now);
+            if (ownerSuspended)
+                throw new Exception("This hotel is not accepting bookings right now.");
+
             if (request.CheckinDate >= request.CheckoutDate)
                 throw new Exception("Checkout date must be after checkin date.");
 
