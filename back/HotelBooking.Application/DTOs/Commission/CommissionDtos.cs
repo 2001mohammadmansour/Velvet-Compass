@@ -19,8 +19,8 @@ namespace HotelBooking.Application.DTOs.Commission
 
     // Admin overview across all hotels — the platform's commission position as three buckets.
     public record PlatformCommissionDto(
-        decimal PendingTotal,       // confirmed bookings whose stay hasn't ended — 15% not due yet
-        decimal EarnedTotal,        // finalised (checked out / cancelled), owner owes it, not paid
+        decimal PendingTotal,       // unsettled bookings — stay hasn't ended, 15% not due yet
+        decimal ToCollectTotal,     // stay ended / cancelled: the hotel is holding the 15%, must pay it
         decimal CollectedTotal,     // owner paid + admin confirmed — money the platform actually has
         List<HotelCommissionRowDto> Hotels
     );

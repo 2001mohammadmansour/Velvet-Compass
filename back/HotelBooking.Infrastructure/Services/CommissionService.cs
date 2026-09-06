@@ -154,7 +154,7 @@ namespace HotelBooking.Infrastructure.Services
             var byHotel = bookings.GroupBy(b => b.HotelId).ToDictionary(g => g.Key, g => g.ToList());
 
             var rows = new List<HotelCommissionRowDto>();
-            decimal pending = 0m, earned = 0m, collected = 0m;
+            decimal pending = 0m, toCollect = 0m, collected = 0m;
 
             foreach (var hotel in hotels)
             {
@@ -172,7 +172,7 @@ namespace HotelBooking.Infrastructure.Services
                                   .Sum(b => b.PlatformFee);
 
                 pending += notYetDue;
-                earned += owed + awaiting;
+                toCollect += owed + awaiting;
                 collected += paid;
 
                 if (owed > 0m || awaiting > 0m)
@@ -193,7 +193,7 @@ namespace HotelBooking.Infrastructure.Services
             }
 
             return new PlatformCommissionDto(
-                Math.Round(pending, 2), Math.Round(earned, 2), Math.Round(collected, 2),
+                Math.Round(pending, 2), Math.Round(toCollect, 2), Math.Round(collected, 2),
                 rows.OrderByDescending(r => r.Owed + r.AwaitingConfirmation).ToList());
         }
 

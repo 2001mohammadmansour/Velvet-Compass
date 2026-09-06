@@ -32,22 +32,17 @@ public class AdminDashboardService : IAdminDashboardService
             .Where(b => from == null || (b.CheckinDate >= from && b.CheckinDate < to))
             .ToListAsync();
 
-        var paidBookings = bookings.Where(b =>
-            b.Status == BookingStatus.Confirmed ||
-            b.Status == BookingStatus.Completed).ToList();
-
         var cancelledBookings = bookings.Where(b =>
             b.Status == BookingStatus.Cancelled).ToList();
 
         // ─── Platform Revenue ─────────────────────────────────
-        // The 15% commission accrued on confirmed/completed bookings.
-        var platformRevenue = paidBookings.Sum(b => b.PlatformFee);
-        // The platform is owed 15% of every cancellation penalty — the penalty itself stays in the
-        // owner's wallet. This is NOT revenue until the owner pays it (it's in the Commission tab's
-        // "pending" total), so it's reported separately and left out of the revenue figure.
-        const decimal commissionRate = 0.15m;
-        var cancellationCommissionOwed = Math.Round(
-            cancelledBookings.Sum(b => b.CancellationPenalty ?? 0) * commissionRate, 2);
+        // Money the platform has actually received: commission an owner has paid and the admin
+        // has confirmed. Everything else (accrued-but-unpaid, cancellation cuts) lives in the
+        // Commission tab's own buckets. Kept a distinct figure so other income can be added here
+        // later without touching the commission calc.
+        var totalRevenue = bookings
+            .Where(b => b.CommissionPaidAt != null)
+            .Sum(b => b.CommissionAmount ?? 0m);
 
         // ─── Per-hotel performance (every hotel, zero-activity included) ──────
         var allHotels = await _context.Hotels.ToListAsync();
@@ -79,7 +74,7 @@ public class AdminDashboardService : IAdminDashboardService
         var totalUsers = await _context.Users.CountAsync();
 
         return new AdminDashboardDto(
-            new AdminRevenueDto(platformRevenue, cancellationCommissionOwed, platformRevenue),
+            new AdminRevenueDto(totalRevenue),
             new AdminBookingStatsDto(
                 bookings.Count,
                 bookings.Count(b => b.Status == BookingStatus.Confirmed),
