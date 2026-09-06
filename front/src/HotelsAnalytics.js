@@ -333,7 +333,6 @@ export default function HotelsAnalytics() {
         <div className="admin-stat-card">
           <div className="admin-stat-label">{t('hotelsAnalytics.platformRevenue')}</div>
           <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(revenue.totalRevenue)}</div>
-          <div className="admin-stat-sub">{t('hotelsAnalytics.platformRevenueSub')}</div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-label">{t('hotelsAnalytics.hotelsUsers')}</div>

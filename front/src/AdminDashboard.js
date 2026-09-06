@@ -55,7 +55,6 @@ function OverviewTab({ onTabChange }) {
           <div className="admin-stat-card">
             <div className="admin-stat-label">{t('adminDashboard.overviewTab.platformRevenue')}</div>
             <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(data.revenue?.totalRevenue)}</div>
-            <div className="admin-stat-sub">{t('adminDashboard.overviewTab.platformRevenueSub')}</div>
           </div>
           <div
             className="admin-stat-card"
@@ -64,7 +63,6 @@ function OverviewTab({ onTabChange }) {
           >
             <div className="admin-stat-label">{t('adminDashboard.overviewTab.pendingCommission')}</div>
             <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(pendingCommission)}</div>
-            <div className="admin-stat-sub">{t('adminDashboard.overviewTab.pendingCommissionSub')}</div>
           </div>
           <div
             className="admin-stat-card"
@@ -73,7 +71,6 @@ function OverviewTab({ onTabChange }) {
           >
             <div className="admin-stat-label">{t('adminDashboard.overviewTab.toCollect')}</div>
             <div className="admin-stat-value" style={{ fontSize: 20, color: toCollectCommission > 0 ? '#f59e0b' : undefined }}>{formatMoney(toCollectCommission)}</div>
-            <div className="admin-stat-sub">{t('adminDashboard.overviewTab.toCollectSub')}</div>
           </div>
           <div className="admin-stat-card">
             <div className="admin-stat-label">{t('adminDashboard.overviewTab.hotelsUsers')}</div>

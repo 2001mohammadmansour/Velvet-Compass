@@ -119,17 +119,14 @@ export default function CommissionAdmin() {
         <div className="admin-stat-card">
           <div className="admin-stat-label">{t('commission.pendingBucket')}</div>
           <div className="admin-stat-value" style={{ fontSize: 20 }}>{money(data.pendingTotal)}</div>
-          <div className="admin-stat-sub">{t('commission.pendingBucketSub')}</div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-label">{t('commission.toCollect')}</div>
           <div className="admin-stat-value" style={{ fontSize: 20, color: data.toCollectTotal > 0 ? '#f59e0b' : undefined }}>{money(data.toCollectTotal)}</div>
-          <div className="admin-stat-sub">{t('commission.toCollectSub')}</div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-label">{t('commission.collected')}</div>
           <div className="admin-stat-value" style={{ fontSize: 20 }}>{money(data.collectedTotal)}</div>
-          <div className="admin-stat-sub">{t('commission.collectedSub')}</div>
         </div>
       </div>
 
