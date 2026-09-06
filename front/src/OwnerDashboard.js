@@ -32,6 +32,7 @@ const CAT_LABELS = { staff: 'Staff', location: 'Location', facilities: 'Faciliti
 const SHOW_CLICKS = false;
 const SHOW_CAMPAIGNS = false;
 const SHOW_PERFORMANCE_COMPARISON = false;
+const SHOW_ROOM_VARIANTS = false;
 
 function toDate(value) {
   return new Date(`${value}T00:00:00`);
@@ -1609,6 +1610,7 @@ export default function OwnerDashboard() {
               </div>
             </div>
 
+            {SHOW_ROOM_VARIANTS && (
             <div className="campaign-section">
               <label>{t('ownerDashboard.roomModal.variants')}</label>
               {variants.map((v, i) => (
@@ -1621,6 +1623,7 @@ export default function OwnerDashboard() {
               ))}
               <button className="campaign-next" onClick={addVariant}>{t('ownerDashboard.roomModal.addVariant')}</button>
             </div>
+            )}
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
               <div className="room-form-actions">

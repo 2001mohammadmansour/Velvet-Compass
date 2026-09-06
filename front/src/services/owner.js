@@ -24,6 +24,7 @@ function mapHotelDetailToProfile(h) {
     amenities: Array.isArray(h?.amenities) ? h.amenities : [],
     shamCashWallet: h?.shamCashWallet || '',
     shamCashQrUrl: h?.shamCashQrUrl || '',
+    email: h?.email || '',
     // Not shown in the edit form, but required to send back on update.
     _country: h?.country || '',
     _email: h?.email || '',
@@ -342,7 +343,7 @@ export async function updateHotelProfile(hotelId, updates) {
     country: current._country,
     starRating: current.starRating,
     phone: updates.phoneNumber ?? current.phoneNumber,
-    email: current._email,
+    email: updates.email ?? current.email ?? current._email,
     shamCashWallet: (updates.shamCashWallet ?? current.shamCashWallet) || null,
   };
   const h = await request(`/api/v1/hotels/${hotelId}`, { method: 'PUT', body: JSON.stringify(payload) });

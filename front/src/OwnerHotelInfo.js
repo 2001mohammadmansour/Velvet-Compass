@@ -10,6 +10,7 @@ const initialForm = {
   city: "",
   address: "",
   phoneNumber: "",
+  email: "",
   description: "",
   shamCashWallet: "",
 };
@@ -56,6 +57,7 @@ export default function OwnerHotelInfo({ embedded = false }) {
           city: String(profile?.city || ""),
           address: String(profile?.address || ""),
           phoneNumber: String(profile?.phoneNumber || ""),
+          email: String(profile?.email || ""),
           description: String(profile?.description || ""),
           shamCashWallet: String(profile?.shamCashWallet || ""),
         });
@@ -166,6 +168,7 @@ export default function OwnerHotelInfo({ embedded = false }) {
         city: form.city.trim(),
         address: form.address.trim(),
         phoneNumber: form.phoneNumber.trim(),
+        email: form.email.trim(),
         description: form.description.trim(),
         shamCashWallet: form.shamCashWallet.trim(),
       };
@@ -175,6 +178,7 @@ export default function OwnerHotelInfo({ embedded = false }) {
         city: String(updated?.city || ""),
         address: String(updated?.address || ""),
         phoneNumber: String(updated?.phoneNumber || ""),
+        email: String(updated?.email || ""),
         description: String(updated?.description || ""),
         shamCashWallet: String(updated?.shamCashWallet || ""),
       });
@@ -296,6 +300,17 @@ export default function OwnerHotelInfo({ embedded = false }) {
                 value={form.phoneNumber}
                 onChange={(e) => updateField("phoneNumber", e.target.value)}
                 placeholder="+1 555 123 4567"
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8 }}
+              />
+            </label>
+
+            <label>
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerHotelInfo.email')}</div>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => updateField("email", e.target.value)}
+                placeholder="hotel@email.com"
                 style={{ width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8 }}
               />
             </label>

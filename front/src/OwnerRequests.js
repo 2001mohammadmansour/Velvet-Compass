@@ -8,7 +8,7 @@ import { getCurrentUser } from './services/auth';
 
 const MAX_DOC_BYTES = 8 * 1024 * 1024; // 8MB source cap (image is downscaled before storing)
 
-const emptyForm = { address: '', stars: 0 };
+const emptyForm = { hotelName: '', address: '', stars: 0 };
 
 function StarPicker({ value, onChange }) {
   return (
@@ -54,8 +54,7 @@ export default function OwnerRequests({ embedded = false }) {
     };
   }, []);
 
-  const [type, setType] = useState('edit'); // 'edit' | 'create'
-  const [identity, setIdentity] = useState({ ownerName: owner.ownerName, ownerEmail: owner.ownerEmail });
+  // Owners can only request edits to their existing hotel; new-hotel registration was removed.
   const [form, setForm] = useState(emptyForm);
   const [doc, setDoc] = useState(null); // { name, dataUrl }
   const [error, setError] = useState('');
@@ -72,19 +71,16 @@ export default function OwnerRequests({ embedded = false }) {
 
   useEffect(() => { loadRequests(); }, [loadRequests]);
 
-  // Prefill edit form with the owner's current hotel info
+  // Prefill with the owner's current hotel info
   useEffect(() => {
-    if (type === 'edit') {
-      setForm({
-        address: owner.address || '',
-        stars: owner.stars || 0,
-      });
-    } else {
-      setForm(emptyForm);
-    }
+    setForm({
+      hotelName: owner.hotelName || '',
+      address: owner.address || '',
+      stars: owner.stars || 0,
+    });
     setError('');
     setSuccess('');
-  }, [type, owner]);
+  }, [owner]);
 
   function updateField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -116,19 +112,20 @@ export default function OwnerRequests({ embedded = false }) {
       setError(t('ownerRequests.errors.documentRequired'));
       return;
     }
-    if (!identity.ownerName.trim()) {
-      setError(t('ownerRequests.errors.nameRequired'));
+    if (!form.hotelName.trim()) {
+      setError(t('ownerRequests.errors.hotelNameRequired'));
       return;
     }
-    if (type === 'edit' && !owner.hotelId) {
+    if (!owner.hotelId) {
       setError(t('ownerRequests.errors.noApprovedHotel'));
       return;
     }
     setSubmitting(true);
     try {
       await submitHotelRequest({
-        type,
-        hotelId: type === 'edit' ? owner.hotelId : null,
+        type: 'edit',
+        hotelId: owner.hotelId,
+        hotelName: form.hotelName.trim(),
         address: form.address.trim(),
         stars: form.stars || null,
         document: doc,
@@ -139,11 +136,7 @@ export default function OwnerRequests({ embedded = false }) {
       return;
     }
     setDoc(null);
-    setSuccess(
-      type === 'create'
-        ? t('ownerRequests.success.created')
-        : t('ownerRequests.success.edited')
-    );
+    setSuccess(t('ownerRequests.success.edited'));
     setSubmitting(false);
     await loadRequests();
   }
@@ -170,35 +163,12 @@ export default function OwnerRequests({ embedded = false }) {
 
       <section className="od-row">
         <form onSubmit={handleSubmit}>
-          <div className="orq-type-toggle">
-            <button
-              type="button"
-              className={`orq-type-btn ${type === 'edit' ? 'active' : ''}`}
-              onClick={() => setType('edit')}
-            >
-              {t('ownerRequests.editMyHotel')}
-            </button>
-            <button
-              type="button"
-              className={`orq-type-btn ${type === 'create' ? 'active' : ''}`}
-              onClick={() => setType('create')}
-            >
-              {t('ownerRequests.registerNewHotel')}
-            </button>
-          </div>
-
           <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
             <label>
-              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerRequests.yourName')}</div>
-              <input value={identity.ownerName}
-                onChange={(e) => setIdentity((p) => ({ ...p, ownerName: e.target.value }))}
-                placeholder={t('ownerRequests.yourNamePlaceholder')} required className="orq-input" />
-            </label>
-            <label>
-              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerRequests.yourEmail')}</div>
-              <input type="email" value={identity.ownerEmail}
-                onChange={(e) => setIdentity((p) => ({ ...p, ownerEmail: e.target.value }))}
-                placeholder="you@email.com" className="orq-input" />
+              <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerRequests.hotelName')}</div>
+              <input value={form.hotelName}
+                onChange={(e) => updateField('hotelName', e.target.value)}
+                placeholder={t('ownerRequests.hotelNamePlaceholder')} required className="orq-input" />
             </label>
             <label style={{ gridColumn: '1 / -1' }}>
               <div className="small muted" style={{ marginBottom: 4 }}>{t('ownerRequests.address')}</div>
