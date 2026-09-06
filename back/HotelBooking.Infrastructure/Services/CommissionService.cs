@@ -154,7 +154,7 @@ namespace HotelBooking.Infrastructure.Services
             var byHotel = bookings.GroupBy(b => b.HotelId).ToDictionary(g => g.Key, g => g.ToList());
 
             var rows = new List<HotelCommissionRowDto>();
-            decimal pending = 0m, collected = 0m;
+            decimal pending = 0m, earned = 0m, collected = 0m;
 
             foreach (var hotel in hotels)
             {
@@ -162,8 +162,17 @@ namespace HotelBooking.Infrastructure.Services
                 var owed = Math.Round(hb.Where(b => IsOwed(b, today)).Sum(b => KeptAmount(b, today)) * Rate, 2);
                 var awaiting = hb.Where(IsAwaitingConfirmation).Sum(b => b.CommissionAmount ?? 0m);
                 var paid = hb.Where(b => b.CommissionPaidAt != null).Sum(b => b.CommissionAmount ?? 0m);
+                // Confirmed bookings still in progress — the 15% the platform will be owed once the
+                // stay ends. Not due yet, so it's its own bucket.
+                var notYetDue = hb.Where(b => b.Status == BookingStatus.Confirmed
+                                           && b.CheckoutDate >= today
+                                           && b.CommissionClaimedAt == null
+                                           && b.CommissionPaidAt == null
+                                           && b.CommissionWaivedAt == null)
+                                  .Sum(b => b.PlatformFee);
 
-                pending += owed + awaiting;
+                pending += notYetDue;
+                earned += owed + awaiting;
                 collected += paid;
 
                 if (owed > 0m || awaiting > 0m)
@@ -183,7 +192,8 @@ namespace HotelBooking.Infrastructure.Services
                 }
             }
 
-            return new PlatformCommissionDto(pending, collected,
+            return new PlatformCommissionDto(
+                Math.Round(pending, 2), Math.Round(earned, 2), Math.Round(collected, 2),
                 rows.OrderByDescending(r => r.Owed + r.AwaitingConfirmation).ToList());
         }
 

@@ -17,10 +17,11 @@ namespace HotelBooking.Application.DTOs.Commission
         string? SenderName = null
     );
 
-    // Admin overview across all hotels.
+    // Admin overview across all hotels — the platform's commission position as three buckets.
     public record PlatformCommissionDto(
-        decimal PendingTotal,       // owed + awaiting confirmation, everywhere
-        decimal CollectedTotal,     // lifetime confirmed — real platform revenue
+        decimal PendingTotal,       // confirmed bookings whose stay hasn't ended — 15% not due yet
+        decimal EarnedTotal,        // finalised (checked out / cancelled), owner owes it, not paid
+        decimal CollectedTotal,     // owner paid + admin confirmed — money the platform actually has
         List<HotelCommissionRowDto> Hotels
     );
 

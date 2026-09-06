@@ -36,7 +36,7 @@ function OverviewTab({ onTabChange }) {
         if (!mounted) return;
         setData(dashboard);
         setPendingRequests(requests.filter((r) => r.status === 'pending').length);
-        setPendingCommission(commission?.pendingTotal || 0);
+        setPendingCommission(commission?.earnedTotal || 0);
       })
       .catch((err) => { if (mounted) setError(err.message || t('adminDashboard.overviewTab.loadError')); })
       .finally(() => { if (mounted) setLoading(false); });

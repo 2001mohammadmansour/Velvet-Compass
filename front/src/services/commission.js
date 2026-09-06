@@ -1,10 +1,14 @@
 import { apiRequest as request } from './apiClient';
 
-// Admin: platform-wide pending vs collected commission, per hotel.
+// Admin: platform-wide commission in three buckets, plus the per-hotel breakdown.
+//  - pendingTotal:   confirmed bookings still in progress — 15% not due yet
+//  - earnedTotal:    finalised, owner owes it, hasn't paid
+//  - collectedTotal: paid + admin-confirmed — money the platform actually has
 export async function getCommissionOverview() {
   const d = await request('/api/v1/commission/overview');
   return {
     pendingTotal: Number(d?.pendingTotal) || 0,
+    earnedTotal: Number(d?.earnedTotal) || 0,
     collectedTotal: Number(d?.collectedTotal) || 0,
     hotels: Array.isArray(d?.hotels) ? d.hotels : [],
   };
