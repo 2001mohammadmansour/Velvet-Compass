@@ -623,6 +623,8 @@
       "loadError": "تعذّر تحميل النظرة العامة.",
       "platformRevenue": "إيرادات المنصة",
       "platformRevenueSub": "العمولة المستلمة والمؤكدة",
+      "pendingCommission": "قيد الانتظار",
+      "pendingCommissionSub": "حجوزات غير مُسوّاة — لم تنتهِ الإقامة",
       "toCollect": "للتحصيل",
       "toCollectSub": "انتهت الإقامة — الفندق يحتفظ بنسبة 15%",
       "hotelsUsers": "الفنادق / المستخدمون",

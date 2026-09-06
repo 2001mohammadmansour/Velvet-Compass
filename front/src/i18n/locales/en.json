@@ -623,6 +623,8 @@
       "loadError": "Unable to load overview.",
       "platformRevenue": "Platform Revenue",
       "platformRevenueSub": "Commission received and confirmed",
+      "pendingCommission": "Pending",
+      "pendingCommissionSub": "Unsettled bookings — stay hasn't ended",
       "toCollect": "To Collect",
       "toCollectSub": "Stay done — hotel is holding the 15%",
       "hotelsUsers": "Hotels / Users",

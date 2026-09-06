@@ -26,6 +26,7 @@ function OverviewTab({ onTabChange }) {
   const [data, setData] = useState(null);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [toCollectCommission, setToCollectCommission] = useState(0);
+  const [pendingCommission, setPendingCommission] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -37,6 +38,7 @@ function OverviewTab({ onTabChange }) {
         setData(dashboard);
         setPendingRequests(requests.filter((r) => r.status === 'pending').length);
         setToCollectCommission(commission?.toCollectTotal || 0);
+        setPendingCommission(commission?.pendingTotal || 0);
       })
       .catch((err) => { if (mounted) setError(err.message || t('adminDashboard.overviewTab.loadError')); })
       .finally(() => { if (mounted) setLoading(false); });
@@ -54,6 +56,15 @@ function OverviewTab({ onTabChange }) {
             <div className="admin-stat-label">{t('adminDashboard.overviewTab.platformRevenue')}</div>
             <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(data.revenue?.totalRevenue)}</div>
             <div className="admin-stat-sub">{t('adminDashboard.overviewTab.platformRevenueSub')}</div>
+          </div>
+          <div
+            className="admin-stat-card"
+            style={{ cursor: 'pointer' }}
+            onClick={() => onTabChange('commission')}
+          >
+            <div className="admin-stat-label">{t('adminDashboard.overviewTab.pendingCommission')}</div>
+            <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(pendingCommission)}</div>
+            <div className="admin-stat-sub">{t('adminDashboard.overviewTab.pendingCommissionSub')}</div>
           </div>
           <div
             className="admin-stat-card"
