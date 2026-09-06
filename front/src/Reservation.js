@@ -38,7 +38,7 @@ export default function Reservation() {
     return () => { mounted = false; };
   }, [room?.hotelId]);
 
-  const discountApplied = discountCode.trim().toLowerCase() === "alhamid";
+  const discountApplied = discountCode.trim().toLowerCase() === "mohamed alhamid";
   const finalTotal = discountApplied ? 0 : grandTotal;
 
   const handleCustomer = (field, value) => setCustomer({ ...customer, [field]: value });
@@ -180,7 +180,7 @@ export default function Reservation() {
           )}
           {discountApplied && (
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
-              <span>{t('reservation.discountLabel', { code: 'alhamid' })}</span>
+              <span>{t('reservation.discountLabel', { code: 'Mohamed Alhamid' })}</span>
               <span>-${grandTotal.toFixed(2)}</span>
             </div>
           )}
