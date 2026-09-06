@@ -9,9 +9,14 @@ public record AdminDashboardDto(
 );
 
 public record AdminRevenueDto(
-    decimal TotalPlatformRevenue,      // مجموع 15% من كل الحجوزات
-    decimal TotalCancellationRevenue,  // الـ 20% من الإلغاءات تذهب للمنصة
-    decimal TotalRevenue               // الإجمالي
+    // The 15% commission accrued on every confirmed/completed booking.
+    decimal TotalPlatformRevenue,
+    // The platform's 15% cut of cancellation penalties. The penalty money stays in the owner's
+    // wallet, so this is owed by owners (it shows in the Commission tab's "pending" total) — NOT
+    // collected platform revenue. Surfaced here only so the admin sees it accruing.
+    decimal CancellationCommissionOwed,
+    // = TotalPlatformRevenue. The cancellation cut is intentionally excluded (it's owed, not revenue).
+    decimal TotalRevenue
 );
 
 public record AdminBookingStatsDto(

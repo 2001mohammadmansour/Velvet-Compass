@@ -9,6 +9,7 @@ import AmenitiesAdmin from './AmenitiesAdmin';
 import CommissionAdmin from './CommissionAdmin';
 import { getAdminDashboard } from './services/hotels';
 import { getAllHotelRequests } from './services/hotelRequests';
+import { getCommissionOverview } from './services/commission';
 import './AdminDashboard.css';
 
 function formatMoney(value) {
@@ -24,16 +25,18 @@ function OverviewTab({ onTabChange }) {
   const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [pendingRequests, setPendingRequests] = useState(0);
+  const [pendingCommission, setPendingCommission] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([getAdminDashboard(), getAllHotelRequests()])
-      .then(([dashboard, requests]) => {
+    Promise.all([getAdminDashboard(), getAllHotelRequests(), getCommissionOverview().catch(() => null)])
+      .then(([dashboard, requests, commission]) => {
         if (!mounted) return;
         setData(dashboard);
         setPendingRequests(requests.filter((r) => r.status === 'pending').length);
+        setPendingCommission(commission?.pendingTotal || 0);
       })
       .catch((err) => { if (mounted) setError(err.message || t('adminDashboard.overviewTab.loadError')); })
       .finally(() => { if (mounted) setLoading(false); });
@@ -51,6 +54,15 @@ function OverviewTab({ onTabChange }) {
             <div className="admin-stat-label">{t('adminDashboard.overviewTab.platformRevenue')}</div>
             <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(data.revenue?.totalRevenue)}</div>
             <div className="admin-stat-sub">{t('adminDashboard.overviewTab.platformRevenueSub')}</div>
+          </div>
+          <div
+            className="admin-stat-card"
+            style={{ cursor: 'pointer' }}
+            onClick={() => onTabChange('commission')}
+          >
+            <div className="admin-stat-label">{t('adminDashboard.overviewTab.pendingCommission')}</div>
+            <div className="admin-stat-value" style={{ fontSize: 20, color: pendingCommission > 0 ? '#f59e0b' : undefined }}>{formatMoney(pendingCommission)}</div>
+            <div className="admin-stat-sub">{t('adminDashboard.overviewTab.pendingCommissionSub')}</div>
           </div>
           <div className="admin-stat-card">
             <div className="admin-stat-label">{t('adminDashboard.overviewTab.hotelsUsers')}</div>

@@ -336,13 +336,8 @@ export default function HotelsAnalytics() {
           <div className="admin-stat-sub">{t('hotelsAnalytics.platformRevenueSub')}</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-label">{t('hotelsAnalytics.bookingFees')}</div>
-          <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(revenue.totalPlatformRevenue)}</div>
-          <div className="admin-stat-sub">{t('hotelsAnalytics.bookingFeesSub')}</div>
-        </div>
-        <div className="admin-stat-card">
           <div className="admin-stat-label">{t('hotelsAnalytics.cancellationRevenue')}</div>
-          <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(revenue.totalCancellationRevenue)}</div>
+          <div className="admin-stat-value" style={{ fontSize: 20 }}>{formatMoney(revenue.cancellationCommissionOwed)}</div>
           <div className="admin-stat-sub">{t('hotelsAnalytics.cancellationRevenueSub')}</div>
         </div>
         <div className="admin-stat-card">

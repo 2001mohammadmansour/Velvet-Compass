@@ -40,9 +40,14 @@ public class AdminDashboardService : IAdminDashboardService
             b.Status == BookingStatus.Cancelled).ToList();
 
         // ─── Platform Revenue ─────────────────────────────────
+        // The 15% commission accrued on confirmed/completed bookings.
         var platformRevenue = paidBookings.Sum(b => b.PlatformFee);
-        var cancellationRevenue = cancelledBookings.Sum(b => b.CancellationPenalty ?? 0);
-        var totalPlatformRevenue = platformRevenue + cancellationRevenue;
+        // The platform is owed 15% of every cancellation penalty — the penalty itself stays in the
+        // owner's wallet. This is NOT revenue until the owner pays it (it's in the Commission tab's
+        // "pending" total), so it's reported separately and left out of the revenue figure.
+        const decimal commissionRate = 0.15m;
+        var cancellationCommissionOwed = Math.Round(
+            cancelledBookings.Sum(b => b.CancellationPenalty ?? 0) * commissionRate, 2);
 
         // ─── Per-hotel performance (every hotel, zero-activity included) ──────
         var allHotels = await _context.Hotels.ToListAsync();
@@ -74,7 +79,7 @@ public class AdminDashboardService : IAdminDashboardService
         var totalUsers = await _context.Users.CountAsync();
 
         return new AdminDashboardDto(
-            new AdminRevenueDto(platformRevenue, cancellationRevenue, totalPlatformRevenue),
+            new AdminRevenueDto(platformRevenue, cancellationCommissionOwed, platformRevenue),
             new AdminBookingStatsDto(
                 bookings.Count,
                 bookings.Count(b => b.Status == BookingStatus.Confirmed),
